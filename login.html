@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Connexion — Xtracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#06080f;--bg2:#0a0d1a;
+  --border:rgba(255,255,255,0.06);
+  --ba:rgba(99,102,241,0.3);
+  --text:#f0f2ff;--muted:#4a5280;--muted2:#8892c0;
+  --accent:#6366f1;--accent2:#818cf8;--violet:#a78bfa;
+  --glow:0 0 40px rgba(99,102,241,0.2);
+}
+html,body{height:100%}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;min-height:100vh}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 20%,rgba(99,102,241,0.07) 0%,transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%,rgba(167,139,250,0.06) 0%,transparent 60%);
+}
+
+/* NAV */
+nav{
+  padding:0 48px;height:60px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);position:relative;z-index:10;
+}
+.logo{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;letter-spacing:-0.5px;text-decoration:none;color:var(--text)}
+.logo span{color:var(--accent)}
+.nav-link{font-size:13px;color:var(--muted2);text-decoration:none;transition:color .2s}
+.nav-link:hover{color:var(--text)}
+
+/* MAIN */
+main{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px;position:relative;z-index:10}
+
+/* CARD */
+.card{
+  width:100%;max-width:420px;
+  background:rgba(10,13,26,0.8);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:40px;
+  backdrop-filter:blur(20px);
+  box-shadow:0 0 0 1px rgba(99,102,241,0.05),0 24px 48px rgba(0,0,0,0.4);
+  animation:fadeUp .5s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+
+.card-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:11px;font-weight:500;letter-spacing:1px;
+  color:var(--accent2);background:rgba(99,102,241,0.1);
+  border:1px solid rgba(99,102,241,0.2);
+  padding:4px 12px;border-radius:20px;margin-bottom:24px;
+  text-transform:uppercase;
+}
+.card-badge::before{content:'';width:6px;height:6px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.2}}
+
+h1{
+  font-family:'Syne',sans-serif;font-size:26px;font-weight:800;
+  letter-spacing:-0.8px;margin-bottom:6px;line-height:1.2;
+}
+.card-sub{font-size:14px;color:var(--muted2);margin-bottom:32px;font-weight:300}
+
+/* TABS */
+.tabs{
+  display:flex;background:rgba(255,255,255,0.03);
+  border:1px solid var(--border);border-radius:8px;
+  padding:3px;margin-bottom:28px;
+}
+.tab{
+  flex:1;padding:8px;border:none;background:transparent;
+  font-size:13px;font-weight:500;color:var(--muted2);
+  border-radius:6px;cursor:pointer;transition:all .2s;font-family:inherit;
+}
+.tab.active{background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(99,102,241,0.4)}
+
+/* FORM */
+.fgroup{margin-bottom:16px}
+label{display:block;font-size:11px;font-weight:500;color:var(--muted2);letter-spacing:0.8px;text-transform:uppercase;margin-bottom:6px}
+input{
+  width:100%;background:rgba(255,255,255,0.04);
+  border:1px solid var(--border);border-radius:8px;
+  padding:11px 14px;font-size:14px;color:var(--text);
+  font-family:inherit;outline:none;transition:all .2s;
+}
+input:focus{border-color:rgba(99,102,241,0.6);background:rgba(99,102,241,0.06);box-shadow:0 0 0 3px rgba(99,102,241,0.1)}
+input::placeholder{color:var(--muted);font-size:13px}
+
+.btn{
+  width:100%;padding:13px;margin-top:8px;
+  background:linear-gradient(135deg,var(--accent),var(--violet));
+  color:#fff;font-size:14px;font-weight:600;
+  border:none;border-radius:8px;cursor:pointer;
+  font-family:'Syne',sans-serif;letter-spacing:0.3px;
+  transition:all .25s;box-shadow:0 4px 20px rgba(99,102,241,0.3);
+}
+.btn:hover{transform:translateY(-1px);box-shadow:0 8px 30px rgba(99,102,241,0.4)}
+.btn:active{transform:none}
+.btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+
+.divider{
+  display:flex;align-items:center;gap:12px;margin:20px 0;
+}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.divider span{font-size:12px;color:var(--muted);white-space:nowrap}
+
+.err{
+  background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);
+  border-radius:8px;padding:10px 14px;font-size:13px;color:#fca5a5;
+  margin-bottom:16px;display:none;
+}
+.ok{
+  background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);
+  border-radius:8px;padding:10px 14px;font-size:13px;color:var(--accent2);
+  margin-bottom:16px;display:none;
+}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+footer{
+  text-align:center;padding:20px;font-size:12px;color:var(--muted);
+  border-top:1px solid var(--border);position:relative;z-index:10;
+}
+footer a{color:var(--muted2);text-decoration:none}
+footer a:hover{color:var(--text)}
+
+@media(max-width:480px){nav{padding:0 20px}.card{padding:28px 24px}}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="logo">X<span>tracker</span></a>
+  <a href="index.html" class="nav-link">← Accueil</a>
+</nav>
+
+<main>
+  <div class="card">
+    <div class="card-badge">Accès sécurisé</div>
+    <h1>Bon retour 👋</h1>
+    <p class="card-sub">Connectez-vous ou créez votre compte.</p>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('login')">Connexion</button>
+      <button class="tab" onclick="switchTab('register')">Inscription</button>
+    </div>
+
+    <div id="msg-err" class="err"></div>
+    <div id="msg-ok" class="ok"></div>
+
+    <!-- LOGIN -->
+    <div id="pane-login">
+      <div class="fgroup">
+        <label>Email</label>
+        <input id="l-email" type="email" placeholder="vous@email.com" autocomplete="email">
+      </div>
+      <div class="fgroup">
+        <label>Mot de passe</label>
+        <input id="l-pass" type="password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button class="btn" id="btn-login" onclick="doLogin()">Se connecter</button>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="pane-register" style="display:none">
+      <div class="fgroup">
+        <label>Nom d'utilisateur</label>
+        <input id="r-user" type="text" placeholder="VotreNom">
+      </div>
+      <div class="fgroup">
+        <label>Email</label>
+        <input id="r-email" type="email" placeholder="vous@email.com">
+      </div>
+      <div class="fgroup">
+        <label>Mot de passe</label>
+        <input id="r-pass" type="password" placeholder="8 caractères minimum">
+      </div>
+      <button class="btn" id="btn-register" onclick="doRegister()">Créer mon compte</button>
+      <div class="divider"><span>10 recherches gratuites à l'inscription</span></div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <a href="cgu.html">Conditions d'utilisation</a> · © 2026 Xtracker · Created by jln_mk3
+</footer>
+
+<script>
+const API = '';  // même domaine
+
+function g(id){return document.getElementById(id)}
+function showErr(msg){const e=g('msg-err');e.textContent=msg;e.style.display='block';g('msg-ok').style.display='none'}
+function showOk(msg){const e=g('msg-ok');e.textContent=msg;e.style.display='block';g('msg-err').style.display='none'}
+function hideMsg(){g('msg-err').style.display='none';g('msg-ok').style.display='none'}
+
+function switchTab(t){
+  const isLogin = t==='login';
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',(isLogin&&i===0)||(!isLogin&&i===1)));
+  g('pane-login').style.display    = isLogin ? 'block' : 'none';
+  g('pane-register').style.display = isLogin ? 'none'  : 'block';
+  hideMsg();
+}
+
+function setLoading(btnId, on, label){
+  const b=g(btnId);b.disabled=on;
+  b.innerHTML=on?`<span class="spinner"></span>Chargement...`:label;
+}
+
+async function doLogin(){
+  hideMsg();
+  const email=g('l-email').value.trim();
+  const pass=g('l-pass').value;
+  if(!email||!pass){showErr('Remplissez tous les champs.');return}
+  setLoading('btn-login',true,'Se connecter');
+  try{
+    const r=await fetch(`${API}/api/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pass})});
+    const d=await r.json();
+    if(!r.ok){showErr(d.detail||'Erreur de connexion');return}
+    localStorage.setItem('token',d.token);
+    localStorage.setItem('user',JSON.stringify(d.user));
+    showOk('Connexion réussie — redirection...');
+    setTimeout(()=>window.location.href=d.user.role==='admin'?'admin.html':'dashboard.html',800);
+  }catch(e){showErr('Erreur réseau. Vérifiez votre connexion.')}
+  finally{setLoading('btn-login',false,'Se connecter')}
+}
+
+async function doRegister(){
+  hideMsg();
+  const username=g('r-user').value.trim();
+  const email=g('r-email').value.trim();
+  const pass=g('r-pass').value;
+  if(!username||!email||!pass){showErr('Remplissez tous les champs.');return}
+  if(pass.length<8){showErr('Mot de passe trop court (8 caractères min).');return}
+  setLoading('btn-register',true,'Créer mon compte');
+  try{
+    const r=await fetch(`${API}/api/auth/register`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pass,username})});
+    const d=await r.json();
+    if(!r.ok){showErr(d.detail||'Erreur inscription');return}
+    localStorage.setItem('token',d.token);
+    showOk('Compte créé ! 10 recherches gratuites débloquées 🎉');
+    setTimeout(()=>window.location.href='dashboard.html',1000);
+  }catch(e){showErr('Erreur réseau.')}
+  finally{setLoading('btn-register',false,'Créer mon compte')}
+}
+
+// Enter key
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter')return;
+  if(g('pane-login').style.display!=='none')doLogin();
+  else doRegister();
+});
+
+// Redirect si déjà connecté
+const t=localStorage.getItem('token');
+if(t){
+  const u=JSON.parse(localStorage.getItem('user')||'{}');
+  window.location.href=u.role==='admin'?'admin.html':'dashboard.html';
+}
+</script>
+</body>
+</html>

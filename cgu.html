@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Conditions Générales d'Utilisation — Xtracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07090f;--bg2:#0c0f18;
+  --border:rgba(255,255,255,0.07);--ba:rgba(249,115,22,0.25);
+  --text:#eef0f8;--muted:#4e566e;--muted2:#8892b0;
+  --accent:#f97316;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.7}
+nav{
+  height:60px;padding:0 48px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);background:var(--bg);
+  position:sticky;top:0;z-index:50;
+}
+.logo{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;letter-spacing:-0.5px;color:var(--text);text-decoration:none}
+.logo span{color:var(--accent)}
+.nav-back{font-size:13px;color:var(--muted2);text-decoration:none;display:flex;align-items:center;gap:6px;transition:color .2s}
+.nav-back:hover{color:var(--text)}.nav-back::before{content:'←'}
+
+.layout{max-width:720px;margin:0 auto;padding:64px 40px 100px}
+
+.page-eyebrow{
+  font-size:11px;font-weight:500;color:var(--accent);
+  letter-spacing:3px;text-transform:uppercase;margin-bottom:16px;
+}
+h1{
+  font-family:'Syne',sans-serif;font-size:clamp(28px,4vw,42px);
+  font-weight:800;letter-spacing:-1px;line-height:1.1;margin-bottom:12px;
+}
+.update{
+  font-size:12px;color:var(--muted);margin-bottom:48px;
+  padding-bottom:24px;border-bottom:1px solid var(--border);
+}
+
+.toc{
+  background:var(--bg2);border:1px solid var(--border);border-radius:10px;
+  padding:24px 28px;margin-bottom:48px;
+}
+.toc-title{font-size:12px;font-weight:500;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:14px}
+.toc ol{list-style:none;display:flex;flex-direction:column;gap:6px;counter-reset:toc}
+.toc ol li{counter-increment:toc;display:flex;gap:8px;align-items:baseline}
+.toc ol li::before{content:counter(toc,decimal-leading-zero);font-size:11px;color:var(--accent);font-weight:500;min-width:20px}
+.toc ol li a{font-size:13px;color:var(--muted2);text-decoration:none;transition:color .2s}
+.toc ol li a:hover{color:var(--text)}
+
+h2{
+  font-family:'Syne',sans-serif;font-size:18px;font-weight:700;
+  letter-spacing:-0.3px;margin-bottom:14px;margin-top:48px;
+  padding-bottom:10px;border-bottom:1px solid var(--border);
+  display:flex;gap:12px;align-items:center;
+}
+h2 .n{font-size:11px;color:var(--accent);font-weight:700;letter-spacing:1px}
+p{font-size:15px;color:var(--muted2);margin-bottom:14px;font-weight:300}
+ul,ol{padding-left:20px;margin-bottom:14px;display:flex;flex-direction:column;gap:6px}
+li{font-size:14px;color:var(--muted2);font-weight:300}
+li::marker{color:var(--accent)}
+strong{color:var(--text);font-weight:500}
+
+.warn{
+  background:rgba(249,115,22,0.06);border:1px solid var(--ba);
+  border-radius:8px;padding:16px 20px;margin:20px 0;
+  font-size:14px;color:var(--text);display:flex;gap:10px;
+}
+.warn::before{content:'⚠';flex-shrink:0}
+
+footer{
+  border-top:1px solid var(--border);padding:24px 48px;
+  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;
+}
+.footer-logo{font-family:'Syne',sans-serif;font-size:16px;font-weight:800}
+.footer-logo span{color:var(--accent)}
+footer p{font-size:12px;color:var(--muted)}
+
+@media(max-width:640px){nav{padding:0 20px}.layout{padding:40px 20px 80px}footer{padding:20px}}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="logo">X<span>tracker</span></a>
+  <a href="index.html" class="nav-back">Accueil</a>
+</nav>
+
+<div class="layout">
+  <div class="page-eyebrow">Documents légaux</div>
+  <h1>Conditions Générales d'Utilisation</h1>
+  <div class="update">Dernière mise à jour : Janvier 2026 · Version 1.0</div>
+
+  <div class="toc">
+    <div class="toc-title">Sommaire</div>
+    <ol>
+      <li><a href="#s1">Objet et champ d'application</a></li>
+      <li><a href="#s2">Accès au service</a></li>
+      <li><a href="#s3">Utilisation autorisée</a></li>
+      <li><a href="#s4">Utilisations interdites</a></li>
+      <li><a href="#s5">Données personnelles</a></li>
+      <li><a href="#s6">Responsabilité</a></li>
+      <li><a href="#s7">Propriété intellectuelle</a></li>
+      <li><a href="#s8">Suspension et résiliation</a></li>
+      <li><a href="#s9">Modifications des CGU</a></li>
+      <li><a href="#s10">Droit applicable</a></li>
+    </ol>
+  </div>
+
+  <h2 id="s1"><span class="n">01</span> Objet et champ d'application</h2>
+  <p>Les présentes Conditions Générales d'Utilisation (ci-après « CGU ») régissent l'accès et l'utilisation de la plateforme <strong>Xtracker</strong> (ci-après « le Service »), accessible à l'adresse du site ou via tout autre canal mis à disposition.</p>
+  <p>En accédant au Service, l'utilisateur accepte sans réserve l'intégralité des présentes CGU. Si vous n'acceptez pas ces conditions, veuillez ne pas utiliser le Service.</p>
+
+  <h2 id="s2"><span class="n">02</span> Accès au service</h2>
+  <p>L'accès au Service est réservé aux utilisateurs disposant d'une clé API valide. L'utilisation du Service est conditionnée au respect des présentes CGU ainsi qu'aux conditions imposées par les fournisseurs de données tiers.</p>
+  <ul>
+    <li>L'utilisateur doit être âgé d'au moins <strong>18 ans</strong>.</li>
+    <li>L'accès est strictement personnel et non cessible.</li>
+    <li>La clé API est confidentielle — toute divulgation engage la responsabilité de l'utilisateur.</li>
+    <li>Le quota journalier est limité selon le plan souscrit (1 000 req/jour pour le plan Starter).</li>
+  </ul>
+
+  <h2 id="s3"><span class="n">03</span> Utilisation autorisée</h2>
+  <p>Le Service peut être utilisé uniquement dans le cadre des finalités suivantes :</p>
+  <ul>
+    <li>Recherche d'informations sur des personnes avec leur <strong>consentement explicite</strong>.</li>
+    <li>Vérification d'identité dans un cadre professionnel légalement encadré.</li>
+    <li>Investigations journalistiques conformes au droit de la presse.</li>
+    <li>Toute autre finalité licite au regard du droit applicable.</li>
+  </ul>
+  <div class="warn">L'utilisation du Service implique que vous avez obtenu les autorisations nécessaires et que votre utilisation est conforme à la législation en vigueur dans votre pays.</div>
+
+  <h2 id="s4"><span class="n">04</span> Utilisations interdites</h2>
+  <p>Il est strictement interdit d'utiliser le Service pour :</p>
+  <ul>
+    <li>Le harcèlement, le stalking ou toute forme de surveillance non consentie.</li>
+    <li>La collecte de données à caractère personnel sans base légale au sens du RGPD.</li>
+    <li>La revente ou redistribution des données obtenues.</li>
+    <li>L'automatisation abusive des requêtes au-delà des limites autorisées.</li>
+    <li>Toute activité frauduleuse, illicite ou portant atteinte aux droits de tiers.</li>
+    <li>Le profilage à des fins discriminatoires ou d'usurpation d'identité.</li>
+  </ul>
+  <div class="warn">Toute violation de ces dispositions entraînera la suspension immédiate de l'accès et pourra donner lieu à des poursuites judiciaires.</div>
+
+  <h2 id="s5"><span class="n">05</span> Données personnelles</h2>
+  <p>Xtracker accède à des données personnelles issues de bases tierces dans le cadre de l'exécution du Service. Ces données sont traitées conformément au <strong>Règlement Général sur la Protection des Données (RGPD)</strong> et à la loi Informatique et Libertés.</p>
+  <ul>
+    <li>Les résultats de recherche ne doivent pas être conservés plus longtemps que nécessaire.</li>
+    <li>Toute personne concernée dispose d'un droit d'accès, de rectification et d'opposition sur ses données.</li>
+    <li>L'utilisateur est responsable du traitement qu'il effectue sur les données obtenues via le Service.</li>
+  </ul>
+  <p>Pour exercer vos droits ou signaler un abus, vous pouvez contacter le responsable du traitement via les canaux indiqués sur le site.</p>
+
+  <h2 id="s6"><span class="n">06</span> Responsabilité</h2>
+  <p>Xtracker est un outil de consultation. Les données affichées proviennent de sources tierces et leur exactitude ne peut être garantie. En conséquence :</p>
+  <ul>
+    <li>Xtracker ne saurait être tenu responsable des erreurs, omissions ou inexactitudes dans les données retournées.</li>
+    <li>L'utilisateur assume l'entière responsabilité de l'usage qu'il fait des informations obtenues.</li>
+    <li>Xtracker ne pourra être tenu responsable des dommages directs ou indirects résultant de l'utilisation du Service.</li>
+  </ul>
+
+  <h2 id="s7"><span class="n">07</span> Propriété intellectuelle</h2>
+  <p>L'interface, le code source, les éléments graphiques et la marque <strong>Xtracker</strong> sont protégés par le droit de la propriété intellectuelle. Toute reproduction, modification ou exploitation sans autorisation écrite préalable est interdite.</p>
+
+  <h2 id="s8"><span class="n">08</span> Suspension et résiliation</h2>
+  <p>Xtracker se réserve le droit de suspendre ou de résilier l'accès au Service, sans préavis ni indemnité, en cas de :</p>
+  <ul>
+    <li>Non-respect des présentes CGU.</li>
+    <li>Utilisation abusive ou frauduleuse du Service.</li>
+    <li>Demande des autorités compétentes.</li>
+  </ul>
+
+  <h2 id="s9"><span class="n">09</span> Modifications des CGU</h2>
+  <p>Xtracker se réserve le droit de modifier les présentes CGU à tout moment. Les modifications entrent en vigueur dès leur publication sur le site. L'utilisation continue du Service après modification vaut acceptation des nouvelles CGU.</p>
+
+  <h2 id="s10"><span class="n">10</span> Droit applicable et juridiction</h2>
+  <p>Les présentes CGU sont soumises au droit français. Tout litige relatif à leur interprétation ou exécution sera soumis à la compétence exclusive des tribunaux compétents.</p>
+  <p>Pour toute question relative aux présentes CGU, veuillez consulter les informations de contact disponibles sur le site.</p>
+</div>
+
+<footer>
+  <div class="footer-logo">X<span>tracker</span></div>
+  <p>© 2026 Xtracker · Tous droits réservés</p>
+</footer>
+
+</body>
+</html>

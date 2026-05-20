@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Xtracker — #1 du CSINT</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#06080f;--bg2:#0a0d1a;
+  --border:rgba(255,255,255,0.06);--ba:rgba(99,102,241,0.25);
+  --text:#f0f2ff;--muted:#4a5280;--muted2:#8892c0;
+  --accent:#6366f1;--accent2:#818cf8;--violet:#a78bfa;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 70% 50% at 15% 15%,rgba(99,102,241,0.08) 0%,transparent 60%),
+    radial-gradient(ellipse 50% 40% at 85% 85%,rgba(167,139,250,0.06) 0%,transparent 60%);
+}
+
+/* NAV */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  height:62px;padding:0 56px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(6,8,15,0.85);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+}
+.logo{font-family:'Syne',sans-serif;font-size:21px;font-weight:800;letter-spacing:-0.5px;text-decoration:none;color:var(--text)}
+.logo span{color:var(--accent)}
+.nav-links{display:flex;gap:36px;list-style:none}
+.nav-links a{font-size:13px;color:var(--muted2);text-decoration:none;transition:color .2s}
+.nav-links a:hover{color:var(--text)}
+.nav-right{display:flex;gap:10px;align-items:center}
+.btn-nav-ghost{
+  font-size:13px;font-weight:500;padding:7px 18px;
+  border:1px solid var(--border);border-radius:7px;color:var(--muted2);
+  text-decoration:none;transition:all .2s;background:transparent;
+}
+.btn-nav-ghost:hover{border-color:rgba(99,102,241,0.4);color:var(--text)}
+.btn-nav{
+  font-size:13px;font-weight:600;padding:7px 18px;
+  background:var(--accent);border-radius:7px;color:#fff;
+  text-decoration:none;transition:all .2s;
+  box-shadow:0 0 20px rgba(99,102,241,0.3);
+}
+.btn-nav:hover{background:var(--accent2);box-shadow:0 0 30px rgba(99,102,241,0.4)}
+
+/* HERO */
+.hero{
+  min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  text-align:center;padding:120px 40px 80px;
+  position:relative;z-index:10;
+}
+.hero-tag{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:12px;font-weight:500;letter-spacing:0.5px;
+  color:var(--accent2);background:rgba(99,102,241,0.08);
+  border:1px solid rgba(99,102,241,0.2);
+  padding:5px 16px;border-radius:20px;margin-bottom:32px;
+  animation:fadeDown .6s .1s both;
+}
+.hero-tag i{width:6px;height:6px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+@keyframes fadeDown{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:none}}
+
+h1{
+  font-family:'Syne',sans-serif;
+  font-size:clamp(48px,8vw,96px);
+  font-weight:800;letter-spacing:-3px;line-height:.95;
+  margin-bottom:28px;
+  animation:fadeDown .7s .2s both;
+}
+h1 .line1{display:block;color:var(--text)}
+h1 .line2{
+  display:block;
+  background:linear-gradient(135deg,var(--accent) 0%,var(--violet) 60%,var(--accent2) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 30px rgba(99,102,241,0.4));
+}
+.hero-sub{
+  font-size:18px;font-weight:300;color:var(--muted2);
+  max-width:520px;line-height:1.75;margin-bottom:44px;
+  animation:fadeDown .7s .35s both;
+}
+.hero-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;animation:fadeDown .7s .45s both}
+.btn-primary{
+  padding:13px 32px;
+  background:linear-gradient(135deg,var(--accent),var(--violet));
+  color:#fff;font-size:15px;font-weight:600;border-radius:9px;
+  text-decoration:none;transition:all .25s;
+  box-shadow:0 4px 24px rgba(99,102,241,0.35);
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(99,102,241,0.5)}
+.btn-ghost{
+  padding:13px 32px;border:1px solid var(--border);
+  color:var(--muted2);font-size:15px;font-weight:500;border-radius:9px;
+  text-decoration:none;transition:all .2s;background:transparent;
+}
+.btn-ghost:hover{border-color:rgba(99,102,241,0.4);color:var(--text)}
+
+/* STATS */
+.stats{
+  display:flex;justify-content:center;gap:0;
+  border:1px solid var(--border);border-radius:12px;
+  background:rgba(10,13,26,0.6);backdrop-filter:blur(10px);
+  max-width:700px;margin:60px auto 0;
+  animation:fadeDown .7s .55s both;
+  overflow:hidden;
+}
+.stat{flex:1;padding:28px 20px;text-align:center;border-right:1px solid var(--border)}
+.stat:last-child{border-right:none}
+.stat-n{
+  font-family:'Syne',sans-serif;font-size:28px;font-weight:800;
+  display:block;letter-spacing:-1px;margin-bottom:4px;
+  background:linear-gradient(135deg,var(--accent2),var(--violet));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.stat-l{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;font-weight:500}
+
+/* MARQUEE */
+.marquee-outer{
+  border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+  overflow:hidden;padding:16px 0;position:relative;z-index:10;
+  background:rgba(10,13,26,0.5);
+}
+.marquee-inner{display:flex;gap:48px;animation:marquee 28s linear infinite;white-space:nowrap}
+@keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.m-item{font-size:12px;font-weight:500;color:var(--muted);letter-spacing:2px;text-transform:uppercase;display:flex;align-items:center;gap:10px}
+.m-item::before{content:'';width:4px;height:4px;background:var(--accent);border-radius:50%;flex-shrink:0}
+
+/* SECTION */
+.section{max-width:1080px;margin:0 auto;padding:90px 56px;position:relative;z-index:10}
+.eyebrow{font-size:11px;font-weight:500;color:var(--accent2);letter-spacing:3px;text-transform:uppercase;margin-bottom:14px}
+h2{font-family:'Syne',sans-serif;font-size:clamp(26px,4vw,44px);font-weight:800;letter-spacing:-1.5px;line-height:1.1;margin-bottom:14px}
+.s-sub{font-size:16px;color:var(--muted2);max-width:440px;line-height:1.75;font-weight:300}
+.divider{height:1px;background:linear-gradient(90deg,transparent,rgba(99,102,241,0.2),transparent);margin:0 56px;position:relative;z-index:10}
+
+/* FEATURES */
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-top:52px}
+.feat{
+  background:var(--bg2);padding:32px 28px;position:relative;overflow:hidden;
+  transition:background .25s;
+}
+.feat::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--accent),var(--violet),transparent);
+  transform:scaleX(0);transform-origin:left;transition:transform .4s;
+}
+.feat:hover{background:rgba(99,102,241,0.04)}
+.feat:hover::before{transform:scaleX(1)}
+.feat-ico{
+  width:38px;height:38px;border-radius:8px;
+  background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);
+  display:flex;align-items:center;justify-content:center;font-size:17px;margin-bottom:18px;
+}
+.feat h3{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:8px;letter-spacing:-0.2px}
+.feat p{font-size:13px;color:var(--muted2);line-height:1.65}
+
+/* PRICING */
+.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:52px}
+.plan{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:12px;padding:32px 28px;
+  transition:border-color .25s,transform .25s;position:relative;overflow:hidden;
+}
+.plan:hover{border-color:rgba(99,102,241,0.3);transform:translateY(-4px)}
+.plan.popular{border-color:rgba(99,102,241,0.4);background:rgba(99,102,241,0.06)}
+.plan-badge{
+  position:absolute;top:16px;right:16px;
+  font-size:10px;font-weight:700;letter-spacing:1px;
+  color:#fff;background:var(--accent);padding:3px 10px;border-radius:20px;text-transform:uppercase;
+}
+.plan-name{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;letter-spacing:-0.3px;margin-bottom:8px}
+.plan-price{
+  font-family:'Syne',sans-serif;font-size:38px;font-weight:800;letter-spacing:-2px;
+  margin-bottom:4px;
+  background:linear-gradient(135deg,var(--accent2),var(--violet));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.plan-price span{font-size:16px;font-weight:400;color:var(--muted2);-webkit-text-fill-color:var(--muted2)}
+.plan-credits{font-size:13px;color:var(--muted2);margin-bottom:24px}
+.plan-features{list-style:none;display:flex;flex-direction:column;gap:8px;margin-bottom:28px}
+.plan-features li{font-size:13px;color:var(--muted2);display:flex;align-items:center;gap:8px}
+.plan-features li::before{content:'✓';color:var(--accent2);font-weight:700;flex-shrink:0}
+.btn-plan{
+  width:100%;padding:11px;
+  background:linear-gradient(135deg,var(--accent),var(--violet));
+  color:#fff;font-size:13px;font-weight:600;
+  border:none;border-radius:8px;cursor:pointer;text-align:center;
+  text-decoration:none;display:block;
+  font-family:'Syne',sans-serif;transition:all .2s;
+  box-shadow:0 4px 16px rgba(99,102,241,0.25);
+}
+.btn-plan:hover{box-shadow:0 4px 24px rgba(99,102,241,0.45);transform:translateY(-1px)}
+.btn-plan.ghost{background:transparent;border:1px solid var(--border);color:var(--muted2);box-shadow:none}
+.btn-plan.ghost:hover{border-color:rgba(99,102,241,0.4);color:var(--text)}
+
+/* CTA */
+.cta{
+  margin:0 56px 80px;
+  background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(167,139,250,0.08));
+  border:1px solid rgba(99,102,241,0.2);border-radius:16px;
+  padding:60px;display:flex;align-items:center;justify-content:space-between;gap:40px;
+  position:relative;z-index:10;overflow:hidden;
+}
+.cta::before{
+  content:'';position:absolute;right:-80px;top:-80px;
+  width:240px;height:240px;border-radius:50%;
+  background:radial-gradient(circle,rgba(99,102,241,0.12),transparent 70%);pointer-events:none;
+}
+.cta h2{font-size:clamp(20px,3vw,36px);max-width:460px}
+.cta .actions{display:flex;gap:10px;flex-shrink:0}
+
+/* FOOTER */
+footer{
+  border-top:1px solid var(--border);padding:28px 56px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
+  position:relative;z-index:10;
+}
+.f-logo{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;letter-spacing:-0.5px}
+.f-logo span{color:var(--accent)}
+.f-links{display:flex;gap:24px}
+.f-links a{font-size:13px;color:var(--muted);text-decoration:none;transition:color .2s}
+.f-links a:hover{color:var(--text)}
+.f-copy{width:100%;text-align:center;font-size:12px;color:var(--muted);padding-top:16px;border-top:1px solid var(--border)}
+
+/* REVEAL */
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .6s cubic-bezier(.16,1,.3,1),transform .6s cubic-bezier(.16,1,.3,1)}
+.reveal.on{opacity:1;transform:none}
+.d1{transition-delay:.08s}.d2{transition-delay:.16s}.d3{transition-delay:.24s}
+
+@media(max-width:900px){
+  nav{padding:0 20px}.nav-links{display:none}
+  .section{padding:60px 24px}
+  .feat-grid,.pricing-grid{grid-template-columns:1fr}
+  .stats{flex-wrap:wrap;max-width:340px}.stat{min-width:50%}
+  .cta{flex-direction:column;margin:0 24px 60px;padding:40px 28px}
+  footer{padding:20px 24px;flex-direction:column;text-align:center}.f-links{flex-wrap:wrap;justify-content:center}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="#" class="logo">X<span>tracker</span></a>
+  <ul class="nav-links">
+    <li><a href="#features">Fonctionnalités</a></li>
+    <li><a href="#pricing">Tarifs</a></li>
+    <li><a href="cgu.html">CGU</a></li>
+  </ul>
+  <div class="nav-right">
+    <a href="login.html" class="btn-nav-ghost">Connexion</a>
+    <a href="login.html" class="btn-nav">Commencer →</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-tag"><i></i> Xtracker — #1 du CSINT</div>
+  <h1>
+    <span class="line1">Retrouvez</span>
+    <span class="line2">n'importe qui.</span>
+  </h1>
+  <p class="hero-sub">Le moteur de recherche le plus puissant du CSINT francophone. 11 milliards d'entrées. Résultats en moins de 50ms.</p>
+  <div class="hero-actions">
+    <a href="login.html" class="btn-primary">Commencer gratuitement</a>
+    <a href="#pricing" class="btn-ghost">Voir les tarifs</a>
+  </div>
+  <div class="stats">
+    <div class="stat"><span class="stat-n">11Md+</span><div class="stat-l">Entrées</div></div>
+    <div class="stat"><span class="stat-n">10</span><div class="stat-l">Recherches gratuites</div></div>
+    <div class="stat"><span class="stat-n">&lt;50ms</span><div class="stat-l">Latence</div></div>
+    <div class="stat"><span class="stat-n">99.9%</span><div class="stat-l">Uptime</div></div>
+  </div>
+</section>
+
+<div class="marquee-outer">
+  <div class="marquee-inner" id="mq"></div>
+</div>
+
+<div class="section reveal" id="features">
+  <div class="eyebrow">Fonctionnalités</div>
+  <h2>Tout ce qu'il faut<br>pour retrouver quelqu'un.</h2>
+  <p class="s-sub">Des outils puissants. Une interface épurée. Des résultats fiables.</p>
+  <div class="feat-grid">
+    <div class="feat reveal d1"><div class="feat-ico">🔍</div><h3>Recherche avancée</h3><p>Nom, prénom, email, téléphone, adresse — combinez tout pour des résultats ultra-précis.</p></div>
+    <div class="feat reveal d2"><div class="feat-ico">⚡</div><h3>Lookup direct</h3><p>Email, téléphone ou IBAN — un seul identifiant suffit pour trouver un profil complet.</p></div>
+    <div class="feat reveal d3"><div class="feat-ico">🎯</div><h3>Score de confiance</h3><p>Chaque profil est scoré 0-100% selon les sources croisées et la qualité des données.</p></div>
+    <div class="feat reveal d1"><div class="feat-ico">📂</div><h3>Multi-sources</h3><p>Données fusionnées depuis des dizaines de sources françaises, dédupliquées automatiquement.</p></div>
+    <div class="feat reveal d2"><div class="feat-ico">📊</div><h3>Historique complet</h3><p>Retrouvez toutes vos recherches passées depuis votre tableau de bord personnel.</p></div>
+    <div class="feat reveal d3"><div class="feat-ico">🛡️</div><h3>Panel admin</h3><p>Gestion complète des utilisateurs, crédits, transactions et statistiques en temps réel.</p></div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<div class="section reveal" id="pricing">
+  <div class="eyebrow">Tarifs</div>
+  <h2>Simple et transparent.</h2>
+  <p class="s-sub">10 recherches gratuites dès l'inscription. Rechargez quand vous voulez.</p>
+  <div class="pricing-grid">
+    <div class="plan reveal d1">
+      <div class="plan-name">Starter</div>
+      <div class="plan-price">4.99<span>€</span></div>
+      <div class="plan-credits">50 crédits · 0.10€ / recherche</div>
+      <ul class="plan-features">
+        <li>50 recherches</li>
+        <li>Recherche avancée</li>
+        <li>Lookup direct</li>
+        <li>Historique 30 jours</li>
+      </ul>
+      <a href="login.html" class="btn-plan ghost">Choisir</a>
+    </div>
+    <div class="plan popular reveal d2">
+      <div class="plan-badge">Populaire</div>
+      <div class="plan-name">Pro</div>
+      <div class="plan-price">14.99<span>€</span></div>
+      <div class="plan-credits">200 crédits · 0.07€ / recherche</div>
+      <ul class="plan-features">
+        <li>200 recherches</li>
+        <li>Recherche avancée</li>
+        <li>Lookup direct</li>
+        <li>Historique illimité</li>
+        <li>Support prioritaire</li>
+      </ul>
+      <a href="login.html" class="btn-plan">Choisir</a>
+    </div>
+    <div class="plan reveal d3">
+      <div class="plan-name">Enterprise</div>
+      <div class="plan-price">49.99<span>€</span></div>
+      <div class="plan-credits">1000 crédits · 0.05€ / recherche</div>
+      <ul class="plan-features">
+        <li>1 000 recherches</li>
+        <li>Tout le Pro inclus</li>
+        <li>Accès API direct</li>
+        <li>Support dédié</li>
+        <li>Facturation entreprise</li>
+      </ul>
+      <a href="login.html" class="btn-plan ghost">Choisir</a>
+    </div>
+  </div>
+</div>
+
+<div class="cta reveal">
+  <h2>Prêt à commencer ?<br>C'est gratuit.</h2>
+  <div class="actions">
+    <a href="login.html" class="btn-primary">Créer mon compte</a>
+    <a href="login.html" class="btn-ghost">Se connecter</a>
+  </div>
+</div>
+
+<footer>
+  <div class="f-logo">X<span>tracker</span></div>
+  <div class="f-links">
+    <a href="login.html">Connexion</a>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="cgu.html">CGU</a>
+  </div>
+  <div class="f-copy">© 2026 Xtracker · #1 du CSINT · Created by jln_mk3</div>
+</footer>
+
+<script>
+const items=['Recherche avancée','Lookup email','Lookup téléphone','Score de confiance','Multi-sources','Mode flexible','11 milliards d\'entrées','Résultats en 50ms','Profils enrichis','Panel admin'];
+const mq=document.getElementById('mq');
+let h='';for(let i=0;i<4;i++)items.forEach(t=>h+=`<span class="m-item">${t}</span>`);
+mq.innerHTML=h;
+const obs=new IntersectionObserver(e=>e.forEach(el=>{if(el.isIntersecting)el.target.classList.add('on')}),{threshold:.1});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+</script>
+</body>
+</html>

@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — Xtracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#06080f;--bg2:#0a0d1a;--bg3:#0d1020;
+  --border:rgba(255,255,255,0.06);--ba:rgba(99,102,241,0.25);
+  --text:#f0f2ff;--muted:#4a5280;--muted2:#8892c0;
+  --accent:#6366f1;--accent2:#818cf8;--violet:#a78bfa;
+  --green:#22c55e;--yellow:#f59e0b;--red:#ef4444;
+}
+html,body{height:100%}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 60% 40% at 10% 10%,rgba(99,102,241,0.06) 0%,transparent 60%)}
+
+/* SIDEBAR */
+.sidebar{
+  position:fixed;top:0;left:0;bottom:0;width:220px;
+  background:rgba(10,13,26,0.95);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;z-index:50;
+  backdrop-filter:blur(20px);
+}
+.sb-logo{
+  padding:24px 20px 20px;
+  font-family:'Syne',sans-serif;font-size:19px;font-weight:800;letter-spacing:-0.5px;
+  border-bottom:1px solid var(--border);text-decoration:none;color:var(--text);display:block;
+}
+.sb-logo span{color:var(--accent)}
+.sb-nav{padding:16px 10px;flex:1;display:flex;flex-direction:column;gap:4px}
+.sb-link{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 12px;border-radius:8px;
+  font-size:13px;font-weight:500;color:var(--muted2);
+  text-decoration:none;transition:all .2s;cursor:pointer;border:none;background:transparent;
+  font-family:inherit;width:100%;text-align:left;
+}
+.sb-link:hover{background:rgba(99,102,241,0.08);color:var(--text)}
+.sb-link.active{background:rgba(99,102,241,0.12);color:var(--accent2)}
+.sb-link .ico{width:16px;text-align:center;font-size:15px}
+.sb-section{font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;padding:12px 12px 4px;font-weight:500}
+.sb-bottom{padding:12px 10px;border-top:1px solid var(--border)}
+.sb-user{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;
+  border-radius:8px;background:rgba(99,102,241,0.06);
+}
+.sb-avatar{
+  width:32px;height:32px;border-radius:8px;
+  background:linear-gradient(135deg,var(--accent),var(--violet));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;
+}
+.sb-uname{font-size:13px;font-weight:600;color:var(--text);line-height:1.2}
+.sb-uemail{font-size:11px;color:var(--muted)}
+
+/* MAIN */
+.main{margin-left:220px;min-height:100vh;display:flex;flex-direction:column;position:relative;z-index:10}
+.topbar{
+  height:56px;padding:0 32px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);background:rgba(6,8,15,0.8);
+  backdrop-filter:blur(10px);position:sticky;top:0;z-index:40;
+}
+.topbar-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;letter-spacing:-0.3px}
+.credits-badge{
+  display:flex;align-items:center;gap:8px;
+  background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);
+  padding:5px 14px;border-radius:20px;font-size:12px;font-weight:500;
+}
+.credits-badge .c-free{color:var(--accent2)}
+.credits-badge .c-paid{color:var(--violet)}
+
+.content{padding:32px;flex:1}
+
+/* PAGES */
+.page{display:none}.page.active{display:block}
+
+/* CARDS GRID */
+.cards-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px}
+.card-label{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;font-weight:500}
+.card-val{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;letter-spacing:-1px;margin-bottom:4px}
+.card-val.accent{background:linear-gradient(135deg,var(--accent2),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.card-sub{font-size:12px;color:var(--muted)}
+
+/* PANEL SEARCH */
+.panel-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.panel-tabs{display:flex;padding:0;border-bottom:1px solid var(--border)}
+.ptab{
+  padding:12px 20px;font-size:13px;font-weight:500;
+  background:transparent;border:none;color:var(--muted2);
+  cursor:pointer;font-family:inherit;border-bottom:2px solid transparent;
+  transition:all .2s;margin-bottom:-1px;
+}
+.ptab.active{color:var(--accent2);border-bottom-color:var(--accent)}
+.ptab:hover:not(.active){color:var(--text)}
+.panel-body{padding:24px}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.fgroup{display:flex;flex-direction:column;gap:5px}
+label{font-size:11px;font-weight:500;color:var(--muted2);letter-spacing:.6px;text-transform:uppercase}
+input{
+  background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:7px;
+  padding:9px 12px;font-size:13px;color:var(--text);font-family:inherit;
+  outline:none;transition:all .2s;
+}
+input:focus{border-color:rgba(99,102,241,0.5);background:rgba(99,102,241,0.05);box-shadow:0 0 0 3px rgba(99,102,241,0.1)}
+input::placeholder{color:var(--muted);font-size:12px}
+.toggle-row{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;
+  background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:7px;margin-bottom:14px;
+}
+.tog{width:34px;height:18px;background:rgba(255,255,255,0.1);border-radius:9px;position:relative;cursor:pointer;flex-shrink:0;transition:background .2s}
+.tog::after{content:'';position:absolute;left:3px;top:3px;width:12px;height:12px;background:var(--muted);border-radius:50%;transition:all .2s}
+input[type=checkbox]:checked+.tog{background:rgba(99,102,241,0.4)}
+input[type=checkbox]:checked+.tog::after{left:19px;background:var(--accent2)}
+input[type=checkbox]{display:none}
+.tog-label{font-size:12px;color:var(--muted2)}
+.btn-run{
+  width:100%;padding:11px;
+  background:linear-gradient(135deg,var(--accent),var(--violet));
+  color:#fff;font-size:13px;font-weight:600;border:none;border-radius:8px;cursor:pointer;
+  font-family:'Syne',sans-serif;transition:all .2s;
+  box-shadow:0 4px 16px rgba(99,102,241,0.25);
+}
+.btn-run:hover{box-shadow:0 4px 24px rgba(99,102,241,0.45);transform:translateY(-1px)}
+.btn-run:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* RESULTS */
+#results{margin-top:20px}
+.res-meta{font-size:12px;color:var(--muted);margin-bottom:12px;display:flex;justify-content:space-between;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.rcard{border:1px solid var(--border);border-radius:8px;margin-bottom:8px;overflow:hidden;background:rgba(255,255,255,0.02);transition:border-color .2s}
+.rcard:hover{border-color:rgba(99,102,241,0.25)}
+.rcard-top{padding:12px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.rcard-top:hover{background:rgba(99,102,241,0.03)}
+.rname{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;letter-spacing:-.2px}
+.rmeta{font-size:11px;color:var(--muted2);margin-top:2px}
+.badge{font-size:11px;font-weight:600;padding:2px 10px;border-radius:20px}
+.badge.hi{background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.2)}
+.badge.md{background:rgba(245,158,11,.1);color:var(--yellow);border:1px solid rgba(245,158,11,.2)}
+.badge.lo{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+.rarr{color:var(--muted);font-size:11px;margin-left:8px;transition:transform .2s}
+.rcard-body{display:none;padding:14px 16px 16px;border-top:1px solid var(--border)}
+.rcard-body.open{display:block}
+.rfields{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:12px}
+.rf{display:flex;flex-direction:column;gap:2px}
+.rf-k{font-size:10px;font-weight:500;color:var(--muted);letter-spacing:.8px;text-transform:uppercase}
+.rf-v{font-size:12px;font-weight:500;color:var(--text)}
+.rsources{display:flex;flex-wrap:wrap;gap:5px;padding-top:10px;border-top:1px solid var(--border)}
+.src{font-size:10px;color:var(--muted2);background:rgba(255,255,255,.03);border:1px solid var(--border);padding:2px 8px;border-radius:4px}
+.empty{text-align:center;padding:40px;font-size:13px;color:var(--muted)}
+.err-box{padding:12px 14px;border-radius:8px;background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.2);font-size:13px;color:#fca5a5}
+.no-credits{
+  text-align:center;padding:40px 20px;
+  background:rgba(99,102,241,.05);border:1px solid rgba(99,102,241,.15);border-radius:10px;
+}
+.no-credits h3{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:8px}
+.no-credits p{font-size:13px;color:var(--muted2);margin-bottom:20px}
+.btn-small{
+  padding:9px 20px;background:linear-gradient(135deg,var(--accent),var(--violet));
+  color:#fff;font-size:13px;font-weight:600;border:none;border-radius:7px;cursor:pointer;
+  font-family:'Syne',sans-serif;transition:all .2s;
+}
+
+/* HISTORY */
+.hist-list{display:flex;flex-direction:column;gap:8px}
+.hist-item{
+  background:var(--bg2);border:1px solid var(--border);border-radius:8px;
+  padding:12px 16px;display:flex;align-items:center;justify-content:space-between;
+  font-size:13px;
+}
+.hist-query{color:var(--text);font-family:'Inter',sans-serif;font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hist-meta{font-size:11px;color:var(--muted);flex-shrink:0;margin-left:12px;display:flex;gap:12px}
+.hist-cost{color:var(--accent2);font-weight:500}
+
+/* CREDITS PAGE */
+.packs-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:24px}
+.pack{
+  background:var(--bg2);border:1px solid var(--border);border-radius:12px;
+  padding:28px;transition:all .25s;position:relative;
+}
+.pack:hover{border-color:rgba(99,102,241,.3);transform:translateY(-3px)}
+.pack.pop{border-color:rgba(99,102,241,.35);background:rgba(99,102,241,.06)}
+.pack-badge{position:absolute;top:14px;right:14px;font-size:10px;font-weight:700;color:#fff;background:var(--accent);padding:2px 8px;border-radius:20px;text-transform:uppercase}
+.pack-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:800;margin-bottom:6px}
+.pack-price{
+  font-family:'Syne',sans-serif;font-size:34px;font-weight:800;letter-spacing:-1.5px;margin-bottom:4px;
+  background:linear-gradient(135deg,var(--accent2),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.pack-price span{font-size:14px;font-weight:400;-webkit-text-fill-color:var(--muted2)}
+.pack-credits{font-size:13px;color:var(--muted2);margin-bottom:20px}
+.pack-btn{
+  width:100%;padding:10px;
+  background:linear-gradient(135deg,var(--accent),var(--violet));
+  color:#fff;font-size:13px;font-weight:600;border:none;border-radius:7px;cursor:pointer;
+  font-family:'Syne',sans-serif;transition:all .2s;box-shadow:0 4px 14px rgba(99,102,241,.2);
+}
+.pack-btn:hover{box-shadow:0 4px 20px rgba(99,102,241,.4)}
+.pack-btn.ghost{background:transparent;border:1px solid var(--border);color:var(--muted2);box-shadow:none}
+.pack-btn.ghost:hover{border-color:rgba(99,102,241,.3);color:var(--text)}
+
+/* TRANSACTIONS */
+.tx-list{display:flex;flex-direction:column;gap:6px;margin-top:20px}
+.tx-item{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
+.tx-type{font-size:13px;font-weight:500}
+.tx-credits{font-size:13px;color:var(--accent2);font-weight:600}
+.tx-date{font-size:11px;color:var(--muted)}
+.tx-status-ok{font-size:11px;color:var(--green)}
+.tx-status-pending{font-size:11px;color:var(--yellow)}
+
+/* PROFIL */
+.profile-card{max-width:500px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:32px}
+.profile-avatar{
+  width:64px;height:64px;border-radius:12px;
+  background:linear-gradient(135deg,var(--accent),var(--violet));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:#fff;
+  margin-bottom:20px;
+}
+.profile-name{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px}
+.profile-email{font-size:13px;color:var(--muted2);margin-bottom:24px}
+.profile-stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px}
+.ps{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;padding:14px}
+.ps-val{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:2px;color:var(--accent2)}
+.ps-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.btn-logout{
+  width:100%;padding:10px;background:rgba(239,68,68,.08);
+  border:1px solid rgba(239,68,68,.2);color:#fca5a5;
+  font-size:13px;font-weight:500;border-radius:8px;cursor:pointer;font-family:inherit;transition:all .2s;
+}
+.btn-logout:hover{background:rgba(239,68,68,.15)}
+
+/* PAGE HEADER */
+.page-h{margin-bottom:24px}
+.page-h h2{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px}
+.page-h p{font-size:13px;color:var(--muted2)}
+
+/* NOTIF */
+.notif{
+  position:fixed;bottom:24px;right:24px;z-index:200;
+  background:var(--bg2);border:1px solid var(--border);border-radius:10px;
+  padding:12px 18px;font-size:13px;font-weight:500;
+  box-shadow:0 8px 32px rgba(0,0,0,.4);
+  animation:slideIn .3s cubic-bezier(.16,1,.3,1);max-width:320px;
+}
+.notif.ok{border-color:rgba(34,197,94,.3);color:var(--green)}
+.notif.err{border-color:rgba(239,68,68,.3);color:#fca5a5}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+
+@media(max-width:768px){
+  .sidebar{display:none}
+  .main{margin-left:0}
+  .cards-row{grid-template-columns:1fr 1fr}
+  .fg{grid-template-columns:1fr}
+  .packs-grid{grid-template-columns:1fr}
+  .content{padding:20px}
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <a href="index.html" class="sb-logo">X<span>tracker</span></a>
+  <div class="sb-nav">
+    <span class="sb-section">Menu</span>
+    <button class="sb-link active" onclick="goTo('search')"><span class="ico">🔍</span> Recherche</button>
+    <button class="sb-link" onclick="goTo('history')"><span class="ico">📋</span> Historique</button>
+    <button class="sb-link" onclick="goTo('credits')"><span class="ico">⚡</span> Crédits</button>
+    <button class="sb-link" onclick="goTo('profile')"><span class="ico">👤</span> Profil</button>
+  </div>
+  <div class="sb-bottom">
+    <div class="sb-user">
+      <div class="sb-avatar" id="sb-av">?</div>
+      <div>
+        <div class="sb-uname" id="sb-name">—</div>
+        <div class="sb-uemail" id="sb-email">—</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbar-title">Recherche</div>
+    <div class="credits-badge">
+      <span class="c-free">🎁 <span id="free-left">—</span> gratuites</span>
+      <span style="color:var(--border)">·</span>
+      <span class="c-paid">⚡ <span id="paid-credits">—</span> crédits</span>
+    </div>
+  </div>
+  <div class="content">
+
+    <!-- SEARCH PAGE -->
+    <div class="page active" id="page-search">
+      <div class="panel-card">
+        <div class="panel-tabs">
+          <button class="ptab active" onclick="switchPTab('adv',this)">Recherche avancée</button>
+          <button class="ptab" onclick="switchPTab('lookup',this)">Lookup direct</button>
+        </div>
+        <div class="panel-body">
+          <!-- ADV -->
+          <div id="ptab-adv">
+            <div class="fg">
+              <div class="fgroup"><label>Nom</label><input id="s-nom" placeholder="Dupont"></div>
+              <div class="fgroup"><label>Prénom</label><input id="s-prenom" placeholder="Jean"></div>
+              <div class="fgroup"><label>Email</label><input id="s-email" type="email" placeholder="jean@gmail.com"></div>
+              <div class="fgroup"><label>Téléphone</label><input id="s-tel" placeholder="0612345678"></div>
+              <div class="fgroup"><label>Adresse</label><input id="s-adresse" placeholder="12 rue de la Paix"></div>
+              <div class="fgroup"><label>Ville</label><input id="s-ville" placeholder="Paris"></div>
+              <div class="fgroup"><label>Code postal</label><input id="s-cp" placeholder="75001"></div>
+              <div class="fgroup"><label>Pays</label><input id="s-pays" placeholder="FR"></div>
+            </div>
+            <label class="toggle-row" style="cursor:pointer">
+              <input type="checkbox" id="flexible" checked><div class="tog"></div>
+              <span class="tog-label">Recherche flexible activée</span>
+            </label>
+            <button class="btn-run" id="btn-search" onclick="doSearch()">Lancer la recherche</button>
+          </div>
+          <!-- LOOKUP -->
+          <div id="ptab-lookup" style="display:none">
+            <div class="fg" style="grid-template-columns:1fr;margin-bottom:14px">
+              <div class="fgroup">
+                <label>Email, téléphone ou IBAN</label>
+                <input id="l-val" placeholder="jean@gmail.com  /  0612345678  /  FR76...">
+              </div>
+            </div>
+            <button class="btn-run" id="btn-lookup" onclick="doLookup()">Exécuter le lookup</button>
+          </div>
+          <div id="results"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORY PAGE -->
+    <div class="page" id="page-history">
+      <div class="page-h"><h2>Historique</h2><p>Vos 50 dernières recherches.</p></div>
+      <div class="hist-list" id="hist-list"><div class="empty">Chargement...</div></div>
+    </div>
+
+    <!-- CREDITS PAGE -->
+    <div class="page" id="page-credits">
+      <div class="page-h"><h2>Recharger les crédits</h2><p>Achetez des crédits via Stripe. Paiement sécurisé.</p></div>
+      <div class="packs-grid">
+        <div class="pack">
+          <div class="pack-name">Starter</div>
+          <div class="pack-price">4.99<span>€</span></div>
+          <div class="pack-credits">50 crédits · 0.10€ / recherche</div>
+          <button class="pack-btn ghost" onclick="buyPack('starter')">Acheter</button>
+        </div>
+        <div class="pack pop">
+          <div class="pack-badge">Populaire</div>
+          <div class="pack-name">Pro</div>
+          <div class="pack-price">14.99<span>€</span></div>
+          <div class="pack-credits">200 crédits · 0.07€ / recherche</div>
+          <button class="pack-btn" onclick="buyPack('pro')">Acheter</button>
+        </div>
+        <div class="pack">
+          <div class="pack-name">Enterprise</div>
+          <div class="pack-price">49.99<span>€</span></div>
+          <div class="pack-credits">1000 crédits · 0.05€ / recherche</div>
+          <button class="pack-btn ghost" onclick="buyPack('enterprise')">Acheter</button>
+        </div>
+      </div>
+      <div class="page-h" style="margin-top:36px"><h2>Transactions</h2></div>
+      <div class="tx-list" id="tx-list"></div>
+    </div>
+
+    <!-- PROFILE PAGE -->
+    <div class="page" id="page-profile">
+      <div class="page-h"><h2>Mon profil</h2></div>
+      <div class="profile-card">
+        <div class="profile-avatar" id="p-av">?</div>
+        <div class="profile-name" id="p-name">—</div>
+        <div class="profile-email" id="p-email">—</div>
+        <div class="profile-stats">
+          <div class="ps"><div class="ps-val" id="p-free">—</div><div class="ps-label">Recherches gratuites</div></div>
+          <div class="ps"><div class="ps-val" id="p-credits">—</div><div class="ps-label">Crédits</div></div>
+        </div>
+        <button class="btn-logout" onclick="logout()">Se déconnecter</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const API='';
+let TOKEN=localStorage.getItem('token');
+let USER=JSON.parse(localStorage.getItem('user')||'{}');
+
+// Auth check
+if(!TOKEN){window.location.href='login.html'}
+
+function hdr(){return{Authorization:'Bearer '+TOKEN,'Content-Type':'application/json'}}
+function g(id){return document.getElementById(id)}
+
+function notif(msg,type='ok'){
+  const el=document.createElement('div');
+  el.className=`notif ${type}`;el.textContent=msg;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),3000);
+}
+
+// Init
+async function init(){
+  try{
+    const r=await fetch(`${API}/api/auth/me`,{headers:hdr()});
+    if(r.status===401){logout();return}
+    const d=await r.json();
+    USER=d;localStorage.setItem('user',JSON.stringify(d));
+    updateUI();
+  }catch(e){console.error(e)}
+}
+
+function updateUI(){
+  const initial=(USER.username||'?')[0].toUpperCase();
+  g('sb-av').textContent=initial;
+  g('sb-name').textContent=USER.username||'—';
+  g('sb-email').textContent=USER.email||'—';
+  g('free-left').textContent=USER.free_left??0;
+  g('paid-credits').textContent=USER.credits??0;
+  g('p-av').textContent=initial;
+  g('p-name').textContent=USER.username||'—';
+  g('p-email').textContent=USER.email||'—';
+  g('p-free').textContent=USER.free_left??0;
+  g('p-credits').textContent=USER.credits??0;
+}
+
+function goTo(page){
+  document.querySelectorAll('.sb-link').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  g('page-'+page).classList.add('active');
+  const titles={search:'Recherche',history:'Historique',credits:'Crédits',profile:'Profil'};
+  g('topbar-title').textContent=titles[page]||'';
+  if(page==='history')loadHistory();
+  if(page==='credits')loadTx();
+}
+
+function switchPTab(t,btn){
+  document.querySelectorAll('.ptab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  g('ptab-adv').style.display=t==='adv'?'block':'none';
+  g('ptab-lookup').style.display=t==='lookup'?'block':'none';
+  g('results').innerHTML='';
+}
+
+function setLoad(id,on,label){
+  const b=g(id);b.disabled=on;
+  b.innerHTML=on?'<span class="spinner"></span>Recherche...':label;
+}
+
+function renderResults(results,total,took,free_left,credits){
+  USER.free_left=free_left;USER.credits=credits;
+  g('free-left').textContent=free_left;g('paid-credits').textContent=credits;
+  const el=g('results');
+  if(!results.length){el.innerHTML='<div class="empty">Aucun résultat trouvé.</div>';return}
+  let html=`<div class="res-meta"><span><b style="color:var(--text)">${total.toLocaleString()}</b> résultat(s) — ${results.length} affiché(s)</span><span>${took}ms</span></div>`;
+  results.slice(0,8).forEach((p,i)=>{
+    const conf=p._confidence||0;
+    const cls=conf>=70?'hi':conf>=40?'md':'lo';
+    const name=[p.prenom,p.nom_famille].filter(Boolean).join(' ')||'Profil inconnu';
+    const sub=[p.email,p.telephone,p.ville].filter(Boolean).join(' · ')||'—';
+    const fmap=[['Nom',p.nom_famille],['Prénom',p.prenom],['Email',p.email],['Téléphone',p.telephone],['Mobile',p.mobile],['Adresse',p.adresse],['Code postal',p.code_postal],['Ville',p.ville],['Région',p.region],['Pays',p.pays],['Naissance',p.date_naissance],['Genre',p.genre],['Société',p.societe],['Profession',p.profession],['NIR',p.nir],['IBAN',p.iban],['SIRET',p.siret]].filter(([,v])=>v);
+    const fh=fmap.map(([k,v])=>`<div class="rf"><div class="rf-k">${k}</div><div class="rf-v">${v}</div></div>`).join('');
+    const sh=(p._sources||[]).map(s=>`<span class="src">${s}</span>`).join('');
+    html+=`<div class="rcard">
+      <div class="rcard-top" onclick="tog(${i})">
+        <div><div class="rname">${name}</div><div class="rmeta">${sub}</div></div>
+        <div style="display:flex;align-items:center"><span class="badge ${cls}">${conf}%</span><span class="rarr" id="arr${i}">↓</span></div>
+      </div>
+      <div class="rcard-body" id="rb${i}"><div class="rfields">${fh}</div>${sh?`<div class="rsources">${sh}</div>`:''}</div>
+    </div>`;
+  });
+  el.innerHTML=html;
+}
+
+function tog(i){
+  const b=g('rb'+i),a=g('arr'+i);
+  b.classList.toggle('open');
+  a.style.transform=b.classList.contains('open')?'rotate(180deg)':'none';
+}
+
+function showErr(msg){g('results').innerHTML=`<div class="err-box">⚠ ${msg}</div>`}
+function showNoCredits(){
+  g('results').innerHTML=`<div class="no-credits">
+    <h3>Plus de crédits 💸</h3>
+    <p>Vous avez utilisé toutes vos recherches gratuites.<br>Rechargez votre compte pour continuer.</p>
+    <button class="btn-small" onclick="goTo('credits');document.querySelectorAll('.sb-link')[2].classList.add('active')">Acheter des crédits</button>
+  </div>`;
+}
+
+async function doSearch(){
+  const payload={flexible:g('flexible').checked};
+  const map={nom_famille:'s-nom',prenom:'s-prenom',email:'s-email',telephone:'s-tel',adresse:'s-adresse',ville:'s-ville',code_postal:'s-cp',pays:'s-pays'};
+  Object.entries(map).forEach(([k,id])=>{const v=g(id).value.trim();if(v)payload[k]=v});
+  if(Object.keys(payload).length<=1){showErr('Remplissez au moins un champ.');return}
+  setLoad('btn-search',true,'Lancer la recherche');g('results').innerHTML='';
+  try{
+    const r=await fetch(`${API}/api/search`,{method:'POST',headers:hdr(),body:JSON.stringify(payload)});
+    const d=await r.json();
+    if(r.status===402){showNoCredits();return}
+    if(!r.ok){showErr(d.detail||'Erreur API');return}
+    renderResults(d.results,d.total,d.took_ms,d.free_left,d.credits);
+  }catch(e){showErr('Erreur réseau : '+e.message)}
+  finally{setLoad('btn-search',false,'Lancer la recherche')}
+}
+
+async function doLookup(){
+  const val=g('l-val').value.trim();
+  if(!val){showErr('Entrez un identifiant.');return}
+  setLoad('btn-lookup',true,'Exécuter le lookup');g('results').innerHTML='';
+  try{
+    const r=await fetch(`${API}/api/lookup`,{method:'POST',headers:hdr(),body:JSON.stringify({value:val})});
+    const d=await r.json();
+    if(r.status===402){showNoCredits();return}
+    if(!r.ok){showErr(d.detail||'Erreur API');return}
+    renderResults(d.results,d.total,0,d.free_left,d.credits);
+  }catch(e){showErr('Erreur réseau : '+e.message)}
+  finally{setLoad('btn-lookup',false,'Exécuter le lookup')}
+}
+
+async function loadHistory(){
+  g('hist-list').innerHTML='<div class="empty">Chargement...</div>';
+  try{
+    const r=await fetch(`${API}/api/history`,{headers:hdr()});
+    const d=await r.json();
+    if(!d.length){g('hist-list').innerHTML='<div class="empty">Aucune recherche pour l\'instant.</div>';return}
+    g('hist-list').innerHTML=d.map(h=>{
+      const q=h.query_data||{};
+      const label=Object.entries(q).filter(([k])=>k!=='flexible'&&k!=='per_page').map(([k,v])=>`${v}`).join(', ')||'—';
+      const date=new Date(h.created_at).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+      return `<div class="hist-item">
+        <div class="hist-query">${label}</div>
+        <div class="hist-meta">
+          <span>${h.result_count} résultats</span>
+          <span class="hist-cost">${h.cost===0?'Gratuit':h.cost+' crédit'}</span>
+          <span>${date}</span>
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){g('hist-list').innerHTML='<div class="empty">Erreur de chargement.</div>'}
+}
+
+async function loadTx(){
+  try{
+    const r=await fetch(`${API}/api/transactions`,{headers:hdr()});
+    const d=await r.json();
+    if(!d.length){g('tx-list').innerHTML='<div class="empty">Aucune transaction.</div>';return}
+    g('tx-list').innerHTML=d.map(t=>{
+      const date=new Date(t.created_at).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});
+      const types={purchase:'Achat',admin_grant:'Crédits offerts'};
+      return `<div class="tx-item">
+        <span class="tx-type">${types[t.type]||t.type}</span>
+        <span class="tx-credits">+${t.credits} crédits</span>
+        <span>${t.amount_eur>0?t.amount_eur.toFixed(2)+'€':'Gratuit'}</span>
+        <span class="${t.status==='completed'?'tx-status-ok':'tx-status-pending'}">${t.status==='completed'?'✓ Complété':'En attente'}</span>
+        <span class="tx-date">${date}</span>
+      </div>`;
+    }).join('');
+  }catch(e){}
+}
+
+async function buyPack(packId){
+  try{
+    const r=await fetch(`${API}/api/credits/checkout/${packId}`,{method:'POST',headers:hdr()});
+    const d=await r.json();
+    if(d.checkout_url)window.location.href=d.checkout_url;
+    else notif('Erreur Stripe — configurez vos clés dans app.py','err');
+  }catch(e){notif('Erreur réseau','err')}
+}
+
+function logout(){
+  localStorage.removeItem('token');localStorage.removeItem('user');
+  window.location.href='login.html';
+}
+
+// Check payment return
+const params=new URLSearchParams(window.location.search);
+if(params.get('payment')==='success'){notif('Paiement réussi ! Crédits ajoutés 🎉')}
+if(params.get('payment')==='cancel'){notif('Paiement annulé.','err')}
+
+// Enter key
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter')return;
+  if(g('ptab-adv').style.display!=='none')doSearch();
+  else doLookup();
+});
+
+init();
+</script>
+</body>
+</html>

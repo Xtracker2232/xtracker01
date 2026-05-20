@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Xtracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#06080f;--bg2:#0a0d1a;
+  --border:rgba(255,255,255,0.06);--ba:rgba(99,102,241,0.25);
+  --text:#f0f2ff;--muted:#4a5280;--muted2:#8892c0;
+  --accent:#6366f1;--accent2:#818cf8;--violet:#a78bfa;
+  --green:#22c55e;--yellow:#f59e0b;--red:#ef4444;
+}
+*{font-family:'Inter',sans-serif}
+body{background:var(--bg);color:var(--text);display:flex;min-height:100vh}
+
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:220px;background:rgba(10,13,26,0.97);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:50}
+.sb-logo{padding:22px 20px 18px;font-family:'Syne',sans-serif;font-size:18px;font-weight:800;letter-spacing:-.5px;text-decoration:none;color:var(--text);display:block;border-bottom:1px solid var(--border)}
+.sb-logo span{color:var(--accent)}.sb-logo small{font-size:10px;color:var(--red);font-family:'Inter',sans-serif;font-weight:500;letter-spacing:1px;margin-left:6px;text-transform:uppercase}
+.sb-nav{padding:14px 10px;flex:1;display:flex;flex-direction:column;gap:3px}
+.sb-link{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:500;color:var(--muted2);text-decoration:none;transition:all .2s;cursor:pointer;border:none;background:transparent;font-family:inherit;width:100%;text-align:left}
+.sb-link:hover{background:rgba(99,102,241,.08);color:var(--text)}
+.sb-link.active{background:rgba(99,102,241,.12);color:var(--accent2)}
+.sb-sec{font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;padding:10px 12px 4px;font-weight:500}
+.sb-bottom{padding:12px 10px;border-top:1px solid var(--border)}
+.sb-badge{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#fca5a5;font-size:11px;font-weight:600;padding:6px 12px;border-radius:6px;text-align:center;letter-spacing:1px}
+
+.main{margin-left:220px;flex:1;display:flex;flex-direction:column}
+.topbar{height:56px;padding:0 32px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:rgba(6,8,15,.9);position:sticky;top:0;z-index:40}
+.topbar-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;letter-spacing:-.3px}
+.topbar-right{display:flex;gap:8px;align-items:center}
+.search-input{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:7px;padding:7px 12px;font-size:13px;color:var(--text);outline:none;transition:all .2s;width:200px}
+.search-input:focus{border-color:rgba(99,102,241,.4);background:rgba(99,102,241,.04)}
+.search-input::placeholder{color:var(--muted);font-size:12px}
+
+.content{padding:28px 32px;flex:1}
+.page{display:none}.page.active{display:block}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--violet))}
+.s-label{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;font-weight:500}
+.s-val{font-family:'Syne',sans-serif;font-size:30px;font-weight:800;letter-spacing:-1px;margin-bottom:4px}
+.s-val.a{background:linear-gradient(135deg,var(--accent2),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.s-sub{font-size:12px;color:var(--muted)}
+
+/* TABLE */
+.table-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.table-head{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.table-head h3{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;letter-spacing:-.3px}
+.table-head-right{display:flex;gap:8px}
+table{width:100%;border-collapse:collapse}
+thead th{padding:10px 16px;font-size:11px;font-weight:500;color:var(--muted);letter-spacing:1px;text-transform:uppercase;text-align:left;border-bottom:1px solid var(--border)}
+tbody tr{border-bottom:1px solid var(--border);transition:background .15s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:rgba(99,102,241,.03)}
+td{padding:11px 16px;font-size:13px;color:var(--muted2);vertical-align:middle}
+td.main-col{color:var(--text);font-weight:500}
+.badge-role{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.5px}
+.badge-role.admin{background:rgba(239,68,68,.1);color:#fca5a5;border:1px solid rgba(239,68,68,.2)}
+.badge-role.user{background:rgba(99,102,241,.1);color:var(--accent2);border:1px solid rgba(99,102,241,.2)}
+.badge-banned{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;background:rgba(239,68,68,.1);color:#fca5a5;border:1px solid rgba(239,68,68,.2)}
+.btn-sm{font-size:11px;font-weight:600;padding:4px 10px;border-radius:5px;border:none;cursor:pointer;font-family:inherit;transition:all .15s}
+.btn-sm.danger{background:rgba(239,68,68,.1);color:#fca5a5;border:1px solid rgba(239,68,68,.2)}
+.btn-sm.danger:hover{background:rgba(239,68,68,.2)}
+.btn-sm.success{background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.2)}
+.btn-sm.success:hover{background:rgba(34,197,94,.2)}
+.btn-sm.primary{background:rgba(99,102,241,.1);color:var(--accent2);border:1px solid rgba(99,102,241,.2)}
+.btn-sm.primary:hover{background:rgba(99,102,241,.2)}
+.actions-cell{display:flex;gap:5px;flex-wrap:wrap}
+.pagination{display:flex;align-items:center;gap:8px;padding:14px 20px;border-top:1px solid var(--border);font-size:13px;color:var(--muted2)}
+.pg-btn{padding:5px 12px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;color:var(--muted2);cursor:pointer;font-size:12px;font-family:inherit;transition:all .2s}
+.pg-btn:hover{border-color:rgba(99,102,241,.3);color:var(--text)}
+.pg-btn:disabled{opacity:.3;cursor:not-allowed}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:32px;width:100%;max-width:440px;animation:modalIn .25s cubic-bezier(.16,1,.3,1)}
+@keyframes modalIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
+.modal h3{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;letter-spacing:-.3px;margin-bottom:20px}
+.modal-field{margin-bottom:14px}
+.modal-field label{display:block;font-size:11px;font-weight:500;color:var(--muted2);letter-spacing:.6px;text-transform:uppercase;margin-bottom:5px}
+.modal-field input,.modal-field select{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:7px;padding:9px 12px;font-size:13px;color:var(--text);font-family:inherit;outline:none;transition:all .2s}
+.modal-field input:focus,.modal-field select:focus{border-color:rgba(99,102,241,.5);background:rgba(99,102,241,.05)}
+.modal-field select option{background:var(--bg2)}
+.modal-actions{display:flex;gap:8px;margin-top:20px}
+.btn-modal{flex:1;padding:10px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Syne',sans-serif;transition:all .2s}
+.btn-modal.primary{background:linear-gradient(135deg,var(--accent),var(--violet));color:#fff}
+.btn-modal.cancel{background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--muted2)}
+.btn-modal.cancel:hover{color:var(--text)}
+
+.notif{position:fixed;bottom:24px;right:24px;z-index:300;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 18px;font-size:13px;font-weight:500;box-shadow:0 8px 32px rgba(0,0,0,.4);animation:slideIn .3s cubic-bezier(.16,1,.3,1);max-width:300px}
+.notif.ok{border-color:rgba(34,197,94,.3);color:var(--green)}
+.notif.err{border-color:rgba(239,68,68,.3);color:#fca5a5}
+@keyframes slideIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+
+.empty{text-align:center;padding:40px;font-size:13px;color:var(--muted)}
+.page-h{margin-bottom:20px}
+.page-h h2{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px}
+.page-h p{font-size:13px;color:var(--muted2)}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <a href="dashboard.html" class="sb-logo">X<span>tracker</span> <small>Admin</small></a>
+  <div class="sb-nav">
+    <span class="sb-sec">Dashboard</span>
+    <button class="sb-link active" onclick="goTo('overview')">📊 Vue d'ensemble</button>
+    <span class="sb-sec">Gestion</span>
+    <button class="sb-link" onclick="goTo('users')">👥 Utilisateurs</button>
+    <button class="sb-link" onclick="goTo('searches')">🔍 Recherches</button>
+    <button class="sb-link" onclick="goTo('transactions')">💳 Transactions</button>
+  </div>
+  <div class="sb-bottom">
+    <div class="sb-badge">⚡ PANEL ADMIN</div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbar-title">Vue d'ensemble</div>
+    <div class="topbar-right">
+      <input class="search-input" id="user-search" placeholder="Rechercher un utilisateur..." oninput="searchUsers()" style="display:none">
+      <a href="dashboard.html" style="font-size:13px;color:var(--muted2);text-decoration:none">← Dashboard</a>
+    </div>
+  </div>
+  <div class="content">
+
+    <!-- OVERVIEW -->
+    <div class="page active" id="page-overview">
+      <div class="stats-grid">
+        <div class="stat-card"><div class="s-label">Utilisateurs total</div><div class="s-val a" id="st-users">—</div><div class="s-sub" id="st-new">— nouveaux aujourd'hui</div></div>
+        <div class="stat-card"><div class="s-label">Recherches total</div><div class="s-val a" id="st-searches">—</div><div class="s-sub" id="st-today">— aujourd'hui</div></div>
+        <div class="stat-card"><div class="s-label">Revenus total</div><div class="s-val a" id="st-revenue">—</div><div class="s-sub" id="st-banned">— comptes bannis</div></div>
+      </div>
+      <div class="table-wrap" style="margin-top:0">
+        <div class="table-head"><h3>Derniers utilisateurs</h3></div>
+        <table><thead><tr><th>Utilisateur</th><th>Email</th><th>Rôle</th><th>Crédits</th><th>Inscrit le</th></tr></thead>
+        <tbody id="ov-users"></tbody></table>
+      </div>
+    </div>
+
+    <!-- USERS -->
+    <div class="page" id="page-users">
+      <div class="table-wrap">
+        <div class="table-head">
+          <h3>Utilisateurs <span id="users-count" style="font-size:12px;color:var(--muted);font-family:'Inter',sans-serif;font-weight:400"></span></h3>
+        </div>
+        <table>
+          <thead><tr><th>ID</th><th>Utilisateur</th><th>Email</th><th>Rôle</th><th>Crédits</th><th>Gratuites</th><th>Statut</th><th>Actions</th></tr></thead>
+          <tbody id="users-tbody"></tbody>
+        </table>
+        <div class="pagination">
+          <button class="pg-btn" id="pg-prev" onclick="changePage(-1)">← Précédent</button>
+          <span id="pg-info">Page 1</span>
+          <button class="pg-btn" id="pg-next" onclick="changePage(1)">Suivant →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEARCHES -->
+    <div class="page" id="page-searches">
+      <div class="page-h"><h2>Recherches</h2><p>Toutes les recherches effectuées sur la plateforme.</p></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Date</th><th>Utilisateur</th><th>Critères</th><th>Résultats</th><th>Coût</th></tr></thead>
+          <tbody id="searches-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TRANSACTIONS -->
+    <div class="page" id="page-transactions">
+      <div class="page-h"><h2>Transactions</h2><p>Historique complet des achats de crédits.</p></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Date</th><th>Utilisateur</th><th>Type</th><th>Crédits</th><th>Montant</th><th>Statut</th></tr></thead>
+          <tbody id="tx-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL EDIT USER -->
+<div class="modal-overlay" id="modal-edit">
+  <div class="modal">
+    <h3>Modifier l'utilisateur</h3>
+    <input type="hidden" id="edit-id">
+    <div class="modal-field"><label>Crédits</label><input type="number" id="edit-credits" min="0"></div>
+    <div class="modal-field"><label>Rôle</label>
+      <select id="edit-role"><option value="user">Utilisateur</option><option value="admin">Admin</option></select>
+    </div>
+    <div class="modal-field"><label>Statut</label>
+      <select id="edit-banned"><option value="false">Actif</option><option value="true">Banni</option></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal cancel" onclick="closeModal()">Annuler</button>
+      <button class="btn-modal primary" onclick="saveUser()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ADD CREDITS -->
+<div class="modal-overlay" id="modal-credits">
+  <div class="modal">
+    <h3>Ajouter des crédits</h3>
+    <input type="hidden" id="ac-id">
+    <div class="modal-field"><label>Nombre de crédits à ajouter</label><input type="number" id="ac-amount" min="1" value="50" placeholder="50"></div>
+    <div class="modal-actions">
+      <button class="btn-modal cancel" onclick="closeModal()">Annuler</button>
+      <button class="btn-modal primary" onclick="addCredits()">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API='';
+const TOKEN=localStorage.getItem('token');
+const USER=JSON.parse(localStorage.getItem('user')||'{}');
+if(!TOKEN||USER.role!=='admin'){window.location.href='login.html'}
+function hdr(){return{Authorization:'Bearer '+TOKEN,'Content-Type':'application/json'}}
+
+let currentPage=1, totalUsers=0;
+
+function notif(msg,type='ok'){
+  const el=document.createElement('div');el.className=`notif ${type}`;el.textContent=msg;
+  document.body.appendChild(el);setTimeout(()=>el.remove(),3000);
+}
+
+async function goTo(page){
+  document.querySelectorAll('.sb-link').forEach(b=>b.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  const titles={overview:'Vue d\'ensemble',users:'Utilisateurs',searches:'Recherches',transactions:'Transactions'};
+  document.getElementById('topbar-title').textContent=titles[page]||'';
+  document.getElementById('user-search').style.display=page==='users'?'block':'none';
+  if(page==='overview')loadOverview();
+  if(page==='users')loadUsers();
+  if(page==='searches')loadSearches();
+  if(page==='transactions')loadTransactions();
+}
+
+async function loadOverview(){
+  try{
+    const r=await fetch(`${API}/api/admin/stats`,{headers:hdr()});
+    const d=await r.json();
+    document.getElementById('st-users').textContent=d.total_users?.toLocaleString()||'—';
+    document.getElementById('st-new').textContent=`${d.new_today||0} nouveaux aujourd'hui`;
+    document.getElementById('st-searches').textContent=d.total_searches?.toLocaleString()||'—';
+    document.getElementById('st-today').textContent=`${d.searches_today||0} aujourd'hui`;
+    document.getElementById('st-revenue').textContent=`${d.revenue_eur?.toFixed(2)||'0.00'}€`;
+    document.getElementById('st-banned').textContent=`${d.banned||0} comptes bannis`;
+    // Recent users
+    const ur=await fetch(`${API}/api/admin/users?page=1`,{headers:hdr()});
+    const ud=await ur.json();
+    const tbody=document.getElementById('ov-users');
+    if(!ud.users?.length){tbody.innerHTML='<tr><td colspan="5" class="empty">Aucun utilisateur</td></tr>';return}
+    tbody.innerHTML=ud.users.slice(0,8).map(u=>`<tr>
+      <td class="main-col">${u.username}</td>
+      <td>${u.email}</td>
+      <td><span class="badge-role ${u.role}">${u.role}</span></td>
+      <td>${u.credits}</td>
+      <td>${u.created_at?new Date(u.created_at).toLocaleDateString('fr-FR'):'—'}</td>
+    </tr>`).join('');
+  }catch(e){console.error(e)}
+}
+
+async function loadUsers(){
+  const search=document.getElementById('user-search').value;
+  try{
+    const r=await fetch(`${API}/api/admin/users?page=${currentPage}&search=${encodeURIComponent(search)}`,{headers:hdr()});
+    const d=await r.json();
+    totalUsers=d.total||0;
+    document.getElementById('users-count').textContent=`(${totalUsers})`;
+    document.getElementById('pg-info').textContent=`Page ${currentPage}`;
+    document.getElementById('pg-prev').disabled=currentPage<=1;
+    document.getElementById('pg-next').disabled=currentPage*20>=totalUsers;
+    const tbody=document.getElementById('users-tbody');
+    if(!d.users?.length){tbody.innerHTML='<tr><td colspan="8" class="empty">Aucun utilisateur</td></tr>';return}
+    tbody.innerHTML=d.users.map(u=>`<tr>
+      <td>${u.id}</td>
+      <td class="main-col">${u.username}</td>
+      <td>${u.email}</td>
+      <td><span class="badge-role ${u.role}">${u.role}</span></td>
+      <td>${u.credits}</td>
+      <td>${u.free_left}</td>
+      <td>${u.banned?'<span class="badge-banned">Banni</span>':'<span style="color:var(--green);font-size:11px">✓ Actif</span>'}</td>
+      <td><div class="actions-cell">
+        <button class="btn-sm primary" onclick="openEdit(${u.id},${u.credits},'${u.role}',${u.banned})">Modifier</button>
+        <button class="btn-sm success" onclick="openAddCredits(${u.id})">+ Crédits</button>
+        <button class="btn-sm danger" onclick="deleteUser(${u.id},'${u.username}')">Supprimer</button>
+      </div></td>
+    </tr>`).join('');
+  }catch(e){console.error(e)}
+}
+
+function searchUsers(){clearTimeout(window._st);window._st=setTimeout(()=>{currentPage=1;loadUsers()},400)}
+function changePage(dir){currentPage+=dir;loadUsers()}
+
+async function loadSearches(){
+  try{
+    const r=await fetch(`${API}/api/admin/searches`,{headers:hdr()});
+    const d=await r.json();
+    const tbody=document.getElementById('searches-tbody');
+    if(!d.length){tbody.innerHTML='<tr><td colspan="5" class="empty">Aucune recherche</td></tr>';return}
+    tbody.innerHTML=d.map(s=>{
+      const q=s.query_data||{};
+      const label=Object.entries(q).filter(([k])=>!['flexible','per_page'].includes(k)).map(([,v])=>v).join(', ')||'—';
+      const date=new Date(s.created_at).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+      return `<tr>
+        <td>${date}</td>
+        <td class="main-col">${s.username||'—'}</td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${label}</td>
+        <td>${s.result_count}</td>
+        <td>${s.cost===0?'<span style="color:var(--green)">Gratuit</span>':'<span style="color:var(--accent2)">'+s.cost+' crédit</span>'}</td>
+      </tr>`;
+    }).join('');
+  }catch(e){}
+}
+
+async function loadTransactions(){
+  try{
+    const r=await fetch(`${API}/api/admin/transactions`,{headers:hdr()});
+    const d=await r.json();
+    const tbody=document.getElementById('tx-tbody');
+    if(!d.length){tbody.innerHTML='<tr><td colspan="6" class="empty">Aucune transaction</td></tr>';return}
+    tbody.innerHTML=d.map(t=>{
+      const date=new Date(t.created_at).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});
+      const types={purchase:'Achat',admin_grant:'Don admin'};
+      return `<tr>
+        <td>${date}</td>
+        <td class="main-col">${t.username||'—'}</td>
+        <td>${types[t.type]||t.type}</td>
+        <td style="color:var(--accent2);font-weight:600">+${t.credits}</td>
+        <td>${t.amount_eur>0?t.amount_eur.toFixed(2)+'€':'—'}</td>
+        <td style="color:${t.status==='completed'?'var(--green)':'var(--yellow)'}">${t.status==='completed'?'✓ Complété':'En attente'}</td>
+      </tr>`;
+    }).join('');
+  }catch(e){}
+}
+
+function openEdit(id,credits,role,banned){
+  document.getElementById('edit-id').value=id;
+  document.getElementById('edit-credits').value=credits;
+  document.getElementById('edit-role').value=role;
+  document.getElementById('edit-banned').value=String(banned);
+  document.getElementById('modal-edit').classList.add('open');
+}
+
+function openAddCredits(id){
+  document.getElementById('ac-id').value=id;
+  document.getElementById('ac-amount').value=50;
+  document.getElementById('modal-credits').classList.add('open');
+}
+
+function closeModal(){
+  document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('open'));
+}
+
+async function saveUser(){
+  const id=document.getElementById('edit-id').value;
+  const data={
+    credits:parseInt(document.getElementById('edit-credits').value),
+    role:document.getElementById('edit-role').value,
+    banned:document.getElementById('edit-banned').value==='true',
+  };
+  try{
+    const r=await fetch(`${API}/api/admin/users/${id}`,{method:'PATCH',headers:hdr(),body:JSON.stringify(data)});
+    if(r.ok){notif('Utilisateur mis à jour ✓');closeModal();loadUsers()}
+    else notif('Erreur de mise à jour','err');
+  }catch(e){notif('Erreur réseau','err')}
+}
+
+async function addCredits(){
+  const id=document.getElementById('ac-id').value;
+  const credits=parseInt(document.getElementById('ac-amount').value);
+  try{
+    const r=await fetch(`${API}/api/admin/users/${id}/add-credits`,{method:'POST',headers:hdr(),body:JSON.stringify({credits})});
+    if(r.ok){notif(`${credits} crédits ajoutés ✓`);closeModal();loadUsers()}
+    else notif('Erreur','err');
+  }catch(e){notif('Erreur réseau','err')}
+}
+
+async function deleteUser(id,name){
+  if(!confirm(`Supprimer "${name}" ? Cette action est irréversible.`))return;
+  try{
+    const r=await fetch(`${API}/api/admin/users/${id}`,{method:'DELETE',headers:hdr()});
+    if(r.ok){notif('Utilisateur supprimé');loadUsers()}
+    else notif('Erreur suppression','err');
+  }catch(e){notif('Erreur réseau','err')}
+}
+
+document.getElementById('modal-edit').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal()});
+document.getElementById('modal-credits').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal()});
+
+loadOverview();
+</script>
+</body>
+</html>
