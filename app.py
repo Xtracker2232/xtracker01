@@ -474,7 +474,8 @@ async def checkout(pack_id: str, user=Depends(get_current_user), request: Reques
     origin = str(request.base_url).rstrip("/")
     amount = pack["price_eur"]
     credits = pack["credits"]
-    order_id = f"xtracker-{user['id']}-{pack_id}-{credits}"
+    import time
+    order_id = f"xtracker-{user['id']}-{pack_id}-{credits}-{int(time.time())}"
     try:
         async with httpx.AsyncClient(timeout=15) as client:
             r = await client.post(
