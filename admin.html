@@ -257,6 +257,39 @@ async function goTo(page){
   document.getElementById('topbar-title').textContent=titles[page]||'';
   document.getElementById('user-search').style.display=page==='users'?'block':'none';
   if(page==='overview')loadOverview();
+
+async function toggleMaintenance(){
+  const btn = document.getElementById('btn-maintenance');
+  const isOn = btn.textContent.includes('Désactiver');
+  if(!confirm(isOn ? 'Désactiver la maintenance ?' : 'Activer la maintenance ? Le site sera inaccessible.')){return}
+  try{
+    const r = await fetch(`${API}/api/admin/maintenance`,{
+      method:'POST',
+      headers:hdr(),
+      body:JSON.stringify({enabled: !isOn})
+    });
+    const d = await r.json();
+    if(r.ok){
+      btn.textContent = isOn ? '🔧 Activer maintenance' : '✅ Désactiver maintenance';
+      btn.style.background = isOn ? 'rgba(245,158,11,0.1)' : 'rgba(34,197,94,0.1)';
+      btn.style.borderColor = isOn ? 'rgba(245,158,11,0.3)' : 'rgba(34,197,94,0.3)';
+      btn.style.color = isOn ? '#f59e0b' : '#22c55e';
+      notif(isOn ? 'Maintenance désactivée ✓' : 'Maintenance activée — site inaccessible');
+    }
+  }catch(e){notif('Erreur réseau','err')}
+}
+
+// Vérifier l'état de maintenance au chargement
+fetch(`${API}/api/admin/maintenance/status`,{headers:hdr()})
+  .then(r=>r.json()).then(d=>{
+    if(d.maintenance){
+      const btn=document.getElementById('btn-maintenance');
+      btn.textContent='✅ Désactiver maintenance';
+      btn.style.background='rgba(34,197,94,0.1)';
+      btn.style.borderColor='rgba(34,197,94,0.3)';
+      btn.style.color='#22c55e';
+    }
+  }).catch(()=>{});
   if(page==='users')loadUsers();
   if(page==='searches')loadSearches();
   if(page==='transactions')loadTransactions();
@@ -416,6 +449,39 @@ document.getElementById('modal-edit').addEventListener('click',e=>{if(e.target==
 document.getElementById('modal-credits').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal()});
 
 loadOverview();
+
+async function toggleMaintenance(){
+  const btn = document.getElementById('btn-maintenance');
+  const isOn = btn.textContent.includes('Désactiver');
+  if(!confirm(isOn ? 'Désactiver la maintenance ?' : 'Activer la maintenance ? Le site sera inaccessible.')){return}
+  try{
+    const r = await fetch(`${API}/api/admin/maintenance`,{
+      method:'POST',
+      headers:hdr(),
+      body:JSON.stringify({enabled: !isOn})
+    });
+    const d = await r.json();
+    if(r.ok){
+      btn.textContent = isOn ? '🔧 Activer maintenance' : '✅ Désactiver maintenance';
+      btn.style.background = isOn ? 'rgba(245,158,11,0.1)' : 'rgba(34,197,94,0.1)';
+      btn.style.borderColor = isOn ? 'rgba(245,158,11,0.3)' : 'rgba(34,197,94,0.3)';
+      btn.style.color = isOn ? '#f59e0b' : '#22c55e';
+      notif(isOn ? 'Maintenance désactivée ✓' : 'Maintenance activée — site inaccessible');
+    }
+  }catch(e){notif('Erreur réseau','err')}
+}
+
+// Vérifier l'état de maintenance au chargement
+fetch(`${API}/api/admin/maintenance/status`,{headers:hdr()})
+  .then(r=>r.json()).then(d=>{
+    if(d.maintenance){
+      const btn=document.getElementById('btn-maintenance');
+      btn.textContent='✅ Désactiver maintenance';
+      btn.style.background='rgba(34,197,94,0.1)';
+      btn.style.borderColor='rgba(34,197,94,0.3)';
+      btn.style.color='#22c55e';
+    }
+  }).catch(()=>{});
 </script>
 </body>
 </html>

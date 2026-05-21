@@ -40,6 +40,7 @@ SUMUP_PK = "sup_pk_dk3GN6qF2DGWfRlKXgDCfv4nLLWJmBYRX"
 SUMUP_MERCHANT = "Shop2ToutMHN3Z5RX"
 
 DB_PATH        = "xtracker.db"
+MAINTENANCE    = os.getenv("MAINTENANCE", "false").lower() == "true"
 DATABASE_URL   = _DB_URL
 
 pwd_ctx  = CryptContext(schemes=["bcrypt"])
@@ -53,6 +54,25 @@ CREDIT_PACKS = {
 
 app = FastAPI(title="Xtracker API")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+@app.middleware("http")
+async def maintenance_middleware(request, call_next):
+    # Recharger la variable à chaque requête pour permettre l'activation à chaud
+    try:
+        with open(".maintenance", "r") as _f:
+            maintenance = _f.read().strip() == "true"
+    except:
+        maintenance = os.getenv("MAINTENANCE", "false").lower() == "true"
+    if maintenance:
+        # Laisser passer les admins et les fichiers statiques
+        path = request.url.path
+        if path.startswith("/api/admin") or path == "/maintenance.html" or path.startswith("/preview"):
+            return await call_next(request)
+        from fastapi.responses import HTMLResponse
+        with open("maintenance.html", "r", encoding="utf-8") as f:
+            html = f.read()
+        return HTMLResponse(content=html, status_code=503)
+    return await call_next(request)
 
 # ── DATABASE ──────────────────────────────────────────────────────────────────
 def get_db():
@@ -596,6 +616,24 @@ async def admin_tx(admin=Depends(require_admin)):
     rows = fetchall(db, "SELECT t.id, t.type, t.credits, t.amount_eur, t.status, t.created_at, u.email, u.username FROM transactions t JOIN users u ON t.user_id=u.id ORDER BY t.created_at DESC LIMIT 100")
     db.close()
     return rows
+
+@app.post("/api/admin/maintenance")
+async def set_maintenance(request: Request, admin=Depends(require_admin)):
+    body = await request.json()
+    enabled = body.get("enabled", False)
+    # Écrire dans un fichier flag
+    with open(".maintenance", "w") as f:
+        f.write("true" if enabled else "false")
+    return {"maintenance": enabled, "message": "Maintenance " + ("activée" if enabled else "désactivée")}
+
+@app.get("/api/admin/maintenance/status")
+async def get_maintenance(admin=Depends(require_admin)):
+    try:
+        with open(".maintenance", "r") as f:
+            status = f.read().strip() == "true"
+    except:
+        status = False
+    return {"maintenance": status}
 
 # ── STATIC ────────────────────────────────────────────────────────────────────
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
