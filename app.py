@@ -346,15 +346,15 @@ async def checkout(pack_id: str, user=Depends(get_current_user), request: Reques
                     "amount": amount,
                     "currency": "EUR",
                     "description": f"Xtracker {pack['label']} - {credits} credits",
-                    "pay_to_email": "julien.kocahal@icloud.com",
-                    "return_url": f"{origin}/api/sumup/success?order_id={order_id}&uid={user['id']}&credits={credits}&pack={pack_id}",
+                    "merchant_code": "Shop2ToutMHN3Z5RX",
+                    "redirect_url": f"{origin}/api/sumup/success?order_id={order_id}&uid={user['id']}&credits={credits}&pack={pack_id}",
+                    "hosted_checkout": {"enabled": True},
                 }
             )
             data = r.json()
             if r.status_code not in [200, 201]:
                 raise HTTPException(500, str(data))
-            checkout_id = data.get("id")
-            checkout_url = f"https://pay.sumup.com/b2c/checkout/{checkout_id}"
+            checkout_url = data.get("hosted_checkout_url") or f"https://checkout.sumup.com/pay/{data.get('id')}"
             return {"checkout_url": checkout_url}
     except Exception as e:
         raise HTTPException(500, str(e))
