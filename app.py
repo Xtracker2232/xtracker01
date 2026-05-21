@@ -20,8 +20,9 @@ ALGORITHM      = "HS256"
 TOKEN_EXPIRE   = 60 * 24 * 7
 BRIX_KEY       = "brix_JUs29gtJ46uOB8SBtDU5y3dIbnYCFoEVS5iDSWuFmeC8LGBY"
 BRIX_BASE      = "https://brixhub.net/api/v1"
-SUMUP_SK = "sup_sk_61s6CggY0RxnqXzRtJJPcjyy0bjs2h935"
+SUMUP_SK = "sup_sk_gMQdrWJZZ6XTmPZ2YUVsygZLe5quVLZQB"
 SUMUP_PK = "sup_pk_dk3GN6qF2DGWfRlKXgDCfv4nLLWJmBYRX"
+SUMUP_MERCHANT = "Shop2ToutMHN3Z5RX"
 
 DB_PATH        = "xtracker.db"
 
@@ -346,7 +347,7 @@ async def checkout(pack_id: str, user=Depends(get_current_user), request: Reques
                     "amount": amount,
                     "currency": "EUR",
                     "description": f"Xtracker {pack['label']} - {credits} credits",
-                    "merchant_code": "Shop2ToutMHN3Z5RX",
+                    "merchant_code": SUMUP_MERCHANT,
                     "redirect_url": f"{origin}/api/sumup/success?order_id={order_id}&uid={user['id']}&credits={credits}&pack={pack_id}",
                     "hosted_checkout": {"enabled": True},
                 }
