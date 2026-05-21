@@ -313,11 +313,12 @@ async def checkout(pack_id: str, user=Depends(get_current_user), request: Reques
         "amount": str(amount),
         "currency": "EUR",
         "order_id": f"{user['id']}-{pack_id}-{credits}",
-        "success_url": f"{origin}/dashboard.html?payment=success&pack={pack_id}&credits={credits}&uid={user['id']}",
+        "success_url": f"{origin}/api/paygate/success?order_id={user['id']}-{pack_id}-{credits}",
         "cancel_url": f"{origin}/dashboard.html?payment=cancel",
-        "title": f"Xtracker — {pack['label']} ({credits} crédits)",
+        "title": f"Xtracker {pack['label']} {credits} credits",
+        "fee_payer": "customer",
     }
-    checkout_url = f"https://api.paygate.to/control/api.php?{urllib.parse.urlencode(params)}"
+    checkout_url = f"https://checkout.paygate.to/payment/?{urllib.parse.urlencode(params)}"
     return {"checkout_url": checkout_url}
 
 @app.get("/api/paygate/success")
