@@ -397,20 +397,33 @@ async def search(data: SearchModel, user=Depends(get_current_user)):
     if user["free_left"] <= 0 and user["credits"] <= 0:
         raise HTTPException(402, "Plus de crédits")
     payload = {"flexible": data.flexible, "per_page": 10}
-    if data.nom_famille: payload["nom_famille"] = data.nom_famille
-    if data.prenom:      payload["prenom"]      = data.prenom
-    if data.email:       payload["email"]       = data.email
-    if data.telephone:   payload["telephone"]   = data.telephone
-    if data.adresse:     payload["adresse"]     = data.adresse
-    if data.ville:       payload["ville"]       = data.ville
-    if data.code_postal: payload["code_postal"] = data.code_postal
-    if data.pays:        payload["pays"]        = data.pays
+    fields = ["nom_famille","prenom","nom_naissance","nom_affichage","nom_utilisateur","genre",
+              "jour_naissance","mois_naissance","annee_naissance","date_naissance","ville_naissance",
+              "email","telephone","mobile","adresse_ip",
+              "adresse","code_postal","ville","departement","region","pays",
+              "nir","iban","bic","siret","siren","vin_plaque","societe","profession"]
+    for f in fields:
+        val = getattr(data, f, None)
+        if val: payload[f] = val
     # Filtrer les valeurs trop courtes
     for k in list(payload.keys()):
         if k not in ('flexible','per_page') and isinstance(payload[k], str) and len(payload[k].strip()) < 2:
             del payload[k]
     if len(payload) <= 2:
         raise HTTPException(400, "Remplissez au moins un champ (2 caractères minimum)")
+
+    # Vérifier les termes protégés AVANT d'appeler BrixHub
+    if check_protected(payload):
+        return {
+            "results": [],
+            "total": 0,
+            "took_ms": 0,
+            "free_left": user["free_left"],
+            "credits": user["credits"],
+            "protected": True,
+            "message": "Ahah bien essayé mais j'y suis pas 😏"
+        }
+
     result = await call_brix("POST", "/search", payload)
     results = result.get("data", {}).get("results", [])
     updated = deduct_and_log(user["id"], payload, len(results))
