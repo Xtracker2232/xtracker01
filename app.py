@@ -347,7 +347,7 @@ async def checkout(pack_id: str, user=Depends(get_current_user), request: Reques
                     "amount": amount,
                     "currency": "EUR",
                     "description": f"Xtracker {pack['label']} - {credits} credits",
-                    "merchant_code": SUMUP_MERCHANT,
+                    "pay_to_email": "julien.kocahal@icloud.com",
                     "redirect_url": f"{origin}/api/sumup/success?order_id={order_id}&uid={user['id']}&credits={credits}&pack={pack_id}",
                     "hosted_checkout": {"enabled": True},
                 }
