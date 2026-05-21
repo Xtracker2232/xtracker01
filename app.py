@@ -20,8 +20,8 @@ ALGORITHM      = "HS256"
 TOKEN_EXPIRE   = 60 * 24 * 7
 BRIX_KEY       = "brix_JUs29gtJ46uOB8SBtDU5y3dIbnYCFoEVS5iDSWuFmeC8LGBY"
 BRIX_BASE      = "https://brixhub.net/api/v1"
-PAYGATE_WALLET = "0x480Be9ecB3122fFFBc0917C34fb05B6E524E732a"
-PAYGATE_URL    = "https://api.paygate.to/control/api.php"
+SUMUP_SK = "sup_sk_61s6CggY0RxnqXzRtJJPcjyy0bjs2h935"
+SUMUP_PK = "sup_pk_dk3GN6qF2DGWfRlKXgDCfv4nLLWJmBYRX"
 
 DB_PATH        = "xtracker.db"
 
@@ -332,36 +332,48 @@ async def checkout(pack_id: str, user=Depends(get_current_user), request: Reques
     origin = str(request.base_url).rstrip("/")
     amount = pack["price_eur"]
     credits = pack["credits"]
-    # PayGate : construire l'URL de paiement
-    import urllib.parse
-    params = {
-        "merchant_wallet": PAYGATE_WALLET,
-        "amount": str(amount),
-        "currency": "EUR",
-        "order_id": f"{user['id']}-{pack_id}-{credits}",
-        "success_url": f"{origin}/api/paygate/success?order_id={user['id']}-{pack_id}-{credits}",
-        "cancel_url": f"{origin}/dashboard.html?payment=cancel",
-        "title": f"Xtracker {pack['label']} {credits} credits",
-        "fee_payer": "customer",
-    }
-    checkout_url = f"https://checkout.paygate.to/payment/?{urllib.parse.urlencode(params)}"
-    return {"checkout_url": checkout_url}
-
-@app.get("/api/paygate/success")
-async def paygate_success(request: Request):
-    """PayGate redirige ici après paiement réussi"""
-    params  = dict(request.query_params)
-    order_id = params.get("order_id", "")
-    # order_id format: uid-packid-credits
+    order_id = f"xtracker-{user['id']}-{pack_id}-{credits}"
     try:
-        parts   = order_id.split("-")
-        uid     = int(parts[0])
-        pack_id = parts[1]
-        credits = int(parts[2])
-        pack    = CREDIT_PACKS.get(pack_id, {})
-        amount  = pack.get("price_eur", 0)
+        async with httpx.AsyncClient(timeout=15) as client:
+            r = await client.post(
+                "https://api.sumup.com/v0.1/checkouts",
+                headers={
+                    "Authorization": f"Bearer {SUMUP_SK}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "checkout_reference": order_id,
+                    "amount": amount,
+                    "currency": "EUR",
+                    "description": f"Xtracker {pack['label']} - {credits} credits",
+                    "merchant_code": "Shop2ToutMHN3Z5RX",
+                    "return_url": f"{origin}/api/sumup/success?order_id={order_id}&uid={user['id']}&credits={credits}&pack={pack_id}",
+                }
+            )
+            data = r.json()
+            if r.status_code not in [200, 201]:
+                raise HTTPException(500, str(data))
+            checkout_id = data.get("id")
+            checkout_url = f"https://pay.sumup.com/b2c/checkout/{checkout_id}"
+            return {"checkout_url": checkout_url}
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+@app.get("/api/sumup/success")
+async def sumup_success(request: Request):
+    """SumUp redirige ici après paiement"""
+    params   = dict(request.query_params)
+    order_id = params.get("order_id", "")
+    uid      = int(params.get("uid", 0))
+    credits  = int(params.get("credits", 0))
+    pack_id  = params.get("pack", "")
+    from fastapi.responses import RedirectResponse
+    if not order_id or not uid or not credits:
+        return RedirectResponse(url="/dashboard.html?payment=cancel")
+    try:
+        pack   = CREDIT_PACKS.get(pack_id, {})
+        amount = pack.get("price_eur", 0)
         db = get_db()
-        # Vérifier si déjà traité
         existing = db.execute("SELECT id FROM transactions WHERE stripe_id=?", (order_id,)).fetchone()
         if not existing:
             db.execute("UPDATE users SET credits=credits+? WHERE id=?", (credits, uid))
@@ -372,9 +384,8 @@ async def paygate_success(request: Request):
             db.commit()
         db.close()
     except Exception as e:
-        print(f"[PAYGATE] Erreur traitement: {e}")
-    from fastapi.responses import RedirectResponse
-    return RedirectResponse(url=f"/dashboard.html?payment=success")
+        print(f"[SUMUP] Erreur: {e}")
+    return RedirectResponse(url="/dashboard.html?payment=success")
 
 @app.get("/api/transactions")
 async def transactions(user=Depends(get_current_user)):
