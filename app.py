@@ -1,6 +1,6 @@
 """
 Xtracker — Backend FastAPI + SQLite (test local)
-pip install fastapi uvicorn python-jose passlib bcrypt stripe httpx python-multipart
+pip install fastapi uvicorn python-jose passlib bcrypt httpx python-multipart
 python app.py
 """
 from fastapi import FastAPI, HTTPException, Depends, Request
@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from passlib.context import CryptContext
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
-import sqlite3, os, json, stripe, httpx
+import sqlite3, os, json, httpx
 
 # ── CONFIG ────────────────────────────────────────────────────────────────────
 SECRET_KEY     = "xtracker-secret-2026-changez-en-prod"
@@ -20,11 +20,11 @@ ALGORITHM      = "HS256"
 TOKEN_EXPIRE   = 60 * 24 * 7
 BRIX_KEY       = "brix_JUs29gtJ46uOB8SBtDU5y3dIbnYCFoEVS5iDSWuFmeC8LGBY"
 BRIX_BASE      = "https://brixhub.net/api/v1"
-STRIPE_SECRET  = os.getenv("STRIPE_SECRET", "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")
-STRIPE_WEBHOOK = os.getenv("STRIPE_WEBHOOK", "whsec_agqvL2SbnISiH12comUtW7wusAlR4kPX")
+PAYGATE_WALLET = "0x480Be9ecB3122fFFBc0917C34fb05B6E524E732a"
+PAYGATE_URL    = "https://api.paygate.to/control/api.php"
+
 DB_PATH        = "xtracker.db"
 
-stripe.api_key = STRIPE_SECRET
 pwd_ctx  = CryptContext(schemes=["bcrypt"])
 security = HTTPBearer(auto_error=False)
 
@@ -304,50 +304,50 @@ async def checkout(pack_id: str, user=Depends(get_current_user), request: Reques
         raise HTTPException(400, "Pack invalide")
     pack   = CREDIT_PACKS[pack_id]
     origin = str(request.base_url).rstrip("/")
-    try:
-        print(f"[STRIPE] key={STRIPE_SECRET[:20]}... pack={pack_id}")
-        session = stripe.checkout.Session.create(
-            payment_method_types=["card"],
-            line_items=[{
-                "price_data": {
-                    "currency":     "eur",
-                    "product_data": {"name": f"Xtracker — {pack['label']} ({pack['credits']} crédits)"},
-                    "unit_amount":  int(pack["price_eur"] * 100),
-                },
-                "quantity": 1,
-            }],
-            mode="payment",
-            success_url=f"{origin}/dashboard.html?payment=success",
-            cancel_url=f"{origin}/dashboard.html?payment=cancel",
-            metadata={"user_id": str(user["id"]), "pack_id": pack_id, "credits": str(pack["credits"])},
-        )
-        return {"checkout_url": session.url}
-    except Exception as e:
-        print(f"[STRIPE ERROR] {e}")
-        raise HTTPException(500, str(e))
+    amount = pack["price_eur"]
+    credits = pack["credits"]
+    # PayGate : construire l'URL de paiement
+    import urllib.parse
+    params = {
+        "merchant_wallet": PAYGATE_WALLET,
+        "amount": str(amount),
+        "currency": "EUR",
+        "order_id": f"{user['id']}-{pack_id}-{credits}",
+        "success_url": f"{origin}/dashboard.html?payment=success&pack={pack_id}&credits={credits}&uid={user['id']}",
+        "cancel_url": f"{origin}/dashboard.html?payment=cancel",
+        "title": f"Xtracker — {pack['label']} ({credits} crédits)",
+    }
+    checkout_url = f"https://api.paygate.to/control/api.php?{urllib.parse.urlencode(params)}"
+    return {"checkout_url": checkout_url}
 
-@app.post("/api/stripe/webhook")
-async def webhook(request: Request):
-    payload = await request.body()
-    sig     = request.headers.get("stripe-signature", "")
+@app.get("/api/paygate/success")
+async def paygate_success(request: Request):
+    """PayGate redirige ici après paiement réussi"""
+    params  = dict(request.query_params)
+    order_id = params.get("order_id", "")
+    # order_id format: uid-packid-credits
     try:
-        event = stripe.Webhook.construct_event(payload, sig, STRIPE_WEBHOOK)
-    except Exception:
-        raise HTTPException(400, "Webhook invalide")
-    if event["type"] == "checkout.session.completed":
-        s       = event["data"]["object"]
-        uid     = int(s["metadata"]["user_id"])
-        credits = int(s["metadata"]["credits"])
-        amount  = s["amount_total"] / 100
+        parts   = order_id.split("-")
+        uid     = int(parts[0])
+        pack_id = parts[1]
+        credits = int(parts[2])
+        pack    = CREDIT_PACKS.get(pack_id, {})
+        amount  = pack.get("price_eur", 0)
         db = get_db()
-        db.execute("UPDATE users SET credits=credits+? WHERE id=?", (credits, uid))
-        db.execute("""
-            INSERT INTO transactions (user_id, type, credits, amount_eur, stripe_id, status)
-            VALUES (?,?,?,?,?,'completed')
-        """, (uid, "purchase", credits, amount, s["id"]))
-        db.commit()
+        # Vérifier si déjà traité
+        existing = db.execute("SELECT id FROM transactions WHERE stripe_id=?", (order_id,)).fetchone()
+        if not existing:
+            db.execute("UPDATE users SET credits=credits+? WHERE id=?", (credits, uid))
+            db.execute("""
+                INSERT INTO transactions (user_id, type, credits, amount_eur, stripe_id, status)
+                VALUES (?,?,?,?,?,'completed')
+            """, (uid, "purchase", credits, amount, order_id))
+            db.commit()
         db.close()
-    return {"status": "ok"}
+    except Exception as e:
+        print(f"[PAYGATE] Erreur traitement: {e}")
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url=f"/dashboard.html?payment=success")
 
 @app.get("/api/transactions")
 async def transactions(user=Depends(get_current_user)):
