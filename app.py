@@ -305,6 +305,7 @@ async def checkout(pack_id: str, user=Depends(get_current_user), request: Reques
     pack   = CREDIT_PACKS[pack_id]
     origin = str(request.base_url).rstrip("/")
     try:
+        print(f"[STRIPE] key={STRIPE_SECRET[:20]}... pack={pack_id}")
         session = stripe.checkout.Session.create(
             payment_method_types=["card"],
             line_items=[{
@@ -322,6 +323,7 @@ async def checkout(pack_id: str, user=Depends(get_current_user), request: Reques
         )
         return {"checkout_url": session.url}
     except Exception as e:
+        print(f"[STRIPE ERROR] {e}")
         raise HTTPException(500, str(e))
 
 @app.post("/api/stripe/webhook")
