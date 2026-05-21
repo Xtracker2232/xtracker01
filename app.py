@@ -116,49 +116,93 @@ def date_sql():
 
 def init_db():
     db = get_db()
-    db.executescript("""
-    CREATE TABLE IF NOT EXISTS users (
-        id         INTEGER PRIMARY KEY AUTOINCREMENT,
-        email      TEXT UNIQUE NOT NULL,
-        password   TEXT NOT NULL,
-        username   TEXT NOT NULL,
-        role       TEXT DEFAULT 'user',
-        credits    INTEGER DEFAULT 0,
-        free_left  INTEGER DEFAULT 5,
-        created_at TEXT DEFAULT (datetime('now')),
-        last_login TEXT,
-        banned     INTEGER DEFAULT 0,
-        stripe_id  TEXT
-    );
-    CREATE TABLE IF NOT EXISTS searches (
-        id           INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id      INTEGER,
-        query_data   TEXT,
-        result_count INTEGER DEFAULT 0,
-        cost         INTEGER DEFAULT 1,
-        created_at   TEXT DEFAULT (datetime('now')),
-        FOREIGN KEY(user_id) REFERENCES users(id)
-    );
-    CREATE TABLE IF NOT EXISTS transactions (
-        id         INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id    INTEGER,
-        type       TEXT,
-        credits    INTEGER,
-        amount_eur REAL,
-        stripe_id  TEXT,
-        status     TEXT DEFAULT 'pending',
-        created_at TEXT DEFAULT (datetime('now')),
-        FOREIGN KEY(user_id) REFERENCES users(id)
-    );
-    """)
-    existing = db.execute("SELECT id FROM users WHERE email='admin@xtracker.io'").fetchone()
-    if not existing:
-        db.execute("""
-            INSERT INTO users (email, password, username, role, credits, free_left)
-            VALUES (?, ?, 'Admin', 'admin', 99999, 99999)
-        """, ("admin@xtracker.io", pwd_ctx.hash("Admin1234!")))
-    db.commit()
-    db.close()
+    if is_pg():
+        cur = db.cursor()
+        cur.execute("""CREATE TABLE IF NOT EXISTS users (
+            id         SERIAL PRIMARY KEY,
+            email      TEXT UNIQUE NOT NULL,
+            password   TEXT NOT NULL,
+            username   TEXT NOT NULL,
+            role       TEXT DEFAULT 'user',
+            credits    INTEGER DEFAULT 0,
+            free_left  INTEGER DEFAULT 5,
+            created_at TIMESTAMP DEFAULT NOW(),
+            last_login TIMESTAMP,
+            banned     BOOLEAN DEFAULT FALSE,
+            stripe_id  TEXT
+        )""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS searches (
+            id           SERIAL PRIMARY KEY,
+            user_id      INTEGER REFERENCES users(id),
+            query_data   TEXT,
+            result_count INTEGER DEFAULT 0,
+            cost         INTEGER DEFAULT 1,
+            created_at   TIMESTAMP DEFAULT NOW()
+        )""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS transactions (
+            id         SERIAL PRIMARY KEY,
+            user_id    INTEGER REFERENCES users(id),
+            type       TEXT,
+            credits    INTEGER,
+            amount_eur FLOAT,
+            stripe_id  TEXT,
+            status     TEXT DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT NOW()
+        )""")
+        cur.execute("SELECT id FROM users WHERE email='admin@xtracker.io'")
+        if not cur.fetchone():
+            cur.execute("""INSERT INTO users (email, password, username, role, credits, free_left)
+                VALUES (%s,%s,'Admin','admin',99999,99999)""",
+                ("admin@xtracker.io", pwd_ctx.hash("Admin1234!")))
+        db.commit()
+        cur.close()
+        db.close()
+        print("✓ Base de données PostgreSQL initialisée")
+    else:
+        db.executescript("""
+        CREATE TABLE IF NOT EXISTS users (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            email      TEXT UNIQUE NOT NULL,
+            password   TEXT NOT NULL,
+            username   TEXT NOT NULL,
+            role       TEXT DEFAULT 'user',
+            credits    INTEGER DEFAULT 0,
+            free_left  INTEGER DEFAULT 5,
+            created_at TEXT DEFAULT (datetime('now')),
+            last_login TEXT,
+            banned     INTEGER DEFAULT 0,
+            stripe_id  TEXT
+        );
+        CREATE TABLE IF NOT EXISTS searches (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id      INTEGER,
+            query_data   TEXT,
+            result_count INTEGER DEFAULT 0,
+            cost         INTEGER DEFAULT 1,
+            created_at   TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY(user_id) REFERENCES users(id)
+        );
+        CREATE TABLE IF NOT EXISTS transactions (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id    INTEGER,
+            type       TEXT,
+            credits    INTEGER,
+            amount_eur REAL,
+            stripe_id  TEXT,
+            status     TEXT DEFAULT 'pending',
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY(user_id) REFERENCES users(id)
+        );
+        """)
+        existing = db.execute("SELECT id FROM users WHERE email='admin@xtracker.io'").fetchone()
+        if not existing:
+            db.execute("""INSERT INTO users (email, password, username, role, credits, free_left)
+                VALUES (?,?,'Admin','admin',99999,99999)""",
+                ("admin@xtracker.io", pwd_ctx.hash("Admin1234!")))
+        db.commit()
+        db.close()
+        print("✓ Base de données SQLite initialisée (fallback)")
+
 
 init_db()
 print("✓ Base de données SQLite initialisée (fallback)")
