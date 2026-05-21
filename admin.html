@@ -122,6 +122,12 @@ td.main-col{color:var(--text);font-weight:500}
 
 <div class="sidebar">
   <a href="dashboard.html" class="sb-logo">X<span>tracker</span> <small>Admin</small></a>
+  <div style="padding:8px 10px 4px">
+    <button id="btn-maintenance" onclick="toggleMaintenance()"
+      style="width:100%;padding:9px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);color:#f59e0b;font-size:12px;font-weight:600;border-radius:7px;cursor:pointer;font-family:inherit">
+      🔧 Activer maintenance
+    </button>
+  </div>
   <div class="sb-nav">
     <span class="sb-sec">Dashboard</span>
     <button class="sb-link active" onclick="goTo('overview')">📊 Vue d'ensemble</button>
