@@ -12,13 +12,12 @@ from pydantic import BaseModel
 from passlib.context import CryptContext
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
-import os, json, httpx
+import os, json, httpx, sqlite3
 try:
     import psycopg2
     import psycopg2.extras
     USE_PG = True
 except ImportError:
-    import sqlite3
     USE_PG = False
 
 # ── CONFIG ────────────────────────────────────────────────────────────────────
