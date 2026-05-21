@@ -202,7 +202,7 @@ input[type=checkbox]{display:none}
 @media(max-width:768px){
   .sidebar{transform:translateX(-100%)}
   .sidebar.open{transform:none}
-  .main{margin-left:0;padding-bottom:70px}
+  .main{margin-left:0;padding-bottom:100px}
   .burger{display:flex}
   .bottom-nav{display:block}
   .credits-badge{display:none}
@@ -211,7 +211,9 @@ input[type=checkbox]{display:none}
   .packs-grid{grid-template-columns:1fr}
   .content{padding:16px}
   .panel-body{padding:16px}
-  .notif{bottom:90px}
+  .notif{bottom:100px}
+  .btn-run{margin-bottom:16px}
+  #results{padding-bottom:20px}
 }
 @media(min-width:769px){
   .bottom-nav{display:none}
@@ -307,8 +309,8 @@ input[type=checkbox]{display:none}
             </div>
             <div id="accbody-naissance" style="display:none;padding:0 14px 14px">
               <div class="fg">
-                <div class="fgroup"><label>Jour</label><select id="f-jour_naissance" onchange="acCount('naissance')"><option value="">Jour</option>${Array.from({length:31},(_,i)=>`<option value="${i+1}">${i+1}</option>`).join('')}</select></div>
-                <div class="fgroup"><label>Mois</label><select id="f-mois_naissance" onchange="acCount('naissance')"><option value="">Mois</option>${['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'].map((m,i)=>`<option value="${i+1}">${m}</option>`).join('')}</select></div>
+                <div class="fgroup"><label>Jour</label><select id="f-jour_naissance" onchange="acCount('naissance')"><option value="">Jour</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option><option value="24">24</option><option value="25">25</option><option value="26">26</option><option value="27">27</option><option value="28">28</option><option value="29">29</option><option value="30">30</option><option value="31">31</option></select></div>
+                <div class="fgroup"><label>Mois</label><select id="f-mois_naissance" onchange="acCount('naissance')"><option value="">Mois</option><option value="1">Janvier</option><option value="2">Février</option><option value="3">Mars</option><option value="4">Avril</option><option value="5">Mai</option><option value="6">Juin</option><option value="7">Juillet</option><option value="8">Août</option><option value="9">Septembre</option><option value="10">Octobre</option><option value="11">Novembre</option><option value="12">Décembre</option></select></div>
                 <div class="fgroup"><label>Année</label><input id="f-annee_naissance" placeholder="1990" maxlength="4" oninput="acCount('naissance')"></div>
                 <div class="fgroup"><label>Date exacte</label><input id="f-date_naissance" placeholder="1990-06-15" oninput="acCount('naissance')"></div>
                 <div class="fgroup"><label>Ville de naissance</label><input id="f-ville_naissance" placeholder="Paris" oninput="acCount('naissance')"></div>
@@ -575,7 +577,7 @@ function renderResults(results,total,took,free_left,credits){
     const cls=conf>=70?'hi':conf>=40?'md':'lo';
     const name=[p.prenom,p.nom_famille].filter(Boolean).join(' ')||'Inconnu';
     const sub=[p.email,p.telephone,p.ville].filter(Boolean).join(' · ')||'—';
-    const fmap=[['Nom',p.nom_famille],['Prénom',p.prenom],['Email',p.email],['Téléphone',p.telephone],['Mobile',p.mobile],['Adresse',p.adresse],['CP',p.code_postal],['Ville',p.ville],['Région',p.region],['Pays',p.pays],['Naissance',p.date_naissance],['Genre',p.genre],['Société',p.societe],['Profession',p.profession],['NIR',p.nir],['IBAN',p.iban],['SIRET',p.siret]].filter(([,v])=>v);
+    const fmap=[['Nom',p.nom_famille],['Prénom',p.prenom],['Email',p.email],['Téléphone',p.telephone],['Mobile',p.mobile],['Adresse',p.adresse],['Code postal',p.code_postal],['Ville',p.ville],['Région',p.region],['Pays',p.pays],['Naissance',p.date_naissance],['Genre',p.genre==='M'?'Masculin':p.genre==='F'?'Féminin':p.genre],['Société',p.societe],['Profession',p.profession],['NIR',p.nir],['IBAN',p.iban],['SIRET',p.siret]].filter(([,v])=>v&&typeof v==='string'&&v.trim()!==''&&!v.includes('undefined'));
     const fh=fmap.map(([k,v])=>`<div class="rf"><div class="rf-k">${k}</div><div class="rf-v">${v}</div></div>`).join('');
     const sh=(p._sources||[]).map(s=>`<span class="src">${s}</span>`).join('');
     html+=`<div class="rcard"><div class="rcard-top" onclick="tog(${i})">
@@ -594,6 +596,11 @@ function showNoCredits(){
 
 async function doSearch(){
   const payload={flexible:g('flexible')?.checked||true,per_page:10};
+  // Validation minimale
+  const emailVal=g('f-email')?.value?.trim();
+  if(emailVal && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)){showErr('Email invalide.');return}
+  const telVal=g('f-telephone')?.value?.trim();
+  if(telVal && telVal.replace(/\D/g,'').length<6){showErr('Numéro de téléphone invalide.');return}
   const map={
     nom_famille:'f-nom',prenom:'f-prenom',nom_naissance:'f-nom_naissance',
     nom_affichage:'f-nom_affichage',nom_utilisateur:'f-nom_utilisateur',genre:'f-genre',

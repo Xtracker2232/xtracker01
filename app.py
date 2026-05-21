@@ -208,8 +208,13 @@ class AdminUserUpdate(BaseModel):
 # ── AUTH ROUTES ───────────────────────────────────────────────────────────────
 @app.post("/api/auth/register")
 async def register(data: RegisterModel):
+    import re
     if len(data.password) < 8:
         raise HTTPException(400, "Mot de passe trop court (8 caractères min)")
+    if not re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', data.email):
+        raise HTTPException(400, "Adresse email invalide")
+    if len(data.username) < 2:
+        raise HTTPException(400, "Nom d'utilisateur trop court")
     db = get_db()
     existing = fetchone(db, "SELECT id FROM users WHERE email=?", (data.email.lower(),))
     if existing:
@@ -235,7 +240,9 @@ async def login(data: LoginModel):
     if user["banned"]:
         db.close()
         raise HTTPException(403, "Compte banni")
-    execute(db, "UPDATE users SET last_login=NOW() WHERE id=?", (user["id"],))
+    from datetime import datetime as _dt
+    _now = _dt.utcnow().isoformat()
+    execute(db, "UPDATE users SET last_login=? WHERE id=?", (_now, user["id"]))
     db.commit()
     db.close()
     user = dict(user) if not isinstance(user, dict) else user
@@ -307,8 +314,12 @@ async def search(data: SearchModel, user=Depends(get_current_user)):
     if data.ville:       payload["ville"]       = data.ville
     if data.code_postal: payload["code_postal"] = data.code_postal
     if data.pays:        payload["pays"]        = data.pays
+    # Filtrer les valeurs trop courtes
+    for k in list(payload.keys()):
+        if k not in ('flexible','per_page') and isinstance(payload[k], str) and len(payload[k].strip()) < 2:
+            del payload[k]
     if len(payload) <= 2:
-        raise HTTPException(400, "Remplissez au moins un champ")
+        raise HTTPException(400, "Remplissez au moins un champ (2 caractères minimum)")
     result = await call_brix("POST", "/search", payload)
     results = result.get("data", {}).get("results", [])
     updated = deduct_and_log(user["id"], payload, len(results))

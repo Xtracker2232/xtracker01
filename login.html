@@ -237,6 +237,7 @@ async function doLogin(){
   const email=g('l-email').value.trim();
   const pass=g('l-pass').value;
   if(!email||!pass){showErr('Remplissez tous les champs.');return}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){showErr('Adresse email invalide.');return}
   setLoading('btn-login',true,'Se connecter');
   try{
     const r=await fetch(`${API}/api/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pass})});
@@ -256,7 +257,9 @@ async function doRegister(){
   const email=g('r-email').value.trim();
   const pass=g('r-pass').value;
   if(!username||!email||!pass){showErr('Remplissez tous les champs.');return}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){showErr('Adresse email invalide.');return}
   if(pass.length<8){showErr('Mot de passe trop court (8 caractères min).');return}
+  if(username.length<2){showErr('Nom d'utilisateur trop court.');return}
   setLoading('btn-register',true,'Créer mon compte');
   try{
     const r=await fetch(`${API}/api/auth/register`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pass,username})});

@@ -172,7 +172,7 @@ input[type=checkbox]{display:none}
 @keyframes slideIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
 
 @media(max-width:800px){
-  .wrap{grid-template-columns:1fr;gap:16px;padding:16px 16px 60px}
+  .wrap{grid-template-columns:1fr;gap:16px;padding:16px 16px 80px}
   .search-panel{position:static}
   .fg{grid-template-columns:1fr 1fr}
   .fg-3{grid-template-columns:1fr 1fr}
@@ -280,7 +280,7 @@ input[type=checkbox]{display:none}
               <div class="fgroup"><label>Jour</label>
                 <select id="f-jour_naissance" onchange="countSection('naissance')">
                   <option value="">Jour</option>
-                  ${Array.from({length:31},(_,i)=>`<option value="${i+1}">${i+1}</option>`).join('')}
+                  <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option><option value="24">24</option><option value="25">25</option><option value="26">26</option><option value="27">27</option><option value="28">28</option><option value="29">29</option><option value="30">30</option><option value="31">31</option>
                 </select>
               </div>
               <div class="fgroup"><label>Mois</label>
@@ -575,8 +575,10 @@ async function doSearch(){
     nir:'f-nir',iban:'f-iban',bic:'f-bic',siret:'f-siret',siren:'f-siren',
     vin_plaque:'f-vin_plaque',societe:'f-societe',profession:'f-profession',
   };
-  Object.entries(map).forEach(([k,id])=>{const v=g(id)?.value?.trim();if(v&&v!=='')payload[k]=v});
-  if(Object.keys(payload).length<=2){showResults('<div class="err-box">⚠ Remplissez au moins un champ.</div>');return}
+  Object.entries(map).forEach(([k,id])=>{const v=g(id)?.value?.trim();if(v&&v.length>=2)payload[k]=v});
+  const emailV=g('f-email')?.value?.trim();
+  if(emailV&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailV)){showResults('<div class="err-box">⚠ Email invalide.</div>');return}
+  if(Object.keys(payload).length<=2){showResults('<div class="err-box">⚠ Remplissez au moins un champ (2 caractères min).</div>');return}
   setLoad('btn-run',true,'Rechercher');
   try{
     const r=await fetch(`${API}/api/search`,{method:'POST',headers:{Authorization:'Bearer '+TOKEN,'Content-Type':'application/json'},body:JSON.stringify(payload)});
