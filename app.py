@@ -294,6 +294,32 @@ async def history(user=Depends(get_current_user)):
     return [dict(r) for r in rows]
 
 # ── STRIPE ────────────────────────────────────────────────────────────────────
+@app.post("/api/credits/confirm")
+async def confirm_paygate(request: Request, user=Depends(get_current_user)):
+    """Confirme un paiement PayGate et ajoute les crédits"""
+    body     = await request.json()
+    credits  = int(body.get("credits", 0))
+    pack_id  = body.get("pack_id", "")
+    order_id = body.get("order_id", "")
+    if credits <= 0 or not order_id:
+        raise HTTPException(400, "Données invalides")
+    pack   = CREDIT_PACKS.get(pack_id, {})
+    amount = pack.get("price_eur", 0)
+    db = get_db()
+    # Vérifier si déjà traité
+    existing = db.execute("SELECT id FROM transactions WHERE stripe_id=?", (order_id,)).fetchone()
+    if existing:
+        db.close()
+        return {"message": "Déjà traité"}
+    db.execute("UPDATE users SET credits=credits+? WHERE id=?", (credits, user["id"]))
+    db.execute("""
+        INSERT INTO transactions (user_id, type, credits, amount_eur, stripe_id, status)
+        VALUES (?,?,?,?,?,'completed')
+    """, (user["id"], "purchase", credits, amount, order_id))
+    db.commit()
+    db.close()
+    return {"message": "Crédits ajoutés", "credits": credits}
+
 @app.get("/api/credits/packs")
 async def get_packs():
     return CREDIT_PACKS

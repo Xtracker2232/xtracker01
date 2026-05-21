@@ -658,20 +658,57 @@ async function loadTx(){
   }catch(e){}
 }
 
+const PACKS = {
+  starter:    {credits:20,  amount:'5.00',  label:'Starter'},
+  pro:        {credits:200, amount:'14.99', label:'Pro'},
+  enterprise: {credits:1000,amount:'49.99', label:'Enterprise'},
+};
+const WALLET = '0x480Be9ecB3122fFFBc0917C34fb05B6E524E732a';
+
 async function buyPack(packId){
-  try{
-    const r=await fetch(`${API}/api/credits/checkout/${packId}`,{method:'POST',headers:hdr()});
-    const d=await r.json();
-    if(d.checkout_url)window.location.href=d.checkout_url;
-    else notif('Configurez vos clés Stripe dans app.py','err');
-  }catch(e){notif('Erreur réseau','err')}
+  const pack = PACKS[packId];
+  if(!pack){notif('Pack invalide','err');return}
+  const uid = USER.id || '';
+  const orderId = uid+'-'+packId+'-'+pack.credits+'-'+Date.now();
+  const successUrl = window.location.origin+'/dashboard.html?payment=success&order='+orderId+'&uid='+uid+'&credits='+pack.credits+'&pack='+packId;
+  const cancelUrl  = window.location.origin+'/dashboard.html?payment=cancel';
+  const params = new URLSearchParams({
+    merchant_wallet: WALLET,
+    amount: pack.amount,
+    currency: 'EUR',
+    order_id: orderId,
+    success_url: successUrl,
+    cancel_url: cancelUrl,
+    title: 'Xtracker '+pack.label+' '+pack.credits+' credits',
+    fee_payer: 'customer',
+  });
+  window.location.href = 'https://checkout.paygate.to/payment/?'+params.toString();
+}
+
+async function handlePaygateReturn(){
+  const p = new URLSearchParams(window.location.search);
+  if(p.get('payment')==='success'){
+    const credits = parseInt(p.get('credits')||0);
+    const pack    = p.get('pack')||'';
+    const order   = p.get('order')||'';
+    if(credits>0 && order){
+      try{
+        await fetch(`${API}/api/credits/confirm`,{
+          method:'POST',
+          headers:hdr(),
+          body:JSON.stringify({credits,pack_id:pack,order_id:order})
+        });
+      }catch(e){}
+    }
+    notif('Paiement réussi ! Crédits ajoutés 🎉');
+    init();
+  }
+  if(p.get('payment')==='cancel') notif('Paiement annulé.','err');
 }
 
 function logout(){localStorage.removeItem('token');localStorage.removeItem('user');window.location.href='login.html'}
 
-const params=new URLSearchParams(window.location.search);
-if(params.get('payment')==='success')notif('Paiement réussi ! Crédits ajoutés 🎉');
-if(params.get('payment')==='cancel')notif('Paiement annulé.','err');
+handlePaygateReturn();
 
 document.addEventListener('keydown',e=>{
   if(e.key!=='Enter')return;

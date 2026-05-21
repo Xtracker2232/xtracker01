@@ -3,6 +3,5 @@ fastapi
 uvicorn
 python-jose[cryptography]
 passlib[bcrypt]
-stripe
 httpx
 python-multipart
