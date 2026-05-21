@@ -20,8 +20,8 @@ ALGORITHM      = "HS256"
 TOKEN_EXPIRE   = 60 * 24 * 7
 BRIX_KEY       = "brix_JUs29gtJ46uOB8SBtDU5y3dIbnYCFoEVS5iDSWuFmeC8LGBY"
 BRIX_BASE      = "https://brixhub.net/api/v1"
-STRIPE_SECRET  = os.getenv("STRIPE_SECRET") or "sk_test_51TZYjpGc2GrF5nu3Bb28192rFqxqLFDQycef5mgIqzp2RHxkhJXnxXQzoCfiyd2ZJKQGw9z5blDiva2sq1UtewSL007H8n6Jnb"
-STRIPE_WEBHOOK = os.getenv("STRIPE_WEBHOOK") or "whsec_QlV40zIrcmDGztF2r2dnNqge6uwrwSnb"
+STRIPE_SECRET  = os.getenv("STRIPE_SECRET", "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")
+STRIPE_WEBHOOK = os.getenv("STRIPE_WEBHOOK", "whsec_agqvL2SbnISiH12comUtW7wusAlR4kPX")
 DB_PATH        = "xtracker.db"
 
 stripe.api_key = STRIPE_SECRET
