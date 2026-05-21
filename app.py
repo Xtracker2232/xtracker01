@@ -29,7 +29,7 @@ pwd_ctx  = CryptContext(schemes=["bcrypt"])
 security = HTTPBearer(auto_error=False)
 
 CREDIT_PACKS = {
-    "starter":    {"credits": 50,   "price_eur": 4.99,  "label": "Starter"},
+    "starter":    {"credits": 20,   "price_eur": 5.00,  "label": "Starter"},
     "pro":        {"credits": 200,  "price_eur": 14.99, "label": "Pro"},
     "enterprise": {"credits": 1000, "price_eur": 49.99, "label": "Enterprise"},
 }
