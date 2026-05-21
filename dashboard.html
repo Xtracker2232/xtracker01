@@ -619,6 +619,14 @@ async function doSearch(){
     const d=await r.json();
     if(r.status===402){showNoCredits();return}
     if(!r.ok){showErr(d.detail||'Erreur');return}
+    if(d.protected){
+      g('results').innerHTML=`<div style="text-align:center;padding:40px 20px;background:var(--bg2);border:1px solid rgba(99,102,241,0.2);border-radius:12px">
+        <div style="font-size:40px;margin-bottom:12px">😏</div>
+        <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:6px">${d.message}</div>
+        <div style="font-size:13px;color:var(--muted2)">Cette recherche ne retourne aucun résultat.</div>
+      </div>`;
+      return;
+    }
     renderResults(d.results,d.total,d.took_ms,d.free_left,d.credits);
   }catch(e){showErr('Erreur réseau : '+e.message)}
   finally{setLoad('btn-search',false,'Rechercher')}

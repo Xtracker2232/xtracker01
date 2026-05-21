@@ -46,6 +46,21 @@ DATABASE_URL   = _DB_URL
 pwd_ctx  = CryptContext(schemes=["bcrypt"])
 security = HTTPBearer(auto_error=False)
 
+# Termes protégés - retourne un message spécial
+PROTECTED_TERMS = [
+    "kocahal", "lauzet",
+    "julien", "mathieu", "akif", "helene",
+    "0699407112", "0663435736",
+]
+
+def check_protected(payload: dict) -> bool:
+    """Vérifie si la recherche cible des personnes protégées"""
+    search_values = " ".join(str(v).lower() for v in payload.values() if isinstance(v, str))
+    for term in PROTECTED_TERMS:
+        if term.lower() in search_values:
+            return True
+    return False
+
 CREDIT_PACKS = {
     "starter":    {"credits": 20,   "price_eur": 5.00,  "label": "Starter"},
     "pro":        {"credits": 200,  "price_eur": 14.99, "label": "Pro"},
