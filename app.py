@@ -54,7 +54,7 @@ def init_db():
         username   TEXT NOT NULL,
         role       TEXT DEFAULT 'user',
         credits    INTEGER DEFAULT 0,
-        free_left  INTEGER DEFAULT 10,
+        free_left  INTEGER DEFAULT 5,
         created_at TEXT DEFAULT (datetime('now')),
         last_login TEXT,
         banned     INTEGER DEFAULT 0,
