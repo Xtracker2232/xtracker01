@@ -20,14 +20,14 @@ try:
 except ImportError:
     USE_PG = False
 
-# Force PostgreSQL si DATABASE_URL est définie
-_DB_URL = os.environ.get("DATABASE_URL", "")
-if _DB_URL:
+# Force PostgreSQL
+_DB_URL = os.environ.get("DATABASE_URL", "") or os.environ.get("POSTGRES_URL", "") or "postgresql://postgres:XQnMuhKjHBYBGBhuwOUOEmWtwzXxHniB@postgres.railway.internal:5432/railway"
+if _DB_URL and "postgresql" in _DB_URL:
     USE_PG = True
-    print(f"[DB] PostgreSQL détecté: {_DB_URL[:30]}...")
+    print(f"[DB] PostgreSQL: {_DB_URL[:40]}...")
 else:
     USE_PG = False
-    print("[DB] Pas de DATABASE_URL, utilisation de SQLite")
+    print("[DB] SQLite fallback")
 
 # ── CONFIG ────────────────────────────────────────────────────────────────────
 SECRET_KEY     = "xtracker-secret-2026-changez-en-prod"
