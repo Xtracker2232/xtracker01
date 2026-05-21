@@ -20,6 +20,15 @@ try:
 except ImportError:
     USE_PG = False
 
+# Force PostgreSQL si DATABASE_URL est définie
+_DB_URL = os.environ.get("DATABASE_URL", "")
+if _DB_URL:
+    USE_PG = True
+    print(f"[DB] PostgreSQL détecté: {_DB_URL[:30]}...")
+else:
+    USE_PG = False
+    print("[DB] Pas de DATABASE_URL, utilisation de SQLite")
+
 # ── CONFIG ────────────────────────────────────────────────────────────────────
 SECRET_KEY     = "xtracker-secret-2026-changez-en-prod"
 ALGORITHM      = "HS256"
@@ -31,7 +40,7 @@ SUMUP_PK = "sup_pk_dk3GN6qF2DGWfRlKXgDCfv4nLLWJmBYRX"
 SUMUP_MERCHANT = "Shop2ToutMHN3Z5RX"
 
 DB_PATH        = "xtracker.db"
-DATABASE_URL   = os.getenv("DATABASE_URL", "")
+DATABASE_URL   = _DB_URL
 
 pwd_ctx  = CryptContext(schemes=["bcrypt"])
 security = HTTPBearer(auto_error=False)
@@ -48,8 +57,11 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 # ── DATABASE ──────────────────────────────────────────────────────────────────
 def get_db():
     if USE_PG and DATABASE_URL:
-        conn = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
-        return conn
+        try:
+            conn = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
+            return conn
+        except Exception as e:
+            print(f"[DB] Erreur PostgreSQL: {e}, fallback SQLite")
     db = sqlite3.connect(DB_PATH, check_same_thread=False)
     db.row_factory = sqlite3.Row
     return db
@@ -149,7 +161,7 @@ def init_db():
     db.close()
 
 init_db()
-print("✓ Base de données SQLite initialisée")
+print("✓ Base de données SQLite initialisée (fallback)")
 
 # ── AUTH ──────────────────────────────────────────────────────────────────────
 def create_token(user_id: int, role: str) -> str:
