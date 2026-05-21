@@ -12,7 +12,14 @@ from pydantic import BaseModel
 from passlib.context import CryptContext
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
-import sqlite3, os, json, httpx
+import os, json, httpx
+try:
+    import psycopg2
+    import psycopg2.extras
+    USE_PG = True
+except ImportError:
+    import sqlite3
+    USE_PG = False
 
 # ── CONFIG ────────────────────────────────────────────────────────────────────
 SECRET_KEY     = "xtracker-secret-2026-changez-en-prod"
@@ -25,6 +32,7 @@ SUMUP_PK = "sup_pk_dk3GN6qF2DGWfRlKXgDCfv4nLLWJmBYRX"
 SUMUP_MERCHANT = "Shop2ToutMHN3Z5RX"
 
 DB_PATH        = "xtracker.db"
+DATABASE_URL   = os.getenv("DATABASE_URL", "")
 
 pwd_ctx  = CryptContext(schemes=["bcrypt"])
 security = HTTPBearer(auto_error=False)
@@ -40,9 +48,60 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 
 # ── DATABASE ──────────────────────────────────────────────────────────────────
 def get_db():
+    if USE_PG and DATABASE_URL:
+        conn = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
+        return conn
     db = sqlite3.connect(DB_PATH, check_same_thread=False)
     db.row_factory = sqlite3.Row
     return db
+
+def is_pg():
+    return USE_PG and bool(DATABASE_URL)
+
+def q(sql):
+    """Adapte les placeholders ? -> %s pour PostgreSQL"""
+    if is_pg():
+        return sql.replace("?", "%s")
+    return sql
+
+def fetchone(cur_or_db, sql, params=()):
+    if is_pg():
+        cur = cur_or_db.cursor()
+        cur.execute(q(sql), params)
+        row = cur.fetchone()
+        cur.close()
+        return dict(row) if row else None
+    return cur_or_db.execute(q(sql), params).fetchone()
+
+def fetchall(cur_or_db, sql, params=()):
+    if is_pg():
+        cur = cur_or_db.cursor()
+        cur.execute(q(sql), params)
+        rows = cur.fetchall()
+        cur.close()
+        return [dict(r) for r in rows]
+    return cur_or_db.execute(q(sql), params).fetchall()
+
+def execute(db, sql, params=()):
+    if is_pg():
+        cur = db.cursor()
+        cur.execute(q(sql), params)
+        lastid = None
+        try:
+            lastid = cur.fetchone()
+            if lastid: lastid = list(lastid.values())[0]
+        except: pass
+        cur.close()
+        return lastid
+    else:
+        cur = db.execute(q(sql), params)
+        return cur.lastrowid
+
+def now_sql():
+    return "NOW()" if is_pg() else "datetime('now')"
+
+def date_sql():
+    return "date(NOW())" if is_pg() else "date('now')"
 
 def init_db():
     db = get_db()
@@ -107,11 +166,11 @@ def get_current_user(creds: HTTPAuthorizationCredentials = Depends(security)):
     except JWTError:
         raise HTTPException(401, "Token invalide")
     db = get_db()
-    user = db.execute("SELECT * FROM users WHERE id=?", (uid,)).fetchone()
+    user = fetchone(db, "SELECT * FROM users WHERE id=?", (uid,))
     db.close()
     if not user: raise HTTPException(401, "Introuvable")
     if user["banned"]: raise HTTPException(403, "Compte banni")
-    return dict(user)
+    return dict(user) if not isinstance(user, dict) else user
 
 def require_admin(user=Depends(get_current_user)):
     if user["role"] != "admin":
@@ -153,16 +212,16 @@ async def register(data: RegisterModel):
     if len(data.password) < 8:
         raise HTTPException(400, "Mot de passe trop court (8 caractères min)")
     db = get_db()
-    existing = db.execute("SELECT id FROM users WHERE email=?", (data.email.lower(),)).fetchone()
+    existing = fetchone(db, "SELECT id FROM users WHERE email=?", (data.email.lower(),))
     if existing:
         db.close()
         raise HTTPException(400, "Email déjà utilisé")
     hashed = pwd_ctx.hash(data.password)
-    cur = db.execute("""
-        INSERT INTO users (email, password, username) VALUES (?,?,?)
-    """, (data.email.lower(), hashed, data.username))
+    if is_pg():
+        uid = execute(db, "INSERT INTO users (email, password, username) VALUES (?,?,?) RETURNING id", (data.email.lower(), hashed, data.username))
+    else:
+        uid = execute(db, "INSERT INTO users (email, password, username) VALUES (?,?,?)", (data.email.lower(), hashed, data.username))
     db.commit()
-    uid = cur.lastrowid
     db.close()
     token = create_token(uid, "user")
     return {"token": token, "message": "Compte créé — 10 recherches gratuites !"}
@@ -170,16 +229,17 @@ async def register(data: RegisterModel):
 @app.post("/api/auth/login")
 async def login(data: LoginModel):
     db = get_db()
-    user = db.execute("SELECT * FROM users WHERE email=?", (data.email.lower(),)).fetchone()
+    user = fetchone(db, "SELECT * FROM users WHERE email=?", (data.email.lower(),))
     if not user or not pwd_ctx.verify(data.password, user["password"]):
         db.close()
         raise HTTPException(401, "Email ou mot de passe incorrect")
     if user["banned"]:
         db.close()
         raise HTTPException(403, "Compte banni")
-    db.execute("UPDATE users SET last_login=datetime('now') WHERE id=?", (user["id"],))
+    execute(db, "UPDATE users SET last_login=NOW() WHERE id=?", (user["id"],))
     db.commit()
     db.close()
+    user = dict(user) if not isinstance(user, dict) else user
     token = create_token(user["id"], user["role"])
     return {
         "token": token,
@@ -218,22 +278,20 @@ async def call_brix(method: str, path: str, body: dict = None):
 
 def deduct_and_log(user_id: int, query_data: dict, result_count: int):
     db = get_db()
-    user = db.execute("SELECT free_left, credits FROM users WHERE id=?", (user_id,)).fetchone()
+    user = fetchone(db, "SELECT free_left, credits FROM users WHERE id=?", (user_id,))
     if user["free_left"] > 0:
-        db.execute("UPDATE users SET free_left=free_left-1 WHERE id=?", (user_id,))
+        execute(db, "UPDATE users SET free_left=free_left-1 WHERE id=?", (user_id,))
         cost = 0
     elif user["credits"] > 0:
-        db.execute("UPDATE users SET credits=credits-1 WHERE id=?", (user_id,))
+        execute(db, "UPDATE users SET credits=credits-1 WHERE id=?", (user_id,))
         cost = 1
     else:
         db.close()
         raise HTTPException(402, "Plus de crédits")
-    db.execute("""
-        INSERT INTO searches (user_id, query_data, result_count, cost)
-        VALUES (?,?,?,?)
-    """, (user_id, json.dumps(query_data), result_count, cost))
+    execute(db, "INSERT INTO searches (user_id, query_data, result_count, cost) VALUES (?,?,?,?)",
+            (user_id, json.dumps(query_data), result_count, cost))
     db.commit()
-    updated = db.execute("SELECT free_left, credits FROM users WHERE id=?", (user_id,)).fetchone()
+    updated = fetchone(db, "SELECT free_left, credits FROM users WHERE id=?", (user_id,))
     db.close()
     return dict(updated)
 
@@ -287,12 +345,9 @@ async def lookup(data: LookupModel, user=Depends(get_current_user)):
 @app.get("/api/history")
 async def history(user=Depends(get_current_user)):
     db = get_db()
-    rows = db.execute("""
-        SELECT id, query_data, result_count, cost, created_at
-        FROM searches WHERE user_id=? ORDER BY created_at DESC LIMIT 50
-    """, (user["id"],)).fetchall()
+    rows = fetchall(db, "SELECT id, query_data, result_count, cost, created_at FROM searches WHERE user_id=? ORDER BY created_at DESC LIMIT 50", (user["id"],))
     db.close()
-    return [dict(r) for r in rows]
+    return rows
 
 # ── STRIPE ────────────────────────────────────────────────────────────────────
 @app.post("/api/credits/confirm")
@@ -375,13 +430,11 @@ async def sumup_success(request: Request):
         pack   = CREDIT_PACKS.get(pack_id, {})
         amount = pack.get("price_eur", 0)
         db = get_db()
-        existing = db.execute("SELECT id FROM transactions WHERE stripe_id=?", (order_id,)).fetchone()
+        existing = fetchone(db, "SELECT id FROM transactions WHERE stripe_id=?", (order_id,))
         if not existing:
-            db.execute("UPDATE users SET credits=credits+? WHERE id=?", (credits, uid))
-            db.execute("""
-                INSERT INTO transactions (user_id, type, credits, amount_eur, stripe_id, status)
-                VALUES (?,?,?,?,?,'completed')
-            """, (uid, "purchase", credits, amount, order_id))
+            execute(db, "UPDATE users SET credits=credits+? WHERE id=?", (credits, uid))
+            execute(db, "INSERT INTO transactions (user_id, type, credits, amount_eur, stripe_id, status) VALUES (?,?,?,?,?,'completed')",
+                    (uid, "purchase", credits, amount, order_id))
             db.commit()
         db.close()
     except Exception as e:
@@ -391,23 +444,25 @@ async def sumup_success(request: Request):
 @app.get("/api/transactions")
 async def transactions(user=Depends(get_current_user)):
     db = get_db()
-    rows = db.execute("""
-        SELECT id, type, credits, amount_eur, status, created_at
-        FROM transactions WHERE user_id=? ORDER BY created_at DESC LIMIT 20
-    """, (user["id"],)).fetchall()
+    rows = fetchall(db, "SELECT id, type, credits, amount_eur, status, created_at FROM transactions WHERE user_id=? ORDER BY created_at DESC LIMIT 20", (user["id"],))
     db.close()
-    return [dict(r) for r in rows]
+    return rows
 
 # ── ADMIN ─────────────────────────────────────────────────────────────────────
 @app.get("/api/admin/stats")
 async def admin_stats(admin=Depends(require_admin)):
     db = get_db()
-    total_users    = db.execute("SELECT COUNT(*) FROM users").fetchone()[0]
-    new_today      = db.execute("SELECT COUNT(*) FROM users WHERE date(created_at)=date('now')").fetchone()[0]
-    total_searches = db.execute("SELECT COUNT(*) FROM searches").fetchone()[0]
-    searches_today = db.execute("SELECT COUNT(*) FROM searches WHERE date(created_at)=date('now')").fetchone()[0]
-    revenue        = db.execute("SELECT COALESCE(SUM(amount_eur),0) FROM transactions WHERE status='completed'").fetchone()[0]
-    banned         = db.execute("SELECT COUNT(*) FROM users WHERE banned=1").fetchone()[0]
+    def cnt(sql, p=()):
+        if is_pg():
+            cur=db.cursor(); cur.execute(q(sql),p); r=cur.fetchone(); cur.close()
+            return list(r.values())[0] if r else 0
+        return db.execute(q(sql),p).fetchone()[0]
+    total_users    = cnt("SELECT COUNT(*) FROM users")
+    new_today      = cnt("SELECT COUNT(*) FROM users WHERE date(created_at)=CURRENT_DATE") if is_pg() else cnt("SELECT COUNT(*) FROM users WHERE date(created_at)=date('now')")
+    total_searches = cnt("SELECT COUNT(*) FROM searches")
+    searches_today = cnt("SELECT COUNT(*) FROM searches WHERE date(created_at)=CURRENT_DATE") if is_pg() else cnt("SELECT COUNT(*) FROM searches WHERE date(created_at)=date('now')")
+    revenue        = cnt("SELECT COALESCE(SUM(amount_eur),0) FROM transactions WHERE status='completed'")
+    banned         = cnt("SELECT COUNT(*) FROM users WHERE banned=TRUE") if is_pg() else cnt("SELECT COUNT(*) FROM users WHERE banned=1")
     db.close()
     return {
         "total_users": total_users, "new_today": new_today,
@@ -420,32 +475,34 @@ async def admin_users(admin=Depends(require_admin), page: int = 1, search: str =
     db     = get_db()
     offset = (page - 1) * 20
     if search:
-        rows  = db.execute("SELECT id,email,username,role,credits,free_left,created_at,last_login,banned FROM users WHERE email LIKE ? OR username LIKE ? ORDER BY created_at DESC LIMIT 20 OFFSET ?", (f"%{search}%", f"%{search}%", offset)).fetchall()
-        total = db.execute("SELECT COUNT(*) FROM users WHERE email LIKE ? OR username LIKE ?", (f"%{search}%", f"%{search}%")).fetchone()[0]
+        rows  = fetchall(db, "SELECT id,email,username,role,credits,free_left,created_at,last_login,banned FROM users WHERE email LIKE ? OR username LIKE ? ORDER BY created_at DESC LIMIT 20 OFFSET ?", (f"%{search}%", f"%{search}%", offset))
+        total_r = fetchone(db, "SELECT COUNT(*) as c FROM users WHERE email LIKE ? OR username LIKE ?", (f"%{search}%", f"%{search}%"))
     else:
-        rows  = db.execute("SELECT id,email,username,role,credits,free_left,created_at,last_login,banned FROM users ORDER BY created_at DESC LIMIT 20 OFFSET ?", (offset,)).fetchall()
-        total = db.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+        rows  = fetchall(db, "SELECT id,email,username,role,credits,free_left,created_at,last_login,banned FROM users ORDER BY created_at DESC LIMIT 20 OFFSET ?", (offset,))
+        total_r = fetchone(db, "SELECT COUNT(*) as c FROM users", ())
+    total = total_r["c"] if total_r else 0
     db.close()
-    return {"users": [dict(r) for r in rows], "total": total}
+    return {"users": rows, "total": total}
 
 @app.patch("/api/admin/users/{user_id}")
 async def admin_update(user_id: int, data: AdminUserUpdate, admin=Depends(require_admin)):
     db = get_db()
     if data.credits is not None:
-        db.execute("UPDATE users SET credits=? WHERE id=?", (data.credits, user_id))
+        execute(db, "UPDATE users SET credits=? WHERE id=?", (data.credits, user_id))
     if data.banned is not None:
-        db.execute("UPDATE users SET banned=? WHERE id=?", (1 if data.banned else 0, user_id))
+        banned_val = data.banned if is_pg() else (1 if data.banned else 0)
+        execute(db, "UPDATE users SET banned=? WHERE id=?", (banned_val, user_id))
     if data.role is not None:
-        db.execute("UPDATE users SET role=? WHERE id=?", (data.role, user_id))
+        execute(db, "UPDATE users SET role=? WHERE id=?", (data.role, user_id))
     db.commit(); db.close()
     return {"message": "Mis à jour"}
 
 @app.delete("/api/admin/users/{user_id}")
 async def admin_delete(user_id: int, admin=Depends(require_admin)):
     db = get_db()
-    db.execute("DELETE FROM searches WHERE user_id=?", (user_id,))
-    db.execute("DELETE FROM transactions WHERE user_id=?", (user_id,))
-    db.execute("DELETE FROM users WHERE id=?", (user_id,))
+    execute(db, "DELETE FROM searches WHERE user_id=?", (user_id,))
+    execute(db, "DELETE FROM transactions WHERE user_id=?", (user_id,))
+    execute(db, "DELETE FROM users WHERE id=?", (user_id,))
     db.commit(); db.close()
     return {"message": "Supprimé"}
 
@@ -454,8 +511,8 @@ async def admin_add_credits(user_id: int, request: Request, admin=Depends(requir
     body    = await request.json()
     credits = int(body.get("credits", 0))
     db = get_db()
-    db.execute("UPDATE users SET credits=credits+? WHERE id=?", (credits, user_id))
-    db.execute("INSERT INTO transactions (user_id,type,credits,amount_eur,status) VALUES (?,?,?,0,'completed')", (user_id, "admin_grant", credits))
+    execute(db, "UPDATE users SET credits=credits+? WHERE id=?", (credits, user_id))
+    execute(db, "INSERT INTO transactions (user_id,type,credits,amount_eur,status) VALUES (?,?,?,0,'completed')", (user_id, "admin_grant", credits))
     db.commit(); db.close()
     return {"message": f"{credits} crédits ajoutés"}
 
@@ -463,24 +520,16 @@ async def admin_add_credits(user_id: int, request: Request, admin=Depends(requir
 async def admin_searches(admin=Depends(require_admin), page: int = 1):
     db     = get_db()
     offset = (page - 1) * 50
-    rows   = db.execute("""
-        SELECT s.id, s.query_data, s.result_count, s.cost, s.created_at, u.email, u.username
-        FROM searches s JOIN users u ON s.user_id=u.id
-        ORDER BY s.created_at DESC LIMIT 50 OFFSET ?
-    """, (offset,)).fetchall()
+    rows   = fetchall(db, "SELECT s.id, s.query_data, s.result_count, s.cost, s.created_at, u.email, u.username FROM searches s JOIN users u ON s.user_id=u.id ORDER BY s.created_at DESC LIMIT 50 OFFSET ?", (offset,))
     db.close()
-    return [dict(r) for r in rows]
+    return rows
 
 @app.get("/api/admin/transactions")
 async def admin_tx(admin=Depends(require_admin)):
     db   = get_db()
-    rows = db.execute("""
-        SELECT t.id, t.type, t.credits, t.amount_eur, t.status, t.created_at, u.email, u.username
-        FROM transactions t JOIN users u ON t.user_id=u.id
-        ORDER BY t.created_at DESC LIMIT 100
-    """).fetchall()
+    rows = fetchall(db, "SELECT t.id, t.type, t.credits, t.amount_eur, t.status, t.created_at, u.email, u.username FROM transactions t JOIN users u ON t.user_id=u.id ORDER BY t.created_at DESC LIMIT 100")
     db.close()
-    return [dict(r) for r in rows]
+    return rows
 
 # ── STATIC ────────────────────────────────────────────────────────────────────
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
