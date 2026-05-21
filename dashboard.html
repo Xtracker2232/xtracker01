@@ -255,38 +255,141 @@ input[type=checkbox]{display:none}
         <div class="card"><div class="card-label">Gratuites</div><div class="card-val accent" id="card-free">—</div><div class="card-sub">recherches restantes</div></div>
         <div class="card"><div class="card-label">Crédits</div><div class="card-val accent" id="card-credits">—</div><div class="card-sub">disponibles</div></div>
       </div>
-      <div class="panel-card">
-        <div class="panel-tabs">
-          <button class="ptab active" onclick="switchPTab('adv',this)">Avancée</button>
-          <button class="ptab" onclick="switchPTab('lookup',this)">Lookup</button>
+
+      <!-- TABS -->
+      <div style="display:flex;gap:0;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:9px;padding:3px;margin-bottom:12px">
+        <button class="ptab active" style="flex:1;padding:7px;border:none;font-size:12px;font-weight:500;color:var(--muted2);cursor:pointer;border-radius:7px;transition:all .2s;font-family:inherit" onclick="switchPTab('fr',this)">🇫🇷 Recherche française</button>
+        <button class="ptab" style="flex:1;padding:7px;border:none;font-size:12px;font-weight:500;color:var(--muted2);cursor:pointer;border-radius:7px;transition:all .2s;font-family:inherit" onclick="switchPTab('email',this)">✉️ Email</button>
+        <button class="ptab" style="flex:1;padding:7px;border:none;font-size:12px;font-weight:500;color:var(--muted2);cursor:pointer;border-radius:7px;transition:all .2s;font-family:inherit" onclick="switchPTab('pro',this)">⚡ Pro</button>
+      </div>
+
+      <!-- TAB FR - ACCORDÉONS -->
+      <div id="ptab-fr">
+        <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
+
+          <!-- IDENTITÉ -->
+          <div class="acc-sec open" id="acc-identite" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+            <div onclick="toggleAcc('identite')" style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer;user-select:none">
+              <div style="display:flex;align-items:center;gap:8px"><span>👤</span><span style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700">Identité</span><span id="acnt-identite" style="display:none;font-size:10px;color:var(--accent2);background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);padding:1px 7px;border-radius:10px"></span></div>
+              <span id="acarr-identite" style="color:var(--muted);font-size:10px;transition:transform .25s">▼</span>
+            </div>
+            <div id="accbody-identite" style="padding:0 14px 14px">
+              <div class="fg">
+                <div class="fgroup"><label>Nom</label><input id="f-nom" placeholder="Dupont" oninput="acCount('identite')"></div>
+                <div class="fgroup"><label>Prénom</label><input id="f-prenom" placeholder="Jean" oninput="acCount('identite')"></div>
+                <div class="fgroup"><label>Nom de naissance</label><input id="f-nom_naissance" placeholder="Martin" oninput="acCount('identite')"></div>
+                <div class="fgroup"><label>Nom affiché</label><input id="f-nom_affichage" placeholder="Jean Dupont" oninput="acCount('identite')"></div>
+                <div class="fgroup"><label>Nom d'utilisateur</label><input id="f-nom_utilisateur" placeholder="jean_d" oninput="acCount('identite')"></div>
+                <div class="fgroup"><label>Genre</label><select id="f-genre" onchange="acCount('identite')"><option value="">Tous</option><option value="M">Masculin</option><option value="F">Féminin</option></select></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- NAISSANCE -->
+          <div class="acc-sec" id="acc-naissance" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+            <div onclick="toggleAcc('naissance')" style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer;user-select:none">
+              <div style="display:flex;align-items:center;gap:8px"><span>🎂</span><span style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700">Naissance</span><span id="acnt-naissance" style="display:none;font-size:10px;color:var(--accent2);background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);padding:1px 7px;border-radius:10px"></span></div>
+              <span id="acarr-naissance" style="color:var(--muted);font-size:10px;transition:transform .25s">▼</span>
+            </div>
+            <div id="accbody-naissance" style="display:none;padding:0 14px 14px">
+              <div class="fg">
+                <div class="fgroup"><label>Jour</label><select id="f-jour_naissance" onchange="acCount('naissance')"><option value="">Jour</option>${Array.from({length:31},(_,i)=>`<option value="${i+1}">${i+1}</option>`).join('')}</select></div>
+                <div class="fgroup"><label>Mois</label><select id="f-mois_naissance" onchange="acCount('naissance')"><option value="">Mois</option>${['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'].map((m,i)=>`<option value="${i+1}">${m}</option>`).join('')}</select></div>
+                <div class="fgroup"><label>Année</label><input id="f-annee_naissance" placeholder="1990" maxlength="4" oninput="acCount('naissance')"></div>
+                <div class="fgroup"><label>Date exacte</label><input id="f-date_naissance" placeholder="1990-06-15" oninput="acCount('naissance')"></div>
+                <div class="fgroup"><label>Ville de naissance</label><input id="f-ville_naissance" placeholder="Paris" oninput="acCount('naissance')"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CONTACT -->
+          <div class="acc-sec" id="acc-contact" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+            <div onclick="toggleAcc('contact')" style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer;user-select:none">
+              <div style="display:flex;align-items:center;gap:8px"><span>✉️</span><span style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700">Contact</span><span id="acnt-contact" style="display:none;font-size:10px;color:var(--accent2);background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);padding:1px 7px;border-radius:10px"></span></div>
+              <span id="acarr-contact" style="color:var(--muted);font-size:10px;transition:transform .25s">▼</span>
+            </div>
+            <div id="accbody-contact" style="display:none;padding:0 14px 14px">
+              <div class="fg">
+                <div class="fgroup"><label>Email</label><input id="f-email" type="email" placeholder="jean@example.com" oninput="acCount('contact')"></div>
+                <div class="fgroup"><label>Téléphone</label><input id="f-telephone" placeholder="0612345678" oninput="acCount('contact')"></div>
+                <div class="fgroup"><label>Mobile</label><input id="f-mobile" placeholder="0612345678" oninput="acCount('contact')"></div>
+                <div class="fgroup"><label>Adresse IP</label><input id="f-adresse_ip" placeholder="192.168.1.1" oninput="acCount('contact')"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- LOCALISATION -->
+          <div class="acc-sec" id="acc-localisation" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+            <div onclick="toggleAcc('localisation')" style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer;user-select:none">
+              <div style="display:flex;align-items:center;gap:8px"><span>📍</span><span style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700">Localisation</span><span id="acnt-localisation" style="display:none;font-size:10px;color:var(--accent2);background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);padding:1px 7px;border-radius:10px"></span></div>
+              <span id="acarr-localisation" style="color:var(--muted);font-size:10px;transition:transform .25s">▼</span>
+            </div>
+            <div id="accbody-localisation" style="display:none;padding:0 14px 14px">
+              <div class="fg">
+                <div class="fgroup" style="grid-column:1/-1"><label>Adresse</label><input id="f-adresse" placeholder="10 rue de la Paix" oninput="acCount('localisation')"></div>
+                <div class="fgroup"><label>Code postal</label><input id="f-code_postal" placeholder="75001" oninput="acCount('localisation')"></div>
+                <div class="fgroup"><label>Ville</label><input id="f-ville" placeholder="Paris" oninput="acCount('localisation')"></div>
+                <div class="fgroup"><label>Département</label><input id="f-departement" placeholder="75" oninput="acCount('localisation')"></div>
+                <div class="fgroup"><label>Région</label><input id="f-region" placeholder="Ile-de-France" oninput="acCount('localisation')"></div>
+                <div class="fgroup"><label>Pays</label><input id="f-pays" placeholder="FR" maxlength="2" oninput="acCount('localisation')"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CHAMPS AVANCÉS -->
+          <div class="acc-sec" id="acc-avances" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+            <div onclick="toggleAcc('avances')" style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer;user-select:none">
+              <div style="display:flex;align-items:center;gap:8px"><span>🔑</span><span style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700">Champs avancés</span><span id="acnt-avances" style="display:none;font-size:10px;color:var(--accent2);background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);padding:1px 7px;border-radius:10px"></span></div>
+              <span id="acarr-avances" style="color:var(--muted);font-size:10px;transition:transform .25s">▼</span>
+            </div>
+            <div id="accbody-avances" style="display:none;padding:0 14px 14px">
+              <div class="fg">
+                <div class="fgroup"><label>NIR (Sécu)</label><input id="f-nir" placeholder="1234567890123" oninput="acCount('avances')"></div>
+                <div class="fgroup"><label>IBAN</label><input id="f-iban" placeholder="FR76..." oninput="acCount('avances')"></div>
+                <div class="fgroup"><label>BIC</label><input id="f-bic" placeholder="BNPAFRPP" oninput="acCount('avances')"></div>
+                <div class="fgroup"><label>SIRET</label><input id="f-siret" placeholder="12345678901234" oninput="acCount('avances')"></div>
+                <div class="fgroup"><label>Société</label><input id="f-societe" placeholder="Ma Société" oninput="acCount('avances')"></div>
+                <div class="fgroup"><label>Profession</label><input id="f-profession" placeholder="Ingénieur" oninput="acCount('avances')"></div>
+              </div>
+            </div>
+          </div>
+
         </div>
-        <div class="panel-body">
-          <div id="ptab-adv">
-            <div class="fg">
-              <div class="fgroup"><label>Nom</label><input id="s-nom" placeholder="Dupont"></div>
-              <div class="fgroup"><label>Prénom</label><input id="s-prenom" placeholder="Jean"></div>
-              <div class="fgroup"><label>Email</label><input id="s-email" type="email" placeholder="jean@gmail.com"></div>
-              <div class="fgroup"><label>Téléphone</label><input id="s-tel" placeholder="0612345678"></div>
-              <div class="fgroup"><label>Adresse</label><input id="s-adresse" placeholder="12 rue de la Paix"></div>
-              <div class="fgroup"><label>Ville</label><input id="s-ville" placeholder="Paris"></div>
-              <div class="fgroup"><label>Code postal</label><input id="s-cp" placeholder="75001"></div>
-              <div class="fgroup"><label>Pays</label><input id="s-pays" placeholder="FR"></div>
-            </div>
-            <label class="toggle-row" style="cursor:pointer">
-              <input type="checkbox" id="flexible" checked><div class="tog"></div>
-              <span class="tog-label">Recherche flexible</span>
-            </label>
-            <button class="btn-run" id="btn-search" onclick="doSearch()">Lancer la recherche</button>
+
+        <!-- BOTTOM BAR -->
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" id="flexible" checked><div class="tog"></div>
+            <span style="font-size:11px;color:var(--muted2)">Recherche <strong style="color:var(--text);font-weight:500">flexible</strong></span>
+          </label>
+          <div style="display:flex;gap:8px">
+            <button onclick="clearSearch()" style="padding:8px 14px;background:transparent;border:1px solid var(--border);color:var(--muted2);font-size:12px;border-radius:7px;cursor:pointer;font-family:inherit">Effacer</button>
+            <button class="btn-run" id="btn-search" onclick="doSearch()" style="padding:9px 20px;width:auto">Rechercher</button>
           </div>
-          <div id="ptab-lookup" style="display:none">
-            <div class="fg" style="grid-template-columns:1fr;margin-bottom:14px">
-              <div class="fgroup"><label>Email, téléphone ou IBAN</label><input id="l-val" placeholder="jean@gmail.com / 0612345678"></div>
-            </div>
-            <button class="btn-run" id="btn-lookup" onclick="doLookup()">Exécuter le lookup</button>
-          </div>
-          <div id="results"></div>
         </div>
       </div>
+
+      <!-- TAB EMAIL -->
+      <div id="ptab-email" style="display:none">
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:12px">
+          <div class="fg" style="grid-template-columns:1fr">
+            <div class="fgroup"><label>Email</label><input id="lk-email" type="email" placeholder="jean@example.com"></div>
+          </div>
+        </div>
+        <button class="btn-run" id="btn-email" onclick="doEmailSearch()">Rechercher</button>
+      </div>
+
+      <!-- TAB PRO -->
+      <div id="ptab-pro" style="display:none">
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:12px">
+          <div class="fg" style="grid-template-columns:1fr">
+            <div class="fgroup"><label>Email, téléphone ou IBAN</label><input id="l-val" placeholder="jean@gmail.com / 0612345678 / FR76..."></div>
+          </div>
+        </div>
+        <button class="btn-run" id="btn-lookup" onclick="doLookup()">Exécuter le lookup</button>
+      </div>
+
+      <div id="results"></div>
     </div>
 
     <!-- HISTORY -->
@@ -412,8 +515,31 @@ function goTo(page, sbBtn, bnId){
 function switchPTab(t,btn){
   document.querySelectorAll('.ptab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  g('ptab-adv').style.display=t==='adv'?'block':'none';
-  g('ptab-lookup').style.display=t==='lookup'?'block':'none';
+  ['fr','email','pro'].forEach(id=>{const el=g('ptab-'+id);if(el)el.style.display=id===t?'block':'none'});
+  g('results').innerHTML='';
+}
+
+const accFields={
+  identite:['f-nom','f-prenom','f-nom_naissance','f-nom_affichage','f-nom_utilisateur','f-genre'],
+  naissance:['f-jour_naissance','f-mois_naissance','f-annee_naissance','f-date_naissance','f-ville_naissance'],
+  contact:['f-email','f-telephone','f-mobile','f-adresse_ip'],
+  localisation:['f-adresse','f-code_postal','f-ville','f-departement','f-region','f-pays'],
+  avances:['f-nir','f-iban','f-bic','f-siret','f-societe','f-profession'],
+};
+function toggleAcc(name){
+  const body=g('accbody-'+name),arr=g('acarr-'+name);
+  const open=body.style.display!=='none';
+  body.style.display=open?'none':'block';
+  arr.style.transform=open?'':'rotate(180deg)';
+}
+function acCount(name){
+  const filled=(accFields[name]||[]).filter(id=>{const el=g(id);return el&&el.value.trim()!==''}).length;
+  const cnt=g('acnt-'+name);
+  if(cnt){cnt.textContent=filled;cnt.style.display=filled>0?'inline':'none'}
+}
+function clearSearch(){
+  Object.values(accFields).flat().forEach(id=>{const el=g(id);if(el){el.tagName==='SELECT'?el.value='':el.value=''}});
+  Object.keys(accFields).forEach(n=>acCount(n));
   g('results').innerHTML='';
 }
 
@@ -452,11 +578,20 @@ function showNoCredits(){
 }
 
 async function doSearch(){
-  const payload={flexible:g('flexible').checked};
-  const map={nom_famille:'s-nom',prenom:'s-prenom',email:'s-email',telephone:'s-tel',adresse:'s-adresse',ville:'s-ville',code_postal:'s-cp',pays:'s-pays'};
-  Object.entries(map).forEach(([k,id])=>{const v=g(id).value.trim();if(v)payload[k]=v});
-  if(Object.keys(payload).length<=1){showErr('Remplissez au moins un champ.');return}
-  setLoad('btn-search',true,'Lancer la recherche');g('results').innerHTML='';
+  const payload={flexible:g('flexible')?.checked||true,per_page:10};
+  const map={
+    nom_famille:'f-nom',prenom:'f-prenom',nom_naissance:'f-nom_naissance',
+    nom_affichage:'f-nom_affichage',nom_utilisateur:'f-nom_utilisateur',genre:'f-genre',
+    jour_naissance:'f-jour_naissance',mois_naissance:'f-mois_naissance',
+    annee_naissance:'f-annee_naissance',date_naissance:'f-date_naissance',ville_naissance:'f-ville_naissance',
+    email:'f-email',telephone:'f-telephone',mobile:'f-mobile',adresse_ip:'f-adresse_ip',
+    adresse:'f-adresse',code_postal:'f-code_postal',ville:'f-ville',
+    departement:'f-departement',region:'f-region',pays:'f-pays',
+    nir:'f-nir',iban:'f-iban',bic:'f-bic',siret:'f-siret',societe:'f-societe',profession:'f-profession',
+  };
+  Object.entries(map).forEach(([k,id])=>{const v=g(id)?.value?.trim();if(v&&v!=='')payload[k]=v});
+  if(Object.keys(payload).length<=2){showErr('Remplissez au moins un champ.');return}
+  setLoad('btn-search',true,'Rechercher');g('results').innerHTML='';
   try{
     const r=await fetch(`${API}/api/search`,{method:'POST',headers:hdr(),body:JSON.stringify(payload)});
     const d=await r.json();
@@ -464,7 +599,21 @@ async function doSearch(){
     if(!r.ok){showErr(d.detail||'Erreur');return}
     renderResults(d.results,d.total,d.took_ms,d.free_left,d.credits);
   }catch(e){showErr('Erreur réseau : '+e.message)}
-  finally{setLoad('btn-search',false,'Lancer la recherche')}
+  finally{setLoad('btn-search',false,'Rechercher')}
+}
+
+async function doEmailSearch(){
+  const email=g('lk-email')?.value?.trim();
+  if(!email){showErr('Entrez un email.');return}
+  setLoad('btn-email',true,'Rechercher');g('results').innerHTML='';
+  try{
+    const r=await fetch(`${API}/api/lookup`,{method:'POST',headers:hdr(),body:JSON.stringify({value:email})});
+    const d=await r.json();
+    if(r.status===402){showNoCredits();return}
+    if(!r.ok){showErr(d.detail||'Erreur');return}
+    renderResults(d.results,d.total,0,d.free_left,d.credits);
+  }catch(e){showErr('Erreur réseau : '+e.message)}
+  finally{setLoad('btn-email',false,'Rechercher')}
 }
 
 async function doLookup(){
