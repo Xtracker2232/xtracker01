@@ -317,15 +317,52 @@ class LoginModel(BaseModel):
     password: str
 
 class SearchModel(BaseModel):
+    # Identité
     nom_famille: str = ""
     prenom: str = ""
+    nom_naissance: str = ""
+    nom_affichage: str = ""
+    nom_utilisateur: str = ""
+    genre: str = ""
+    civilite: str = ""
+    # Naissance
+    date_naissance: str = ""
+    annee_naissance: str = ""
+    jour_naissance: int = None
+    mois_naissance: int = None
+    ville_naissance: str = ""
+    lieu_naissance: str = ""
+    # Contact
     email: str = ""
     telephone: str = ""
+    mobile: str = ""
+    adresse_ip: str = ""
+    # Adresse
     adresse: str = ""
-    ville: str = ""
+    complement_adresse: str = ""
     code_postal: str = ""
+    ville: str = ""
     pays: str = ""
+    region: str = ""
+    departement: str = ""
+    # Identifiants uniques
+    nir: str = ""
+    iban: str = ""
+    bic: str = ""
+    siret: str = ""
+    siren: str = ""
+    # Véhicule
+    vin_plaque: str = ""
+    immatriculation: str = ""
+    marque: str = ""
+    modele: str = ""
+    # Professionnel
+    societe: str = ""
+    profession: str = ""
+    fonction: str = ""
+    # Options
     flexible: bool = True
+    per_page: int = 10
 
 class LookupModel(BaseModel):
     value: str
@@ -436,11 +473,15 @@ async def search(data: SearchModel, user=Depends(get_current_user)):
     if user["free_left"] <= 0 and user["credits"] <= 0:
         raise HTTPException(402, "Plus de crédits")
     payload = {"flexible": data.flexible, "per_page": 10}
-    fields = ["nom_famille","prenom","nom_naissance","nom_affichage","nom_utilisateur","genre",
-              "jour_naissance","mois_naissance","annee_naissance","date_naissance","ville_naissance",
-              "email","telephone","mobile","adresse_ip",
-              "adresse","code_postal","ville","departement","region","pays",
-              "nir","iban","bic","siret","siren","vin_plaque","societe","profession"]
+    fields = [
+        "nom_famille","prenom","nom_naissance","nom_affichage","nom_utilisateur","genre","civilite",
+        "jour_naissance","mois_naissance","annee_naissance","date_naissance","ville_naissance","lieu_naissance",
+        "email","telephone","mobile","adresse_ip",
+        "adresse","complement_adresse","code_postal","ville","departement","region","pays",
+        "nir","iban","bic","siret","siren",
+        "vin_plaque","immatriculation","marque","modele",
+        "societe","profession","fonction"
+    ]
     for f in fields:
         val = getattr(data, f, None)
         if val: payload[f] = val

@@ -567,38 +567,111 @@ function setLoad(id,on,label){
 
 function renderResults(results,total,took,free_left,credits){
   USER.free_left=free_left;USER.credits=credits;
-  g('free-left').textContent=free_left;g('paid-credits').textContent=credits;
-  g('card-free').textContent=free_left;g('card-credits').textContent=credits;
+  g('card-free').textContent=free_left;
+  g('card-credits').textContent=credits;
+  g('free-left').textContent=free_left;
+  g('paid-credits').textContent=credits;
   const el=g('results');
-  if(!results.length){el.innerHTML='<div class="empty">Aucun résultat trouvé.</div>';return}
-  let html=`<div class="res-meta"><span><b style="color:var(--text)">${total.toLocaleString()}</b> résultat(s)</span><span>${took}ms</span></div>`;
-  results.slice(0,8).forEach((p,i)=>{
-    const conf=p._confidence||0;
-    const cls=conf>=70?'hi':conf>=40?'md':'lo';
-    const name=[p.prenom,p.nom_famille].filter(Boolean).join(' ')||'Inconnu';
+  if(!results.length){
+    el.innerHTML=`<div style="text-align:center;padding:40px;background:var(--bg2);border:1px solid var(--border);border-radius:10px">
+      <div style="font-size:32px;margin-bottom:10px">😶</div>
+      <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700">Aucun résultat</div>
+      <div style="font-size:13px;color:var(--muted2);margin-top:6px">Essayez avec moins de critères ou activez la recherche flexible.</div>
+    </div>`;
+    return;
+  }
+  const LABELS={
+    nom_famille:'Nom',prenom:'Prénom',nom_naissance:'Nom naissance',nom_affichage:'Nom affiché',
+    nom_utilisateur:'Utilisateur',genre:'Genre',civilite:'Civilité',
+    date_naissance:'Naissance',annee_naissance:'Année naiss.',ville_naissance:'Ville naiss.',lieu_naissance:'Lieu naiss.',
+    email:'Email',telephone:'Téléphone',mobile:'Mobile',adresse_ip:'IP',
+    adresse:'Adresse',complement_adresse:'Complément',code_postal:'Code postal',ville:'Ville',
+    pays:'Pays',region:'Région',departement:'Département',
+    nir:'NIR (Sécu)',iban:'IBAN',bic:'BIC',siret:'SIRET',siren:'SIREN',
+    vin_plaque:'VIN/Plaque',immatriculation:'Immatriculation',marque:'Marque',modele:'Modèle',
+    societe:'Société',profession:'Profession',fonction:'Fonction',
+  };
+  const SKIP=['_confidence','_sources','famille','membres_famille','family','flexible','per_page'];
+  let html=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800">
+      ${total.toLocaleString()} résultat${total>1?'s':''} <span style="font-size:12px;color:var(--muted2);font-family:'Inter',sans-serif;font-weight:400">· ${results.length} affiché(s) · ${took}ms</span>
+    </div>
+  </div>`;
+  results.forEach((p,i)=>{
+    const name=[p.prenom,p.nom_famille].filter(Boolean).join(' ')||'Profil inconnu';
     const sub=[p.email,p.telephone,p.ville].filter(Boolean).join(' · ')||'—';
-    const fmap=[['Nom',p.nom_famille],['Prénom',p.prenom],['Email',p.email],['Téléphone',p.telephone],['Mobile',p.mobile],['Adresse',p.adresse],['Code postal',p.code_postal],['Ville',p.ville],['Région',p.region],['Pays',p.pays],['Naissance',p.date_naissance],['Genre',p.genre==='M'?'Masculin':p.genre==='F'?'Féminin':p.genre],['Société',p.societe],['Profession',p.profession],['NIR',p.nir],['IBAN',p.iban],['SIRET',p.siret]].filter(([,v])=>v&&typeof v==='string'&&v.trim()!==''&&!v.includes('undefined'));
+    const fmap=Object.entries(p)
+      .filter(([k,v])=>!SKIP.includes(k)&&v&&typeof v==='string'&&v.trim()!==''&&v!=='undefined')
+      .map(([k,v])=>[LABELS[k]||k,v]);
     const fh=fmap.map(([k,v])=>`<div class="rf"><div class="rf-k">${k}</div><div class="rf-v">${v}</div></div>`).join('');
-    const sh=(p._sources||[]).map(s=>`<span class="src">${s}</span>`).join('');
-    // Section famille
-    const famille = p.famille || p.membres_famille || p.family || [];
-    const famHtml = famille.length ? `
+    const famille=p.famille||p.membres_famille||p.family||[];
+    const famHtml=famille.length?`
       <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border)">
-        <div style="font-size:10px;font-weight:600;color:var(--muted2);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">👨‍👩‍👧 Famille associée</div>
-        <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="font-size:10px;font-weight:600;color:var(--muted2);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">👨‍👩‍👧 Famille associée (${famille.length})</div>
+        <div style="display:flex;flex-direction:column;gap:5px">
           ${famille.map(m=>`<div style="background:rgba(99,102,241,0.05);border:1px solid rgba(99,102,241,0.1);border-radius:6px;padding:8px 12px;font-size:12px">
-            <span style="color:var(--text);font-weight:500">${m.prenom||''} ${m.nom_famille||''}</span>
-            ${m.lien?`<span style="color:var(--muted2);margin-left:8px">${m.lien}</span>`:''}
-            ${m.date_naissance?`<span style="color:var(--muted);margin-left:8px">né(e) le ${m.date_naissance}</span>`:''}
+            <span style="color:var(--text);font-weight:600">${m.prenom||''} ${m.nom_famille||''}</span>
+            ${m.lien?`<span style="color:var(--accent2);margin-left:8px;font-size:11px">${m.lien}</span>`:''}
+            ${m.date_naissance?`<span style="color:var(--muted2);margin-left:8px">né(e) le ${m.date_naissance}</span>`:''}
+            ${m.email?`<span style="color:var(--muted2);margin-left:8px">${m.email}</span>`:''}
+            ${m.telephone?`<span style="color:var(--muted2);margin-left:8px">${m.telephone}</span>`:''}
           </div>`).join('')}
         </div>
       </div>` : '';
-    html+=`<div class="rcard"><div class="rcard-top" onclick="tog(${i})">
-      <div><div class="rname">${name}</div><div class="rmeta">${sub}</div></div>
-      <div style="display:flex;align-items:center"><span class="badge ${cls}">${conf}%</span><span class="rarr" id="arr${i}">↓</span></div>
-    </div><div class="rcard-body" id="rb${i}"><div class="rfields">${fh}</div>${famHtml}${sh?`<div class="rsources">${sh}</div>`:''}</div></div>`;
+    const sh=(p._sources||[]).map(s=>`<span class="src">${s}</span>`).join('');
+    const rawData=JSON.stringify(p,null,2);
+    window[`_result_${i}`]=p;
+    html+=`<div class="rcard" style="animation-delay:${i*.04}s">
+      <div class="rcard-top" onclick="tog(${i})">
+        <div>
+          <div class="rname">${name}</div>
+          <div class="rmeta">${sub}</div>
+        </div>
+        <div class="rtop-right">
+          <button onclick="event.stopPropagation();copyResult(${i})" title="Copier" style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);color:var(--accent2);padding:4px 10px;border-radius:5px;cursor:pointer;font-size:12px;font-family:inherit">📋</button>
+          <span class="rarr" id="arr${i}">▼</span>
+        </div>
+      </div>
+      <div class="rcard-body" id="rb${i}">
+        <div class="rfields">${fh||'<div style="color:var(--muted);font-size:13px">Aucun champ disponible</div>'}</div>
+        ${famHtml}
+        ${sh?`<div class="rsources" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">${sh}</div>`:''}
+        <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);display:flex;gap:8px">
+          <button onclick="toggleRaw(${i})" style="padding:6px 14px;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--muted2);font-size:12px;border-radius:6px;cursor:pointer;font-family:inherit">🔍 Approfondir</button>
+          <button onclick="copyResult(${i})" style="padding:6px 14px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);color:var(--accent2);font-size:12px;border-radius:6px;cursor:pointer;font-family:inherit">📋 Copier</button>
+        </div>
+        <div id="raw${i}" style="display:none;margin-top:10px;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:8px;padding:14px;font-family:monospace;font-size:11px;color:var(--muted2);white-space:pre-wrap;word-break:break-all;max-height:300px;overflow-y:auto">${rawData.replace(/</g,'&lt;')}</div>
+      </div>
+    </div>`;
   });
   el.innerHTML=html;
+}
+
+
+function toggleRaw(i){
+  const el=document.getElementById('raw'+i);
+  const btn=el.previousElementSibling.previousElementSibling.querySelector('button');
+  if(el.style.display==='none'){el.style.display='block';}
+  else{el.style.display='none';}
+}
+
+function copyResult(i){
+  const p=window[`_result_${i}`];
+  if(!p){return}
+  const lines=Object.entries(p)
+    .filter(([k,v])=>!['_confidence','_sources','famille','membres_famille','family'].includes(k)&&v&&typeof v==='string'&&v.trim()!=='')
+    .map(([k,v])=>`${k}: ${v}`);
+  const famille=p.famille||p.membres_famille||p.family||[];
+  if(famille.length){
+    lines.push('--- Famille ---');
+    famille.forEach(m=>{
+      const parts=[m.prenom,m.nom_famille,m.lien,m.date_naissance].filter(Boolean);
+      lines.push(parts.join(' | '));
+    });
+  }
+  navigator.clipboard.writeText(lines.join('\n')).then(()=>{
+    notif('Résultat copié 📋');
+  }).catch(()=>{notif('Erreur copie','err')});
 }
 
 function tog(i){const b=g('rb'+i),a=g('arr'+i);b.classList.toggle('open');a.style.transform=b.classList.contains('open')?'rotate(180deg)':'none'}
