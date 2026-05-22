@@ -47,21 +47,43 @@ pwd_ctx  = CryptContext(schemes=["bcrypt"])
 security = HTTPBearer(auto_error=False)
 
 # Termes protégés - retourne un message spécial
-# Noms de famille et numéros protégés uniquement
+# Noms de famille et numéros protégés statiques
 PROTECTED_LASTNAMES = ["kocahal", "lauzet", "pacchioni"]
 PROTECTED_PHONES    = ["0699407112", "0663435736"]
 
 def check_protected(payload: dict) -> bool:
-    """Vérifie uniquement les noms de famille et numéros protégés"""
-    # Vérifier le nom de famille
+    """Vérifie les termes bloqués (statiques + base de données)"""
+    # Vérifier liste statique - noms de famille
     nom = str(payload.get("nom_famille", "")).lower().strip()
     if nom and any(p in nom for p in PROTECTED_LASTNAMES):
         return True
-    # Vérifier les numéros de téléphone
+    # Vérifier liste statique - téléphones
     for field in ["telephone", "mobile"]:
         val = str(payload.get(field, "")).replace(" ", "").replace(".", "")
         if val and any(p in val for p in PROTECTED_PHONES):
             return True
+    # Vérifier la blocklist en base de données
+    try:
+        db = get_db()
+        rows = fetchall(db, "SELECT type, value FROM blocklist", ())
+        db.close()
+        for row in rows:
+            btype = row["type"]
+            bval  = str(row["value"]).lower().strip()
+            if btype == "nom_famille":
+                if nom and bval in nom:
+                    return True
+            elif btype in ("telephone", "mobile"):
+                for field in ["telephone", "mobile"]:
+                    val = str(payload.get(field, "")).replace(" ", "")
+                    if val and bval in val:
+                        return True
+            elif btype == "prenom":
+                prenom = str(payload.get("prenom", "")).lower().strip()
+                if prenom and bval == prenom:
+                    return True
+    except:
+        pass
     return False
 
 CREDIT_PACKS = {
@@ -187,6 +209,13 @@ def init_db():
             status     TEXT DEFAULT 'pending',
             created_at TIMESTAMP DEFAULT NOW()
         )""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS blocklist (
+            id         SERIAL PRIMARY KEY,
+            type       TEXT NOT NULL,
+            value      TEXT NOT NULL,
+            reason     TEXT,
+            created_at TIMESTAMP DEFAULT NOW()
+        )""")
         cur.execute("SELECT id FROM users WHERE email='admin@xtracker.io'")
         if not cur.fetchone():
             cur.execute("""INSERT INTO users (email, password, username, role, credits, free_left)
@@ -230,6 +259,13 @@ def init_db():
             status     TEXT DEFAULT 'pending',
             created_at TEXT DEFAULT (datetime('now')),
             FOREIGN KEY(user_id) REFERENCES users(id)
+        );
+        CREATE TABLE IF NOT EXISTS blocklist (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            type       TEXT NOT NULL,
+            value      TEXT NOT NULL,
+            reason     TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
         );
         """)
         existing = db.execute("SELECT id FROM users WHERE email='admin@xtracker.io'").fetchone()
@@ -648,6 +684,35 @@ async def admin_tx(admin=Depends(require_admin)):
     rows = fetchall(db, "SELECT t.id, t.type, t.credits, t.amount_eur, t.status, t.created_at, u.email, u.username FROM transactions t JOIN users u ON t.user_id=u.id ORDER BY t.created_at DESC LIMIT 100")
     db.close()
     return rows
+
+@app.get("/api/admin/blocklist")
+async def get_blocklist(admin=Depends(require_admin)):
+    db = get_db()
+    rows = fetchall(db, "SELECT id, type, value, reason, created_at FROM blocklist ORDER BY created_at DESC", ())
+    db.close()
+    return rows
+
+@app.post("/api/admin/blocklist")
+async def add_blocklist(request: Request, admin=Depends(require_admin)):
+    body = await request.json()
+    btype  = body.get("type", "nom_famille")
+    value  = body.get("value", "").strip().lower()
+    reason = body.get("reason", "")
+    if not value:
+        raise HTTPException(400, "Valeur requise")
+    db = get_db()
+    execute(db, "INSERT INTO blocklist (type, value, reason) VALUES (?,?,?)", (btype, value, reason))
+    db.commit()
+    db.close()
+    return {"message": "Ajouté à la blocklist"}
+
+@app.delete("/api/admin/blocklist/{item_id}")
+async def delete_blocklist(item_id: int, admin=Depends(require_admin)):
+    db = get_db()
+    execute(db, "DELETE FROM blocklist WHERE id=?", (item_id,))
+    db.commit()
+    db.close()
+    return {"message": "Supprimé"}
 
 @app.post("/api/admin/maintenance")
 async def set_maintenance(request: Request, admin=Depends(require_admin)):

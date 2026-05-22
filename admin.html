@@ -264,6 +264,44 @@ async function goTo(page){
   document.getElementById('user-search').style.display=page==='users'?'block':'none';
   if(page==='overview')loadOverview();
 
+async function loadBlocklist(){
+  const r = await fetch(`${API}/api/admin/blocklist`,{headers:hdr()});
+  const rows = await r.json();
+  const el = document.getElementById('bl-list');
+  if(!rows.length){el.innerHTML='<div style="text-align:center;padding:30px;color:var(--muted)">Aucun terme bloqué</div>';return}
+  el.innerHTML = rows.map(row=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 16px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#fca5a5;font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px">${row.type}</span>
+        <span style="font-weight:600;font-size:14px">${row.value}</span>
+        ${row.reason?`<span style="font-size:12px;color:var(--muted2)">${row.reason}</span>`:''}
+      </div>
+      <button onclick="deleteBlocklist(${row.id})" style="padding:5px 12px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#fca5a5;font-size:12px;border-radius:6px;cursor:pointer;font-family:inherit">Supprimer</button>
+    </div>
+  `).join('');
+}
+
+async function addBlocklist(){
+  const type   = document.getElementById('bl-type').value;
+  const value  = document.getElementById('bl-value').value.trim();
+  const reason = document.getElementById('bl-reason').value.trim();
+  if(!value){notif('Entrez une valeur','err');return}
+  const r = await fetch(`${API}/api/admin/blocklist`,{method:'POST',headers:hdr(),body:JSON.stringify({type,value,reason})});
+  if(r.ok){
+    document.getElementById('bl-value').value='';
+    document.getElementById('bl-reason').value='';
+    notif('Ajouté à la blocklist ✓');
+    loadBlocklist();
+  }else{notif('Erreur','err')}
+}
+
+async function deleteBlocklist(id){
+  if(!confirm('Supprimer ce terme de la blocklist ?'))return;
+  const r = await fetch(`${API}/api/admin/blocklist/${id}`,{method:'DELETE',headers:hdr()});
+  if(r.ok){notif('Supprimé ✓');loadBlocklist();}
+  else notif('Erreur','err');
+}
+
 async function toggleMaintenance(){
   const btn = document.getElementById('btn-maintenance');
   const isOn = btn.textContent.includes('Désactiver');
@@ -455,6 +493,44 @@ document.getElementById('modal-edit').addEventListener('click',e=>{if(e.target==
 document.getElementById('modal-credits').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal()});
 
 loadOverview();
+
+async function loadBlocklist(){
+  const r = await fetch(`${API}/api/admin/blocklist`,{headers:hdr()});
+  const rows = await r.json();
+  const el = document.getElementById('bl-list');
+  if(!rows.length){el.innerHTML='<div style="text-align:center;padding:30px;color:var(--muted)">Aucun terme bloqué</div>';return}
+  el.innerHTML = rows.map(row=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 16px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#fca5a5;font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px">${row.type}</span>
+        <span style="font-weight:600;font-size:14px">${row.value}</span>
+        ${row.reason?`<span style="font-size:12px;color:var(--muted2)">${row.reason}</span>`:''}
+      </div>
+      <button onclick="deleteBlocklist(${row.id})" style="padding:5px 12px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#fca5a5;font-size:12px;border-radius:6px;cursor:pointer;font-family:inherit">Supprimer</button>
+    </div>
+  `).join('');
+}
+
+async function addBlocklist(){
+  const type   = document.getElementById('bl-type').value;
+  const value  = document.getElementById('bl-value').value.trim();
+  const reason = document.getElementById('bl-reason').value.trim();
+  if(!value){notif('Entrez une valeur','err');return}
+  const r = await fetch(`${API}/api/admin/blocklist`,{method:'POST',headers:hdr(),body:JSON.stringify({type,value,reason})});
+  if(r.ok){
+    document.getElementById('bl-value').value='';
+    document.getElementById('bl-reason').value='';
+    notif('Ajouté à la blocklist ✓');
+    loadBlocklist();
+  }else{notif('Erreur','err')}
+}
+
+async function deleteBlocklist(id){
+  if(!confirm('Supprimer ce terme de la blocklist ?'))return;
+  const r = await fetch(`${API}/api/admin/blocklist/${id}`,{method:'DELETE',headers:hdr()});
+  if(r.ok){notif('Supprimé ✓');loadBlocklist();}
+  else notif('Erreur','err');
+}
 
 async function toggleMaintenance(){
   const btn = document.getElementById('btn-maintenance');
