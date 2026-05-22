@@ -216,6 +216,11 @@ def init_db():
             reason     TEXT,
             created_at TIMESTAMP DEFAULT NOW()
         )""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS ip_used (
+            id         SERIAL PRIMARY KEY,
+            ip         TEXT UNIQUE NOT NULL,
+            created_at TIMESTAMP DEFAULT NOW()
+        )""")
         cur.execute("SELECT id FROM users WHERE email='admin@xtracker.io'")
         if not cur.fetchone():
             cur.execute("""INSERT INTO users (email, password, username, role, credits, free_left)
@@ -265,6 +270,11 @@ def init_db():
             type       TEXT NOT NULL,
             value      TEXT NOT NULL,
             reason     TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        );
+        CREATE TABLE IF NOT EXISTS ip_used (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            ip         TEXT UNIQUE NOT NULL,
             created_at TEXT DEFAULT (datetime('now'))
         );
         """)
@@ -374,7 +384,7 @@ class AdminUserUpdate(BaseModel):
 
 # ── AUTH ROUTES ───────────────────────────────────────────────────────────────
 @app.post("/api/auth/register")
-async def register(data: RegisterModel):
+async def register(data: RegisterModel, request: Request):
     import re
     if len(data.password) < 8:
         raise HTTPException(400, "Mot de passe trop court (8 caractères min)")
@@ -382,16 +392,27 @@ async def register(data: RegisterModel):
         raise HTTPException(400, "Adresse email invalide")
     if len(data.username) < 2:
         raise HTTPException(400, "Nom d'utilisateur trop court")
+    # Récupérer l'IP du client
+    ip = request.headers.get("CF-Connecting-IP") or request.headers.get("X-Forwarded-For","").split(",")[0].strip() or request.client.host
     db = get_db()
     existing = fetchone(db, "SELECT id FROM users WHERE email=?", (data.email.lower(),))
     if existing:
         db.close()
         raise HTTPException(400, "Email déjà utilisé")
+    # Vérifier si cette IP a déjà eu des crédits gratuits
+    ip_used = fetchone(db, "SELECT id FROM ip_used WHERE ip=?", (ip,))
+    free_left = 0 if ip_used else 5
     hashed = pwd_ctx.hash(data.password)
     if is_pg():
-        uid = execute(db, "INSERT INTO users (email, password, username) VALUES (?,?,?) RETURNING id", (data.email.lower(), hashed, data.username))
+        uid = execute(db, "INSERT INTO users (email, password, username, free_left) VALUES (?,?,?,?) RETURNING id", (data.email.lower(), hashed, data.username, free_left))
     else:
-        uid = execute(db, "INSERT INTO users (email, password, username) VALUES (?,?,?)", (data.email.lower(), hashed, data.username))
+        uid = execute(db, "INSERT INTO users (email, password, username, free_left) VALUES (?,?,?,?)", (data.email.lower(), hashed, data.username, free_left))
+    # Marquer l'IP comme utilisée si c'est la première fois
+    if not ip_used:
+        try:
+            execute(db, "INSERT INTO ip_used (ip) VALUES (?)", (ip,))
+        except:
+            pass
     db.commit()
     db.close()
     token = create_token(uid, "user")
