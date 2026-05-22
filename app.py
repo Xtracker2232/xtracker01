@@ -527,6 +527,78 @@ async def search(data: SearchModel, user=Depends(get_current_user)):
 
     result = await call_brix("POST", "/search", payload)
     results = result.get("data", {}).get("results", [])
+
+    # Pivot famille : recherche automatique sans coût de crédit
+    for p in results[:5]:  # Limiter aux 5 premiers pour économiser les requêtes
+        famille = []
+        pivot_done = set()
+
+        # Pivot par adresse
+        if p.get("adresse") and p.get("code_postal"):
+            pivot_key = f"adresse_{p['adresse']}_{p['code_postal']}"
+            if pivot_key not in pivot_done:
+                pivot_done.add(pivot_key)
+                try:
+                    pivot_payload = {
+                        "adresse": p["adresse"],
+                        "code_postal": p["code_postal"],
+                        "flexible": False,
+                        "per_page": 10
+                    }
+                    pivot_result = await call_brix("POST", "/search", pivot_payload)
+                    pivot_results = pivot_result.get("data", {}).get("results", [])
+                    for pr in pivot_results:
+                        # Exclure le profil principal
+                        if pr.get("nom_famille") == p.get("nom_famille") and pr.get("prenom") == p.get("prenom"):
+                            continue
+                        membre = {
+                            "prenom": pr.get("prenom", ""),
+                            "nom_famille": pr.get("nom_famille", ""),
+                            "date_naissance": pr.get("date_naissance", ""),
+                            "email": pr.get("email", ""),
+                            "telephone": pr.get("telephone", ""),
+                            "lien": "Même adresse",
+                            "_sources": pr.get("_sources", [])
+                        }
+                        # Éviter les doublons
+                        if not any(m["prenom"] == membre["prenom"] and m["nom_famille"] == membre["nom_famille"] for m in famille):
+                            famille.append(membre)
+                except:
+                    pass
+
+        # Pivot par téléphone
+        if p.get("telephone") and len(famille) < 5:
+            pivot_key = f"tel_{p['telephone']}"
+            if pivot_key not in pivot_done:
+                pivot_done.add(pivot_key)
+                try:
+                    pivot_payload = {
+                        "telephone": p["telephone"],
+                        "flexible": False,
+                        "per_page": 5
+                    }
+                    pivot_result = await call_brix("POST", "/search", pivot_payload)
+                    pivot_results = pivot_result.get("data", {}).get("results", [])
+                    for pr in pivot_results:
+                        if pr.get("nom_famille") == p.get("nom_famille") and pr.get("prenom") == p.get("prenom"):
+                            continue
+                        membre = {
+                            "prenom": pr.get("prenom", ""),
+                            "nom_famille": pr.get("nom_famille", ""),
+                            "date_naissance": pr.get("date_naissance", ""),
+                            "email": pr.get("email", ""),
+                            "telephone": pr.get("telephone", ""),
+                            "lien": "Téléphone partagé",
+                            "_sources": pr.get("_sources", [])
+                        }
+                        if not any(m["prenom"] == membre["prenom"] and m["nom_famille"] == membre["nom_famille"] for m in famille):
+                            famille.append(membre)
+                except:
+                    pass
+
+        if famille:
+            p["famille"] = famille
+
     updated = deduct_and_log(user["id"], payload, len(results))
     return {
         "results":   results,
