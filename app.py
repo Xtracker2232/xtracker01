@@ -33,7 +33,7 @@ else:
 SECRET_KEY     = "xtracker-secret-2026-changez-en-prod"
 ALGORITHM      = "HS256"
 TOKEN_EXPIRE   = 60 * 24 * 7
-BRIX_KEY       = "brix_JUs29gtJ46uOB8SBtDU5y3dIbnYCFoEVS5iDSWuFmeC8LGBY"
+BRIX_KEY       = "brix_19QIDJYFNsNiRpG2T3Oa6vfPslFoS_-Z_dZai5IS1-DHiJdh"
 BRIX_BASE      = "https://brixhub.net/api/v1"
 SUMUP_SK = "sup_sk_gMQdrWJZZ6XTmPZ2YUVsygZLe5quVLZQB"
 SUMUP_PK = "sup_pk_dk3GN6qF2DGWfRlKXgDCfv4nLLWJmBYRX"

@@ -580,10 +580,23 @@ function renderResults(results,total,took,free_left,credits){
     const fmap=[['Nom',p.nom_famille],['Prénom',p.prenom],['Email',p.email],['Téléphone',p.telephone],['Mobile',p.mobile],['Adresse',p.adresse],['Code postal',p.code_postal],['Ville',p.ville],['Région',p.region],['Pays',p.pays],['Naissance',p.date_naissance],['Genre',p.genre==='M'?'Masculin':p.genre==='F'?'Féminin':p.genre],['Société',p.societe],['Profession',p.profession],['NIR',p.nir],['IBAN',p.iban],['SIRET',p.siret]].filter(([,v])=>v&&typeof v==='string'&&v.trim()!==''&&!v.includes('undefined'));
     const fh=fmap.map(([k,v])=>`<div class="rf"><div class="rf-k">${k}</div><div class="rf-v">${v}</div></div>`).join('');
     const sh=(p._sources||[]).map(s=>`<span class="src">${s}</span>`).join('');
+    // Section famille
+    const famille = p.famille || p.membres_famille || p.family || [];
+    const famHtml = famille.length ? `
+      <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border)">
+        <div style="font-size:10px;font-weight:600;color:var(--muted2);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">👨‍👩‍👧 Famille associée</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          ${famille.map(m=>`<div style="background:rgba(99,102,241,0.05);border:1px solid rgba(99,102,241,0.1);border-radius:6px;padding:8px 12px;font-size:12px">
+            <span style="color:var(--text);font-weight:500">${m.prenom||''} ${m.nom_famille||''}</span>
+            ${m.lien?`<span style="color:var(--muted2);margin-left:8px">${m.lien}</span>`:''}
+            ${m.date_naissance?`<span style="color:var(--muted);margin-left:8px">né(e) le ${m.date_naissance}</span>`:''}
+          </div>`).join('')}
+        </div>
+      </div>` : '';
     html+=`<div class="rcard"><div class="rcard-top" onclick="tog(${i})">
       <div><div class="rname">${name}</div><div class="rmeta">${sub}</div></div>
       <div style="display:flex;align-items:center"><span class="badge ${cls}">${conf}%</span><span class="rarr" id="arr${i}">↓</span></div>
-    </div><div class="rcard-body" id="rb${i}"><div class="rfields">${fh}</div>${sh?`<div class="rsources">${sh}</div>`:''}</div></div>`;
+    </div><div class="rcard-body" id="rb${i}"><div class="rfields">${fh}</div>${famHtml}${sh?`<div class="rsources">${sh}</div>`:''}</div></div>`;
   });
   el.innerHTML=html;
 }
