@@ -226,9 +226,13 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 <script>
 var API='';
 var allUsers=[];
-
+var _T=localStorage.getItem('_xt')||'';
 function g(id){return document.getElementById(id)}
-function hdr(){return{'Content-Type':'application/json'}}
+function hdr(){
+  var h={'Content-Type':'application/json'};
+  if(_T)h['Authorization']='Bearer '+_T;
+  return h;
+}
 
 function notif(msg,type){
   var el=document.createElement('div');
@@ -412,7 +416,7 @@ function toggleMaintenance(){
     .catch(function(){notif('Erreur reseau','err')});
 }
 
-function logout(){fetch('/api/auth/logout',{method:'POST',credentials:'include'}).finally(function(){localStorage.clear();window.location.href='login.html'})}
+function logout(){localStorage.clear();window.location.href='login.html'}
 
 function init(){
   fetch(API+'/api/auth/me',{headers:hdr(),credentials:"include"}).then(function(r){

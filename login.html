@@ -106,7 +106,7 @@ async function doLogin(){
     const r=await fetch(API+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pass})});
     const d=await r.json();
     if(!r.ok){showErr(d.detail||'Email ou mot de passe incorrect.');return}
-    if(d.user){localStorage.setItem('user',JSON.stringify({username:d.user.username,role:d.user.role}));}
+    if(d.user){localStorage.setItem('_xt',d.token||'');localStorage.setItem('user',JSON.stringify({username:d.user.username,role:d.user.role}));}
     showOk('Connexion reussie...');
     setTimeout(()=>{window.location.href=d.user.role==='admin'?'admin.html':'dashboard.html'},600);
   }catch(e){showErr('Erreur reseau.')}

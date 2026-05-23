@@ -456,9 +456,13 @@ select option{background:var(--bg2)}
 <script>
 const API='';
 let USER=JSON.parse(localStorage.getItem('user')||'{}');
+const _T=localStorage.getItem('_xt')||'';
 function g(id){return document.getElementById(id)}
-function hdr(){return{'Content-Type':'application/json'}}
-// Le token est dans un cookie httpOnly - invisible depuis JS
+function hdr(){
+  const h={'Content-Type':'application/json'};
+  if(_T)h['Authorization']='Bearer '+_T;
+  return h;
+}
 
 function notif(msg,type){
   const el=document.createElement('div');el.className='notif '+(type||'ok');el.textContent=msg;
@@ -672,7 +676,7 @@ function closeDrawer(){
   g('mobile-drawer').classList.remove('open');
   g('drawer-overlay').classList.remove('show');
 }
-function logout(){fetch('/api/auth/logout',{method:'POST',credentials:'include'}).finally(()=>{localStorage.clear();window.location.href='login.html'})}
+function logout(){localStorage.clear();fetch('/api/auth/logout',{method:'POST',credentials:'include'}).finally(()=>{window.location.href='login.html'})}
 
 // ── ASSISTANT IA ─────────────────────────────────────────────────────────────
 let chatHistory = [];

@@ -509,6 +509,7 @@ async def login(data: LoginModel):
     from fastapi.responses import JSONResponse
     resp = JSONResponse({
         "ok": True,
+        "token": token,
         "user": {
             "username": user["username"],
             "role": user["role"],
@@ -520,8 +521,8 @@ async def login(data: LoginModel):
         key="xtoken",
         value=token,
         httponly=True,
-        secure=True,
-        samesite="strict",
+        secure=False,
+        samesite="lax",
         max_age=86400 * 7  # 7 jours
     )
     return resp
