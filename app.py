@@ -507,7 +507,8 @@ async def register(data: RegisterModel, request: Request):
 @app.post("/api/auth/login")
 async def login(data: LoginModel):
     db = get_db()
-    user = fetchone(db, "SELECT * FROM users WHERE username=?", (data.username,))
+    # Accepter username OU email pour la connexion
+    user = fetchone(db, "SELECT * FROM users WHERE username=? OR email=?", (data.username, data.username.lower()))
     if not user or not pwd_ctx.verify(data.password, user["password"]):
         db.close()
         raise HTTPException(401, "Email ou mot de passe incorrect")
