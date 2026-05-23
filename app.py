@@ -1149,33 +1149,35 @@ async def discord_callback(code: str = None, error: str = None):
                 return RedirectResponse(url="/login.html?err=discord_user")
             discord_user = r2.json()
 
-        discord_id  = discord_user["id"]
-        discord_tag = discord_user.get("username", f"user_{discord_id}")
-        # Utiliser global_name si disponible
-        display_name = discord_user.get("global_name") or discord_tag
+        discord_id   = discord_user["id"]
+        # Pseudo = global_name (nouveau Discord) ou username
+        display_name = discord_user.get("global_name") or discord_user.get("username") or f"discord_{discord_id}"
+        display_name = display_name[:32]
 
-        # Email fictif basé sur l'ID Discord
         fake_email = f"discord_{discord_id}@xtracker.local"
 
         db = get_db()
-        # Chercher si le compte existe déjà
         user = fetchone(db, "SELECT * FROM users WHERE email=?", (fake_email,))
         if not user:
-            # Créer le compte
-            hashed = pwd_ctx.hash(discord_id + "xtracker_discord")
-            username = display_name[:32]
-            # Si username déjà pris, ajouter suffixe
+            # Nouveau compte : pseudo Discord, role user, ID Discord comme référence
+            hashed = pwd_ctx.hash(discord_id + "xtracker_discord_2026")
+            username = display_name
             existing = fetchone(db, "SELECT id FROM users WHERE username=?", (username,))
             if existing:
-                username = username[:28] + "_" + discord_id[-3:]
+                username = display_name[:26] + "_" + discord_id[-4:]
             if is_pg():
-                uid = execute(db, "INSERT INTO users (email, password, username, free_left) VALUES (?,?,?,?) RETURNING id",
-                              (fake_email, hashed, username, 5))
+                uid = execute(db, "INSERT INTO users (email, password, username, role, free_left) VALUES (?,?,?,?,?) RETURNING id",
+                              (fake_email, hashed, username, "user", 5))
             else:
-                uid = execute(db, "INSERT INTO users (email, password, username, free_left) VALUES (?,?,?,?)",
-                              (fake_email, hashed, username, 5))
+                uid = execute(db, "INSERT INTO users (email, password, username, role, free_left) VALUES (?,?,?,?,?)",
+                              (fake_email, hashed, username, "user", 5))
             db.commit()
             user = fetchone(db, "SELECT * FROM users WHERE id=?", (uid,))
+        else:
+            # Compte existant - vérifier qu'il n'est pas banni
+            if user["banned"]:
+                db.close()
+                return RedirectResponse(url="/login.html?err=banned")
         db.close()
 
         user = dict(user)
