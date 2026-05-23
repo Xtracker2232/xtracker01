@@ -761,18 +761,53 @@ async def checkout(pack_id: str, user=Depends(get_current_user), request: Reques
 
 @app.get("/api/sumup/success")
 async def sumup_success(request: Request):
-    """SumUp redirige ici après paiement"""
+    """SumUp redirige ici apres paiement - VERIFICATION OBLIGATOIRE avec SumUp API"""
+    from fastapi.responses import RedirectResponse
     params   = dict(request.query_params)
     order_id = params.get("order_id", "")
     uid      = int(params.get("uid", 0))
-    credits  = int(params.get("credits", 0))
     pack_id  = params.get("pack", "")
-    from fastapi.responses import RedirectResponse
-    if not order_id or not uid or not credits:
+
+    if not order_id or not uid or not pack_id:
         return RedirectResponse(url="/dashboard.html?payment=cancel")
+
+    pack = CREDIT_PACKS.get(pack_id, {})
+    if not pack:
+        return RedirectResponse(url="/dashboard.html?payment=cancel")
+
+    credits = pack["credits"]
+    amount  = pack["price_eur"]
+
     try:
-        pack   = CREDIT_PACKS.get(pack_id, {})
-        amount = pack.get("price_eur", 0)
+        # VERIFIER le paiement directement avec l'API SumUp
+        sumup_key = os.getenv("SUMUP_SK", "")
+        async with httpx.AsyncClient(timeout=15) as client:
+            # Récupérer le checkout pour vérifier le statut
+            r = await client.get(
+                f"https://api.sumup.com/v0.1/checkouts/{order_id}",
+                headers={"Authorization": f"Bearer {sumup_key}"}
+            )
+            if r.status_code != 200:
+                print(f"[SUMUP] Checkout introuvable: {order_id} status={r.status_code}")
+                return RedirectResponse(url="/dashboard.html?payment=cancel")
+
+            checkout_data = r.json()
+            status = checkout_data.get("status", "")
+            paid_amount = float(checkout_data.get("amount", 0))
+            currency = checkout_data.get("currency", "")
+
+            print(f"[SUMUP] Checkout {order_id}: status={status} amount={paid_amount} {currency}")
+
+            # Vérifier que le paiement est bien PAID et que le montant correspond
+            if status != "PAID":
+                print(f"[SUMUP] Paiement non complete: {status}")
+                return RedirectResponse(url="/dashboard.html?payment=cancel")
+
+            if abs(paid_amount - amount) > 0.01:
+                print(f"[SUMUP] Montant incorrect: attendu {amount} recu {paid_amount}")
+                return RedirectResponse(url="/dashboard.html?payment=cancel")
+
+        # Tout est OK - ajouter les credits
         db = get_db()
         existing = fetchone(db, "SELECT id FROM transactions WHERE stripe_id=?", (order_id,))
         if not existing:
@@ -780,9 +815,15 @@ async def sumup_success(request: Request):
             execute(db, "INSERT INTO transactions (user_id, type, credits, amount_eur, stripe_id, status) VALUES (?,?,?,?,?,'completed')",
                     (uid, "purchase", credits, amount, order_id))
             db.commit()
+            print(f"[SUMUP] Credits ajoutes: uid={uid} credits={credits}")
+        else:
+            print(f"[SUMUP] Transaction deja traitee: {order_id}")
         db.close()
+
     except Exception as e:
-        print(f"[SUMUP] Erreur: {e}")
+        print(f"[SUMUP] Erreur verification: {e}")
+        return RedirectResponse(url="/dashboard.html?payment=cancel")
+
     return RedirectResponse(url="/dashboard.html?payment=success")
 
 @app.get("/api/transactions")
@@ -832,7 +873,8 @@ async def admin_users(admin=Depends(require_admin), page: int = 1, search: str =
 async def admin_update(user_id: int, data: AdminUserUpdate, admin=Depends(require_admin)):
     db = get_db()
     if data.credits is not None:
-        execute(db, "UPDATE users SET credits=? WHERE id=?", (data.credits, user_id))
+        safe_credits = min(int(data.credits), 1000)  # Max 1000 credits
+        execute(db, "UPDATE users SET credits=credits+? WHERE id=?", (safe_credits, user_id))
     if data.banned is not None:
         banned_val = data.banned if is_pg() else (1 if data.banned else 0)
         execute(db, "UPDATE users SET banned=? WHERE id=?", (banned_val, user_id))
@@ -853,7 +895,7 @@ async def admin_delete(user_id: int, admin=Depends(require_admin)):
 @app.post("/api/admin/users/{user_id}/add-credits")
 async def admin_add_credits(user_id: int, request: Request, admin=Depends(require_admin)):
     body    = await request.json()
-    credits = int(body.get("credits", 0))
+    credits = min(int(body.get("credits", 0)), 1000)  # Max 1000 credits par ajout
     db = get_db()
     execute(db, "UPDATE users SET credits=credits+? WHERE id=?", (credits, user_id))
     execute(db, "INSERT INTO transactions (user_id,type,credits,amount_eur,status) VALUES (?,?,?,0,'completed')", (user_id, "admin_grant", credits))
@@ -954,6 +996,14 @@ async def ai_chat(data: ChatModel, user=Depends(get_current_user)):
     except Exception as e:
         print(f"[AI] Error: {e}")
         raise HTTPException(500, str(e))
+
+@app.post("/api/admin/users/{user_id}/reset-credits")
+async def admin_reset_credits(user_id: int, admin=Depends(require_admin)):
+    db = get_db()
+    execute(db, "UPDATE users SET credits=0, free_left=0 WHERE id=?", (user_id,))
+    db.commit()
+    db.close()
+    return {"ok": True, "message": "Credits remis a zero"}
 
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
 

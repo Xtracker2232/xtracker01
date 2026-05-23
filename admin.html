@@ -347,6 +347,13 @@ async function addCredits(id,email){
   }catch(e){notif('Erreur reseau','err')}
 }
 
+async function resetCredits(id,email){
+  if(!confirm('Remettre les credits de '+email+' a zero ?'))return;
+  try{
+    const r=await fetch(API+'/api/admin/users/'+id+'/reset-credits',{method:'POST',headers:hdr()});
+    if(r.ok){notif('Credits remis a zero');loadUsers()}else notif('Erreur','err');
+  }catch(e){notif('Erreur reseau','err')}
+}
 async function toggleBan(id,banned){
   try{
     const r=await fetch(API+'/api/admin/users/'+id,{method:'PATCH',headers:hdr(),body:JSON.stringify({banned:!banned})});
