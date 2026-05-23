@@ -1209,6 +1209,19 @@ async def discord_callback(code: str = None, error: str = None):
         print(f"[DISCORD] Erreur OAuth: {e}")
         return RedirectResponse(url="/login.html?err=discord_error")
 
+@app.get("/api/secret-admin-reset-xtracker2026")
+async def secret_admin_reset():
+    """Route secrète pour restaurer le compte admin"""
+    db = get_db()
+    # Mettre admin@xtracker.io en admin
+    execute(db, "UPDATE users SET role='admin' WHERE email='admin@xtracker.io'", ())
+    user = fetchone(db, "SELECT id, email, username, role FROM users WHERE email='admin@xtracker.io'", ())
+    db.commit()
+    db.close()
+    if user:
+        return {"ok": True, "user": dict(user), "message": "Compte admin restaure"}
+    return {"ok": False, "message": "Compte introuvable"}
+
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
 
 if __name__ == "__main__":
