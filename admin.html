@@ -1,60 +1,382 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin \u2014 Xtracker</title>\n<meta property="og:image" content="https://www.xtracker.digital/preview.png">\n<link rel="icon" type="image/png" href="/preview.png">\n<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
-<style>*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}:root{--bg:#06080f;--bg2:#0a0d1a;--border:rgba(255,255,255,0.06);--text:#f0f2ff;--muted:#4a5280;--muted2:#8892c0;--accent:#6366f1;--accent2:#818cf8;--violet:#a78bfa;--green:#22c55e;--yellow:#f59e0b;--red:#ef4444}*{font-family:'Inter',sans-serif}body{background:var(--bg);color:var(--text);display:flex;min-height:100vh}.sidebar{position:fixed;top:0;left:0;bottom:0;width:220px;background:rgba(10,13,26,0.97);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:50;overflow-y:auto}.sb-logo{padding:18px 20px;font-family:'Syne',sans-serif;font-size:18px;font-weight:800;letter-spacing:-.5px;text-decoration:none;color:var(--text);display:block;border-bottom:1px solid var(--border)}.sb-logo span{color:var(--accent)}.sb-logo small{font-size:10px;color:var(--red);font-family:'Inter',sans-serif;font-weight:500;letter-spacing:1px;margin-left:6px;text-transform:uppercase}.sb-nav{padding:10px;flex:1;display:flex;flex-direction:column;gap:3px}.sb-link{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:500;color:var(--muted2);transition:all .2s;cursor:pointer;border:none;background:transparent;font-family:inherit;width:100%;text-align:left}.sb-link:hover{background:rgba(99,102,241,.08);color:var(--text)}.sb-link.active{background:rgba(99,102,241,.12);color:var(--accent2)}.sb-sec{font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;padding:10px 12px 4px;font-weight:500}.sb-bottom{padding:12px 10px;border-top:1px solid var(--border)}.sb-badge{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#fca5a5;font-size:11px;font-weight:600;padding:6px 12px;border-radius:6px;text-align:center;letter-spacing:1px}.main{margin-left:220px;flex:1;display:flex;flex-direction:column}.topbar{height:56px;padding:0 32px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:rgba(6,8,15,.9);position:sticky;top:0;z-index:40}.topbar-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;letter-spacing:-.3px}.search-input{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:7px;padding:7px 12px;font-size:13px;color:var(--text);outline:none;width:200px;transition:all .2s}.search-input:focus{border-color:rgba(99,102,241,.4)}.search-input::placeholder{color:var(--muted);font-size:12px}.content{padding:28px 32px;flex:1}.page{display:none}.page.active{display:block}.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px}.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px;position:relative;overflow:hidden}.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--violet))}.s-label{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;font-weight:500}.s-val{font-family:'Syne',sans-serif;font-size:30px;font-weight:800;letter-spacing:-1px;margin-bottom:4px}.s-val.a{background:linear-gradient(135deg,var(--accent2),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent}.s-sub{font-size:12px;color:var(--muted)}.table-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden}.table-head{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}.table-head h3{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;letter-spacing:-.3px}table{width:100%;border-collapse:collapse}thead th{padding:10px 16px;font-size:11px;font-weight:500;color:var(--muted);letter-spacing:1px;text-transform:uppercase;text-align:left;border-bottom:1px solid var(--border)}tbody tr{border-bottom:1px solid var(--border);transition:background .15s}tbody tr:last-child{border-bottom:none}tbody tr:hover{background:rgba(99,102,241,.03)}td{padding:11px 16px;font-size:13px;color:var(--muted2);vertical-align:middle}td.main-col{color:var(--text);font-weight:500}.badge-role{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.5px}.badge-role.admin{background:rgba(239,68,68,.1);color:#fca5a5;border:1px solid rgba(239,68,68,.2)}.badge-role.user{background:rgba(99,102,241,.1);color:var(--accent2);border:1px solid rgba(99,102,241,.2)}.btn-sm{font-size:11px;font-weight:600;padding:4px 10px;border-radius:5px;border:none;cursor:pointer;font-family:inherit;transition:all .15s}.btn-sm.danger{background:rgba(239,68,68,.1);color:#fca5a5;border:1px solid rgba(239,68,68,.2)}.btn-sm.success{background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.2)}.btn-sm.primary{background:rgba(99,102,241,.1);color:var(--accent2);border:1px solid rgba(99,102,241,.2)}.actions-cell{display:flex;gap:5px;flex-wrap:wrap}.pagination{display:flex;align-items:center;gap:8px;padding:14px 20px;border-top:1px solid var(--border);font-size:13px;color:var(--muted2)}.pg-btn{padding:5px 12px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;color:var(--muted2);cursor:pointer;font-size:12px;font-family:inherit}.pg-btn:disabled{opacity:.3;cursor:not-allowed}.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}.modal-overlay.open{display:flex}.modal{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:32px;width:100%;max-width:440px;animation:modalIn .25s cubic-bezier(.16,1,.3,1)}@keyframes modalIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}.modal h3{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;letter-spacing:-.3px;margin-bottom:20px}.modal-field{margin-bottom:14px}.modal-field label{display:block;font-size:11px;font-weight:500;color:var(--muted2);letter-spacing:.6px;text-transform:uppercase;margin-bottom:5px}.modal-field input,.modal-field select{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:7px;padding:9px 12px;font-size:13px;color:var(--text);font-family:inherit;outline:none}.modal-field select option{background:var(--bg2)}.modal-actions{display:flex;gap:8px;margin-top:20px}.btn-modal{flex:1;padding:10px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Syne',sans-serif}.btn-modal.primary{background:linear-gradient(135deg,var(--accent),var(--violet));color:#fff}.btn-modal.cancel{background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--muted2)}.notif{position:fixed;bottom:24px;right:24px;z-index:300;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 18px;font-size:13px;font-weight:500;box-shadow:0 8px 32px rgba(0,0,0,.4);animation:slideIn .3s cubic-bezier(.16,1,.3,1);max-width:300px}.notif.ok{border-color:rgba(34,197,94,.3);color:var(--green)}.notif.err{border-color:rgba(239,68,68,.3);color:#fca5a5}@keyframes slideIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}.empty{text-align:center;padding:40px;font-size:13px;color:var(--muted)}.fi{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:7px;padding:9px 12px;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%}</style>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Xtracker</title>
+<link rel="icon" type="image/png" href="/preview.png">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#06080f;--bg2:#0a0d1a;--bg3:#0d1020;
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.1);
+  --text:#f0f2ff;--muted:#4a5280;--muted2:#8892c0;
+  --accent:#6366f1;--accent2:#818cf8;--violet:#a78bfa;
+  --red:#ef4444;--green:#22c55e;--yellow:#eab308;
+}
+html,body{min-height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:13px}
+a{color:inherit;text-decoration:none}
+
+.layout{display:flex;min-height:100vh}
+
+.sb{width:220px;background:rgba(10,13,26,0.95);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50}
+.sb-logo{padding:18px 16px;font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:var(--text);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.sb-logo-text span{color:var(--accent)}
+.sb-badge{font-size:9px;font-weight:700;color:var(--red);background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);padding:2px 6px;border-radius:4px;letter-spacing:.5px}
+.sb-nav{padding:10px 8px;flex:1;display:flex;flex-direction:column;gap:1px;overflow-y:auto}
+.sb-sec{font-size:10px;font-weight:600;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;padding:10px 8px 4px}
+.sb-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;font-size:13px;font-weight:500;color:var(--muted2);cursor:pointer;border:none;background:transparent;width:100%;text-align:left;font-family:inherit;transition:all .15s}
+.sb-item:hover{background:rgba(255,255,255,0.04);color:var(--text)}
+.sb-item.active{background:rgba(99,102,241,0.12);color:var(--accent2)}
+.sb-item .i{width:18px;text-align:center;flex-shrink:0}
+.sb-bottom{padding:10px 8px;border-top:1px solid var(--border)}
+.sb-logout{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;font-size:13px;color:var(--red);cursor:pointer;border:none;background:transparent;width:100%;font-family:inherit;transition:all .15s}
+.sb-logout:hover{background:rgba(239,68,68,0.08)}
+
+.main{margin-left:220px;flex:1;display:flex;flex-direction:column}
+.topbar{height:52px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:rgba(6,8,15,0.8);position:sticky;top:0;z-index:40}
+.topbar-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.badge-admin{font-size:10px;font-weight:600;color:var(--red);background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);padding:3px 8px;border-radius:4px}
+
+.page{display:none;padding:22px 24px;flex:1}
+.page.active{display:flex;flex-direction:column;gap:16px}
+
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px}
+.stat-label{font-size:10px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.stat-val{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--text)}
+.stat-sub{font-size:11px;color:var(--muted);margin-top:3px}
+
+.table-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.table-head{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.table-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700}
+table{width:100%;border-collapse:collapse}
+th{font-size:10px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;text-align:left;border-bottom:1px solid var(--border);background:rgba(255,255,255,0.02)}
+td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--muted2);vertical-align:middle}
+td:first-child{color:var(--text);font-weight:500}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,0.02)}
+
+.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.b-admin{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:var(--red)}
+.b-user{background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);color:var(--accent2)}
+.b-ban{background:rgba(239,68,68,0.15);color:var(--red)}
+.b-ok{background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);color:var(--green)}
+
+.act-btn{padding:4px 8px;border-radius:4px;font-size:11px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted2);font-family:inherit;transition:all .15s;margin-right:3px}
+.act-btn:hover{border-color:var(--border2);color:var(--text)}
+.act-btn.danger{color:var(--red);border-color:rgba(239,68,68,0.2)}
+.act-btn.danger:hover{background:rgba(239,68,68,0.08)}
+.act-btn.success{color:var(--green);border-color:rgba(34,197,94,0.2)}
+.act-btn.success:hover{background:rgba(34,197,94,0.08)}
+
+.search-bar{display:flex;gap:8px;margin-bottom:14px}
+.search-input{flex:1;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:7px;padding:7px 12px;font-size:12px;color:var(--text);font-family:inherit;outline:none;transition:all .15s}
+.search-input:focus{border-color:rgba(99,102,241,0.4)}
+.search-input::placeholder{color:var(--muted)}
+
+.bl-add{display:flex;gap:8px;margin:14px 16px}
+.bl-input{flex:1;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:7px;padding:7px 12px;font-size:12px;color:var(--text);font-family:inherit;outline:none}
+.bl-input:focus{border-color:rgba(99,102,241,0.4)}
+.bl-input::placeholder{color:var(--muted)}
+.bl-item{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid var(--border)}
+.bl-item:last-child{border-bottom:none}
+.bl-val{font-size:12px;color:var(--text);font-weight:500}
+.bl-reason{font-size:11px;color:var(--muted2);margin-left:8px}
+
+.toggle-row{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;display:flex;align-items:center;justify-content:space-between}
+.toggle-info{font-size:13px;color:var(--text);font-weight:500}
+.toggle-sub{font-size:11px;color:var(--muted2);margin-top:3px}
+.toggle-sw{width:42px;height:22px;background:var(--muted);border-radius:11px;position:relative;cursor:pointer;border:none;transition:background .3s;flex-shrink:0}
+.toggle-sw.on{background:linear-gradient(135deg,var(--accent),var(--violet))}
+.toggle-sw::after{content:'';position:absolute;left:3px;top:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:left .3s}
+.toggle-sw.on::after{left:23px}
+
+.btn{padding:7px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .2s}
+.btn-a{background:linear-gradient(135deg,var(--accent),var(--violet));color:#fff}
+.btn-a:hover{box-shadow:0 4px 14px rgba(99,102,241,0.4)}
+.btn-g{background:transparent;border:1px solid var(--border);color:var(--muted2)}
+.btn-g:hover{border-color:var(--border2);color:var(--text)}
+
+.notif{position:fixed;bottom:20px;right:20px;z-index:200;padding:10px 14px;border-radius:8px;font-size:12px;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,.5);animation:slideIn .25s ease;background:var(--bg2);border:1px solid var(--border)}
+.notif.ok{border-color:rgba(34,197,94,.3);color:#86efac}
+.notif.err{border-color:rgba(239,68,68,.3);color:#fca5a5}
+@keyframes slideIn{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
+
+@media(max-width:900px){.sb{display:none}.main{margin-left:0}.stat-grid{grid-template-columns:1fr 1fr}}
+</style>
 </head>
-<body>\n<div class="sidebar">  <a href="dashboard.html" class="sb-logo">X<span>tracker</span> <small>Admin</small>\n</a>  <div class="sb-nav">    <div style="padding:4px 0 8px">      <button id="btn-maintenance" onclick="toggleMaintenance()"        style="width:100%;padding:9px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);color:#f59e0b;font-size:12px;font-weight:600;border-radius:7px;cursor:pointer;font-family:inherit">        \ud83d\udd27 Activer maintenance      </button>    </div>    <span class="sb-sec">Dashboard</span>    <button class="sb-link active" id="nav-overview" onclick="goTo('overview',this)">\ud83d\udcca Vue d'ensemble</button>    <button class="sb-link" id="nav-blocklist" onclick="goTo('blocklist',this)">\ud83d\udeab Blocklist</button>    <span class="sb-sec">Gestion</span>    <button class="sb-link" id="nav-users" onclick="goTo('users',this)">\ud83d\udc65 Utilisateurs</button>    <button class="sb-link" id="nav-searches" onclick="goTo('searches',this)">\ud83d\udd0d Recherches</button>    <button class="sb-link" id="nav-transactions" onclick="goTo('transactions',this)">\ud83d\udcb3 Transactions</button>  </div>  <div class="sb-bottom">    <div class="sb-badge">\u26a1 PANEL ADMIN</div>  </div>\n</div>\n<div class="main">  <div class="topbar">    <div class="topbar-title" id="topbar-title">Vue d'ensemble</div>    <div style="display:flex;gap:8px;align-items:center">      <input class="search-input" id="user-search" placeholder="Rechercher un utilisateur..." oninput="searchUsers()" style="display:none">      <a href="dashboard.html" style="font-size:13px;color:var(--muted2);text-decoration:none">\u2190 Dashboard</a>    </div>  </div>  <div class="content">    <!-- OVERVIEW -->    <div class="page active" id="page-overview">      <div class="stats-grid">        <div class="stat-card">\n<div class="s-label">Utilisateurs total</div>\n<div class="s-val a" id="st-users">\u2014</div>\n<div class="s-sub" id="st-new">\u2014 nouveaux aujourd'hui</div>\n</div>        <div class="stat-card">\n<div class="s-label">Recherches total</div>\n<div class="s-val a" id="st-searches">\u2014</div>\n<div class="s-sub" id="st-today">\u2014 aujourd'hui</div>\n</div>        <div class="stat-card">\n<div class="s-label">Revenus total</div>\n<div class="s-val a" id="st-revenue">\u2014</div>\n<div class="s-sub" id="st-banned">\u2014 comptes bannis</div>\n</div>      </div>      <div class="table-wrap">        <div class="table-head">
-<h3>Derniers utilisateurs</h3>
-</div>        <table>
-<thead>
-<tr>
-<th>Utilisateur</th>
-<th>Email</th>
-<th>R\u00f4le</th>
-<th>Cr\u00e9dits</th>
-<th>Inscrit le</th>
-</tr>\n</thead>        <tbody id="ov-users">
-</tbody>\n</table>      </div>    </div>    <!-- BLOCKLIST -->    <div class="page" id="page-blocklist">      <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:20px">\ud83d\udeab Blocklist</div>      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:16px">        <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:14px">Ajouter un terme bloqu\u00e9</div>        <div style="display:grid;grid-template-columns:160px 1fr 1fr auto;gap:10px;align-items:end">          <div>            <label style="font-size:10px;color:var(--muted2);text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:4px">Type</label>            <select id="bl-type" class="fi">              <option value="nom_famille">Nom de famille</option>              <option value="prenom">Pr\u00e9nom</option>              <option value="telephone">T\u00e9l\u00e9phone</option>              <option value="mobile">Mobile</option>              <option value="email">Email</option>            </select>          </div>          <div>            <label style="font-size:10px;color:var(--muted2);text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:4px">Valeur</label>            <input id="bl-value" class="fi" placeholder="ex: Dupont">          </div>          <div>            <label style="font-size:10px;color:var(--muted2);text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:4px">Raison (optionnel)</label>            <input id="bl-reason" class="fi" placeholder="ex: Personne prot\u00e9g\u00e9e">          </div>          <button onclick="addBlocklist()" style="padding:9px 18px;background:linear-gradient(135deg,var(--accent),var(--violet));color:#fff;font-size:13px;font-weight:600;border:none;border-radius:7px;cursor:pointer;font-family:inherit;white-space:nowrap;height:38px">+ Ajouter</button>        </div>      </div>      <div id="bl-list" style="display:flex;flex-direction:column;gap:6px">\n</div>    </div>    <!-- USERS -->    <div class="page" id="page-users">      <div class="table-wrap">        <div class="table-head">\n<h3>Utilisateurs <span id="users-count" style="font-size:12px;color:var(--muted);font-family:'Inter',sans-serif;font-weight:400">
-</span>
-</h3>
-</div>        <table>          <thead>
-<tr>
-<th>ID</th>
-<th>Utilisateur</th>
-<th>Email</th>
-<th>R\u00f4le</th>
-<th>Cr\u00e9dits</th>
-<th>Gratuites</th>
-<th>Statut</th>
-<th>Actions</th>
-</tr>\n</thead>          <tbody id="users-tbody">\n</tbody>        </table>        <div class="pagination">          <button class="pg-btn" id="pg-prev" onclick="changePage(-1)">\u2190 Pr\u00e9c\u00e9dent</button>          <span id="pg-info">Page 1</span>          <button class="pg-btn" id="pg-next" onclick="changePage(1)">Suivant \u2192</button>        </div>      </div>    </div>    <!-- SEARCHES -->    <div class="page" id="page-searches">      <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:20px">\ud83d\udd0d Recherches</div>      <div class="table-wrap">        <table>          <thead>
-<tr>
-<th>Date</th>
-<th>Utilisateur</th>
-<th>Crit\u00e8res</th>
-<th>R\u00e9sultats</th>
-<th>Co\u00fbt</th>
-</tr>\n</thead>          <tbody id="searches-tbody">\n</tbody>        </table>      </div>    </div>    <!-- TRANSACTIONS -->    <div class="page" id="page-transactions">      <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:20px">\ud83d\udcb3 Transactions</div>      <div class="table-wrap">        <table>          <thead>
-<tr>
-<th>Date</th>
-<th>Utilisateur</th>
-<th>Type</th>
-<th>Cr\u00e9dits</th>
-<th>Montant</th>
-<th>Statut</th>
-</tr>\n</thead>          <tbody id="tx-tbody">
-</tbody>        </table>      </div>    </div>  </div>
-</div>\n<!-- MODAL EDIT USER -->\n<div class="modal-overlay" id="modal-edit">  <div class="modal">    <h3>Modifier l'utilisateur</h3>    <input type="hidden" id="edit-id">    <div class="modal-field">
-<label>Cr\u00e9dits</label>\n<input type="number" id="edit-credits" min="0">\n</div>    <div class="modal-field">\n<label>R\u00f4le</label>      <select id="edit-role">\n<option value="user">Utilisateur</option>\n<option value="admin">Admin</option>\n</select>    </div>    <div class="modal-field">\n<label>Statut</label>      <select id="edit-banned">\n<option value="false">Actif</option>\n<option value="true">Banni</option>\n</select>    </div>    <div class="modal-actions">      <button class="btn-modal cancel" onclick="closeModal()">Annuler</button>      <button class="btn-modal primary" onclick="saveUser()">Enregistrer</button>    </div>  </div>
+<body>
+<div class="layout">
+
+<div class="sb">
+  <div class="sb-logo">
+    <div class="sb-logo-text">X<span>tracker</span></div>
+    <span class="sb-badge">ADMIN</span>
+  </div>
+  <div class="sb-nav">
+    <span class="sb-sec">Dashboard</span>
+    <button class="sb-item active" onclick="goTo('stats',this)"><span class="i">📊</span>Statistiques</button>
+    <button class="sb-item" onclick="goTo('users',this)"><span class="i">👥</span>Utilisateurs</button>
+    <button class="sb-item" onclick="goTo('history',this)"><span class="i">📋</span>Historique</button>
+    <span class="sb-sec">Securite</span>
+    <button class="sb-item" onclick="goTo('blocklist',this)"><span class="i">🚫</span>Blocklist</button>
+    <button class="sb-item" onclick="goTo('maintenance',this)"><span class="i">🔧</span>Maintenance</button>
+    <span class="sb-sec">Site</span>
+    <a href="dashboard.html" class="sb-item"><span class="i">🔍</span>Dashboard</a>
+    <a href="https://discord.gg/bYSDCmgcRz" target="_blank" class="sb-item"><span class="i">💬</span>Discord</a>
+  </div>
+  <div class="sb-bottom">
+    <button class="sb-logout" onclick="logout()"><span class="i">🚪</span>Deconnexion</button>
+  </div>
 </div>
-<!-- MODAL ADD CREDITS -->\n<div class="modal-overlay" id="modal-credits">  <div class="modal">    <h3>Ajouter des cr\u00e9dits</h3>    <input type="hidden" id="ac-id">    <div class="modal-field">
-<label>Nombre de cr\u00e9dits</label>\n<input type="number" id="ac-amount" min="1" value="50">\n</div>    <div class="modal-actions">      <button class="btn-modal cancel" onclick="closeModal()">Annuler</button>      <button class="btn-modal primary" onclick="addCredits()">Ajouter</button>    </div>  </div>
-</div>\n<script>const API='';const TOKEN=localStorage.getItem('token');const USER=JSON.parse(localStorage.getItem('user')||'{}\n');if(!TOKEN||USER.role!=='admin'){window.location.href='login.html'}function hdr(){return{Authorization:'Bearer '+TOKEN,'Content-Type':'application/json'}}let currentPage=1,totalUsers=0;function notif(msg,type='ok'){  const el=document.createElement('div');el.className=`notif ${type}`;el.textContent=msg;  document.body.appendChild(el);setTimeout(()=>el.remove(),3000);}function goTo(page,btn){  document.querySelectorAll('.sb-link').forEach(b=>b.classList.remove('active'));  if(btn) btn.classList.add('active');  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));  const el=document.getElementById('page-'+page);  if(el) el.classList.add('active');  const titles={overview:"Vue d'ensemble",users:'Utilisateurs',searches:'Recherches',transactions:'Transactions',blocklist:'Blocklist'};  document.getElementById('topbar-title').textContent=titles[page]||page;  document.getElementById('user-search').style.display=page==='users'?'block':'none';  if(page==='overview') loadOverview();  if(page==='users') loadUsers();  if(page==='searches') loadSearches();  if(page==='transactions') loadTransactions();  if(page==='blocklist') loadBlocklist();}async function loadOverview(){  try{    const r=await fetch(`${API}/api/admin/stats`,{headers:hdr()});    const d=await r.json();    document.getElementById('st-users').textContent=d.total_users?.toLocaleString()||'\u2014';    document.getElementById('st-new').textContent=`${d.new_today||0} nouveaux aujourd'hui`;    document.getElementById('st-searches').textContent=d.total_searches?.toLocaleString()||'\u2014';    document.getElementById('st-today').textContent=`${d.searches_today||0} aujourd'hui`;    document.getElementById('st-revenue').textContent=`${d.revenue_eur?.toFixed(2)||'0.00'}\u20ac`;    document.getElementById('st-banned').textContent=`${d.banned||0} comptes bannis`;    const ur=await fetch(`${API}/api/admin/users?page=1`,{headers:hdr()});    const ud=await ur.json();    const tbody=document.getElementById('ov-users');    if(!ud.users?.length){tbody.innerHTML='<tr>\n<td colspan="5" class="empty">Aucun utilisateur</td>\n</tr>';return}    tbody.innerHTML=ud.users.slice(0,8).map(u=>`<tr>      <td class="main-col">${u.username}</td>
-<td>${u.email}</td>      <td>\n<span class="badge-role ${u.role}">${u.role}</span>
-</td>      <td>${u.credits}</td>      <td>${u.created_at?new Date(u.created_at).toLocaleDateString('fr-FR'):'\u2014'}</td>    </tr>`).join('');  }catch(e){console.error(e)}}async function loadUsers(){  const search=document.getElementById('user-search').value;  try{    const r=await fetch(`${API}/api/admin/users?page=${currentPage}&search=${encodeURIComponent(search)}`,{headers:hdr()});    const d=await r.json();    totalUsers=d.total||0;    document.getElementById('users-count').textContent=`(${totalUsers})`;    document.getElementById('pg-info').textContent=`Page ${currentPage}`;    document.getElementById('pg-prev').disabled=currentPage<=1;    document.getElementById('pg-next').disabled=currentPage*20>=totalUsers;    const tbody=document.getElementById('users-tbody');    if(!d.users?.length){tbody.innerHTML='<tr>\n<td colspan="8" class="empty">Aucun utilisateur</td>\n</tr>';return}    tbody.innerHTML=d.users.map(u=>`<tr>      <td>${u.id}</td>\n<td class="main-col">${u.username}</td>
-<td>${u.email}</td>      <td>\n<span class="badge-role ${u.role}">${u.role}</span>
-</td>      <td>${u.credits}</td>\n<td>${u.free_left}</td>      <td>${u.banned?'<span style="color:var(--red);font-size:11px;font-weight:600">Banni</span>':'<span style="color:var(--green);font-size:11px">\u2713 Actif</span>'}</td>      <td>\n<div class="actions-cell">        <button class="btn-sm primary" onclick="openEdit(${u.id},${u.credits},'${u.role}',${u.banned})">Modifier</button>        <button class="btn-sm success" onclick="openAddCredits(${u.id})">+ Cr\u00e9dits</button>        <button class="btn-sm danger" onclick="deleteUser(${u.id},'${u.username}')">Supprimer</button>      </div>\n</td>    </tr>`).join('');  }catch(e){console.error(e)}}function searchUsers(){clearTimeout(window._st);window._st=setTimeout(()=>{currentPage=1;loadUsers()},400)}function changePage(dir){currentPage+=dir;loadUsers()}async function loadSearches(){  try{    const r=await fetch(`${API}/api/admin/searches`,{headers:hdr()});    const d=await r.json();    const tbody=document.getElementById('searches-tbody');    if(!d.length){tbody.innerHTML='<tr>\n<td colspan="5" class="empty">Aucune recherche</td>\n</tr>';return}    tbody.innerHTML=d.map(s=>{      const q=JSON.parse(s.query_data||'{}\n');      const label=Object.entries(q).filter(([k])=>!['flexible','per_page'].includes(k)).map(([,v])=>v).join(', ')||'\u2014';      const date=new Date(s.created_at).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});      return `<tr>\n<td>${date}</td>\n<td class="main-col">${s.username||'\u2014'}</td>        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${label}</td>        <td>${s.result_count}</td>        <td>${s.cost===0?'<span style="color:var(--green)">Gratuit</span>':'<span style="color:var(--accent2)">'+s.cost+' cr</span>'}</td>\n</tr>`;    }).join('');  }catch(e){}\n}async function loadTransactions(){  try{    const r=await fetch(`${API}/api/admin/transactions`,{headers:hdr()});    const d=await r.json();    const tbody=document.getElementById('tx-tbody');    if(!d.length){tbody.innerHTML='<tr>\n<td colspan="6" class="empty">Aucune transaction</td>\n</tr>';return}    tbody.innerHTML=d.map(t=>{      const date=new Date(t.created_at).toLocaleDateString('fr-FR');      return `<tr>\n<td>${date}</td>\n<td class="main-col">${t.username||'\u2014'}</td>        <td>${t.type==='purchase'?'Achat':'Don admin'}</td>        <td style="color:var(--accent2);font-weight:600">+${t.credits}</td>        <td>${t.amount_eur>0?t.amount_eur.toFixed(2)+'\u20ac':'\u2014'}</td>        <td style="color:${t.status==='completed'?'var(--green)':'var(--yellow)'}">${t.status==='completed'?'\u2713 Compl\u00e9t\u00e9':'En attente'}</td>\n</tr>`;    }).join('');  }catch(e){}\n}async function loadBlocklist(){  try{    const r=await fetch(`${API}/api/admin/blocklist`,{headers:hdr()});    const rows=await r.json();    const el=document.getElementById('bl-list');    if(!rows.length){el.innerHTML='<div style="text-align:center;padding:30px;color:var(--muted)">Aucun terme bloqu\u00e9</div>';return}    el.innerHTML=rows.map(row=>`      <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 16px">        <div style="display:flex;align-items:center;gap:12px">          <span style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#fca5a5;font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px">${row.type}</span>          <span style="font-weight:600;font-size:14px">${row.value}</span>          ${row.reason?`<span style="font-size:12px;color:var(--muted2)">${row.reason}</span>`:''}        </div>        <button onclick="deleteBlocklist(${row.id})" style="padding:5px 12px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#fca5a5;font-size:12px;border-radius:6px;cursor:pointer;font-family:inherit">Supprimer</button>      </div>    `).join('');  }catch(e){notif('Erreur chargement blocklist','err')}}async function addBlocklist(){  const type=document.getElementById('bl-type').value;  const value=document.getElementById('bl-value').value.trim();  const reason=document.getElementById('bl-reason').value.trim();  if(!value){notif('Entrez une valeur','err');return}  const r=await fetch(`${API}/api/admin/blocklist`,{method:'POST',headers:hdr(),body:JSON.stringify({type,value,reason})});  if(r.ok){document.getElementById('bl-value').value='';document.getElementById('bl-reason').value='';notif('Ajout\u00e9 \u2713');loadBlocklist();}  else notif('Erreur','err');}async function deleteBlocklist(id){  if(!confirm('Supprimer ce terme ?'))return;  const r=await fetch(`${API}/api/admin/blocklist/${id}`,{method:'DELETE',headers:hdr()});  if(r.ok){notif('Supprim\u00e9 \u2713');loadBlocklist();}  else notif('Erreur','err');}function openEdit(id,credits,role,banned){  document.getElementById('edit-id').value=id;  document.getElementById('edit-credits').value=credits;  document.getElementById('edit-role').value=role;  document.getElementById('edit-banned').value=String(banned);  document.getElementById('modal-edit').classList.add('open');}function openAddCredits(id){  document.getElementById('ac-id').value=id;  document.getElementById('ac-amount').value=50;  document.getElementById('modal-credits').classList.add('open');}function closeModal(){document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('open'))}async function saveUser(){  const id=document.getElementById('edit-id').value;  const data={credits:parseInt(document.getElementById('edit-credits').value),role:document.getElementById('edit-role').value,banned:document.getElementById('edit-banned').value==='true'};  const r=await fetch(`${API}/api/admin/users/${id}`,{method:'PATCH',headers:hdr(),body:JSON.stringify(data)});  if(r.ok){notif('Mis \u00e0 jour \u2713');closeModal();loadUsers()}else notif('Erreur','err');}async function addCredits(){  const id=document.getElementById('ac-id').value;  const credits=parseInt(document.getElementById('ac-amount').value);  const r=await fetch(`${API}/api/admin/users/${id}/add-credits`,{method:'POST',headers:hdr(),body:JSON.stringify({credits})});  if(r.ok){notif(`${credits} cr\u00e9dits ajout\u00e9s \u2713`);closeModal();loadUsers()}else notif('Erreur','err');}async function deleteUser(id,name){  if(!confirm(`Supprimer "${name}" ?`))return;  const r=await fetch(`${API}/api/admin/users/${id}`,{method:'DELETE',headers:hdr()});  if(r.ok){notif('Supprim\u00e9');loadUsers()}else notif('Erreur','err');}async function toggleMaintenance(){  const btn=document.getElementById('btn-maintenance');  const isOn=btn.textContent.includes('D\u00e9sactiver');  if(!confirm(isOn?'D\u00e9sactiver la maintenance ?':'Activer la maintenance ? Le site sera inaccessible.'))return;  const r=await fetch(`${API}/api/admin/maintenance`,{method:'POST',headers:hdr(),body:JSON.stringify({enabled:!isOn})});  if(r.ok){    btn.textContent=isOn?'\ud83d\udd27 Activer maintenance':'\u2705 D\u00e9sactiver maintenance';    btn.style.background=isOn?'rgba(245,158,11,0.1)':'rgba(34,197,94,0.1)';    btn.style.borderColor=isOn?'rgba(245,158,11,0.3)':'rgba(34,197,94,0.3)';    btn.style.color=isOn?'#f59e0b':'#22c55e';    notif(isOn?'Maintenance d\u00e9sactiv\u00e9e \u2713':'Maintenance activ\u00e9e \ud83d\udd27');  }}document.getElementById('modal-edit').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal()});document.getElementById('modal-credits').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal()});// InitloadOverview();fetch(`${API}/api/admin/maintenance/status`,{headers:hdr()})  .then(r=>r.json()).then(d=>{    if(d.maintenance){      const btn=document.getElementById('btn-maintenance');      btn.textContent='\u2705 D\u00e9sactiver maintenance';      btn.style.background='rgba(34,197,94,0.1)';      btn.style.borderColor='rgba(34,197,94,0.3)';      btn.style.color='#22c55e';    }  }).catch(()=>{}
-);</script>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="page-title">Statistiques</div>
+    <div class="topbar-right">
+      <span class="badge-admin">ADMIN</span>
+      <span id="admin-name" style="font-size:12px;color:var(--muted2)"></span>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="page active" id="page-stats">
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-label">Utilisateurs</div><div class="stat-val" id="s-users">—</div><div class="stat-sub">total</div></div>
+      <div class="stat-card"><div class="stat-label">Recherches</div><div class="stat-val" id="s-searches">—</div><div class="stat-sub">total</div></div>
+      <div class="stat-card"><div class="stat-label">Revenus</div><div class="stat-val" id="s-revenue">—</div><div class="stat-sub">total</div></div>
+      <div class="stat-card"><div class="stat-label">Bannis</div><div class="stat-val" id="s-banned">—</div><div class="stat-sub">comptes</div></div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-label">Nouveaux aujourd hui</div><div class="stat-val" id="s-new">—</div></div>
+      <div class="stat-card"><div class="stat-label">Recherches aujourd hui</div><div class="stat-val" id="s-today">—</div></div>
+      <div class="stat-card"><div class="stat-label">Credits vendus</div><div class="stat-val" id="s-credits">—</div></div>
+      <div class="stat-card"><div class="stat-label">Comptes actifs</div><div class="stat-val" id="s-active">—</div></div>
+    </div>
+  </div>
+
+  <!-- USERS -->
+  <div class="page" id="page-users">
+    <div class="search-bar">
+      <input class="search-input" id="user-search" placeholder="Rechercher par email ou nom..." oninput="filterUsers()">
+      <button class="btn btn-a" onclick="loadUsers()">Actualiser</button>
+    </div>
+    <div class="table-wrap">
+      <div class="table-head"><div class="table-title">Utilisateurs</div><span id="user-count" style="font-size:12px;color:var(--muted2)"></span></div>
+      <table>
+        <thead><tr><th>Utilisateur</th><th>Email</th><th>Credits</th><th>Gratuites</th><th>Role</th><th>Statut</th><th>Actions</th></tr></thead>
+        <tbody id="users-tbody"><tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">Chargement...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="page" id="page-history">
+    <div class="table-wrap">
+      <div class="table-head"><div class="table-title">Historique des recherches</div></div>
+      <table>
+        <thead><tr><th>Utilisateur</th><th>Recherche</th><th>Resultats</th><th>Cout</th><th>Date</th></tr></thead>
+        <tbody id="history-tbody"><tr><td colspan="5" style="text-align:center;padding:24px;color:var(--muted)">Chargement...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- BLOCKLIST -->
+  <div class="page" id="page-blocklist">
+    <div class="table-wrap">
+      <div class="table-head"><div class="table-title">Blocklist dynamique</div></div>
+      <div class="bl-add">
+        <input class="bl-input" id="bl-val" placeholder="Terme a bloquer (nom, email, telephone...)">
+        <input class="bl-input" id="bl-reason" placeholder="Raison (optionnel)" style="max-width:200px">
+        <button class="btn btn-a" onclick="addBlocklist()">Ajouter</button>
+      </div>
+      <div id="blocklist-items"><div style="padding:14px 16px;color:var(--muted);text-align:center">Chargement...</div></div>
+    </div>
+    <div class="table-wrap">
+      <div class="table-head"><div class="table-title">Termes proteges statiques</div></div>
+      <div style="padding:14px 16px;display:flex;flex-wrap:wrap;gap:8px">
+        <span style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:var(--red);padding:4px 10px;border-radius:5px;font-size:12px">Kocahal</span>
+        <span style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:var(--red);padding:4px 10px;border-radius:5px;font-size:12px">Lauzet</span>
+        <span style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:var(--red);padding:4px 10px;border-radius:5px;font-size:12px">Pacchioni</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAINTENANCE -->
+  <div class="page" id="page-maintenance">
+    <div class="toggle-row">
+      <div>
+        <div class="toggle-info">Mode maintenance</div>
+        <div class="toggle-sub">Affiche une page de maintenance a tous les visiteurs</div>
+      </div>
+      <button class="toggle-sw" id="maint-toggle" onclick="toggleMaintenance()"></button>
+    </div>
+    <div class="table-wrap">
+      <div class="table-head"><div class="table-title">Actions rapides</div></div>
+      <div style="padding:14px 16px;display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:var(--bg3);border-radius:7px">
+          <div style="font-size:13px">Logs Railway</div>
+          <a href="https://railway.app" target="_blank" class="btn btn-g">Ouvrir</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+const API='';
+const TOKEN=localStorage.getItem('token');
+if(!TOKEN){window.location.href='login.html'}
+let allUsers=[];
+function g(id){return document.getElementById(id)}
+function hdr(){return{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'}}
+
+function notif(msg,type){
+  const el=document.createElement('div');el.className='notif '+(type||'ok');el.textContent=msg;
+  document.body.appendChild(el);setTimeout(()=>el.remove(),3500);
+}
+
+function goTo(page,btn){
+  document.querySelectorAll('.sb-item').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const pg=g('page-'+page);if(pg)pg.classList.add('active');
+  const titles={stats:'Statistiques',users:'Utilisateurs',history:'Historique',blocklist:'Blocklist',maintenance:'Maintenance'};
+  g('page-title').textContent=titles[page]||page;
+  if(page==='users')loadUsers();
+  if(page==='history')loadHistory();
+  if(page==='blocklist')loadBlocklist();
+  if(page==='maintenance')loadMaintenance();
+}
+
+async function loadStats(){
+  try{
+    const r=await fetch(API+'/api/admin/stats',{headers:hdr()});
+    if(!r.ok)return;
+    const d=await r.json();
+    g('s-users').textContent=(d.total_users||0).toLocaleString();
+    g('s-searches').textContent=(d.total_searches||0).toLocaleString();
+    g('s-revenue').textContent=(d.revenue_eur||0).toFixed(2)+'EUR';
+    g('s-banned').textContent=(d.banned||0);
+    g('s-new').textContent=(d.new_today||0);
+    g('s-today').textContent=(d.searches_today||0);
+    g('s-credits').textContent=(d.credits_sold||0);
+    g('s-active').textContent=(d.active_users||0);
+  }catch(e){}
+}
+
+async function loadUsers(){
+  try{
+    const r=await fetch(API+'/api/admin/users',{headers:hdr()});
+    const d=await r.json();
+    allUsers=d;
+    g('user-count').textContent=d.length+' utilisateurs';
+    renderUsers(d);
+  }catch(e){}
+}
+
+function renderUsers(users){
+  const tb=g('users-tbody');
+  if(!users.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">Aucun utilisateur</td></tr>';return}
+  tb.innerHTML=users.map(u=>'<tr><td>'+(u.username||'—')+'</td><td style="font-family:monospace;font-size:11px">'+u.email+'</td><td>'+(u.credits||0)+'</td><td>'+(u.free_left||0)+'</td><td><span class="badge b-'+(u.role||'user')+'">'+(u.role||'user')+'</span></td><td><span class="badge '+(u.banned?'b-ban':'b-ok')+'">'+(u.banned?'Banni':'Actif')+'</span></td><td><button class="act-btn" onclick="addCredits('+u.id+',\''+u.email+'\')">+Credits</button><button class="act-btn '+(u.banned?'success':'danger')+'" onclick="toggleBan('+u.id+','+u.banned+')">'+(u.banned?'Debannir':'Bannir')+'</button></td></tr>').join('');
+}
+
+function filterUsers(){
+  const q=g('user-search').value.toLowerCase();
+  renderUsers(allUsers.filter(u=>(u.email||'').includes(q)||(u.username||'').toLowerCase().includes(q)));
+}
+
+async function addCredits(id,email){
+  const n=prompt('Ajouter des credits a '+email+' :');
+  if(!n||isNaN(parseInt(n)))return;
+  try{
+    const r=await fetch(API+'/api/admin/users/'+id,{method:'PUT',headers:hdr(),body:JSON.stringify({credits:parseInt(n)})});
+    if(r.ok){notif(n+' credits ajoutes');loadUsers()}else notif('Erreur','err');
+  }catch(e){notif('Erreur reseau','err')}
+}
+
+async function toggleBan(id,banned){
+  try{
+    const r=await fetch(API+'/api/admin/users/'+id,{method:'PUT',headers:hdr(),body:JSON.stringify({banned:!banned})});
+    if(r.ok){notif(banned?'Compte debanni':'Compte banni');loadUsers()}else notif('Erreur','err');
+  }catch(e){notif('Erreur reseau','err')}
+}
+
+async function loadHistory(){
+  try{
+    const r=await fetch(API+'/api/admin/history',{headers:hdr()});
+    const d=await r.json();
+    const tb=g('history-tbody');
+    if(!d.length){tb.innerHTML='<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--muted)">Aucun historique</td></tr>';return}
+    tb.innerHTML=d.map(s=>{
+      const q=JSON.parse(s.query_data||'{}');
+      const label=Object.entries(q).filter(([k])=>!['flexible','per_page'].includes(k)).map(([,v])=>v).slice(0,3).join(', ')||'—';
+      const date=new Date(s.created_at).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+      return '<tr><td>'+(s.username||s.user_id)+'</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+label+'</td><td>'+s.result_count+'</td><td style="color:'+(s.cost===0?'var(--green)':'var(--accent2)')+'">'+( s.cost===0?'Gratuit':s.cost+' cr')+'</td><td>'+date+'</td></tr>';
+    }).join('');
+  }catch(e){}
+}
+
+async function loadBlocklist(){
+  try{
+    const r=await fetch(API+'/api/admin/blocklist',{headers:hdr()});
+    const d=await r.json();
+    const el=g('blocklist-items');
+    if(!d.length){el.innerHTML='<div style="padding:14px 16px;color:var(--muted);text-align:center">Aucun terme bloque</div>';return}
+    el.innerHTML=d.map(b=>'<div class="bl-item"><div><span class="bl-val">'+b.value+'</span>'+(b.reason?'<span class="bl-reason">'+b.reason+'</span>':'')+'</div><button class="act-btn danger" onclick="removeBlocklist('+b.id+')">Supprimer</button></div>').join('');
+  }catch(e){}
+}
+
+async function addBlocklist(){
+  const val=g('bl-val').value.trim(),reason=g('bl-reason').value.trim();
+  if(!val)return;
+  try{
+    const r=await fetch(API+'/api/admin/blocklist',{method:'POST',headers:hdr(),body:JSON.stringify({value:val,reason,type:'general'})});
+    if(r.ok){notif('Terme ajoute');g('bl-val').value='';g('bl-reason').value='';loadBlocklist()}else notif('Erreur','err');
+  }catch(e){notif('Erreur reseau','err')}
+}
+
+async function removeBlocklist(id){
+  try{
+    const r=await fetch(API+'/api/admin/blocklist/'+id,{method:'DELETE',headers:hdr()});
+    if(r.ok){notif('Terme supprime');loadBlocklist()}else notif('Erreur','err');
+  }catch(e){notif('Erreur reseau','err')}
+}
+
+async function loadMaintenance(){
+  try{
+    const r=await fetch(API+'/api/admin/maintenance',{headers:hdr()});
+    const d=await r.json();
+    g('maint-toggle').classList.toggle('on',d.maintenance);
+  }catch(e){}
+}
+
+async function toggleMaintenance(){
+  const t=g('maint-toggle');const on=t.classList.contains('on');
+  try{
+    const r=await fetch(API+'/api/admin/maintenance',{method:'POST',headers:hdr(),body:JSON.stringify({enabled:!on})});
+    if(r.ok){t.classList.toggle('on');notif(on?'Maintenance desactivee':'Maintenance activee')}else notif('Erreur','err');
+  }catch(e){notif('Erreur reseau','err')}
+}
+
+function logout(){localStorage.clear();window.location.href='login.html'}
+
+async function init(){
+  try{
+    const r=await fetch(API+'/api/auth/me',{headers:hdr()});
+    if(!r.ok){logout();return}
+    const d=await r.json();
+    if(d.role!=='admin'){window.location.href='dashboard.html';return}
+    g('admin-name').textContent=d.username||d.email;
+    loadStats();
+  }catch(e){logout()}
+}
+init();
+</script>
 </body>
-</html>�
+</html>
