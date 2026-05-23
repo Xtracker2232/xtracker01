@@ -512,9 +512,9 @@ async def login(data: LoginModel):
     # Si c'est un username, chercher UNIQUEMENT par username (jamais les comptes discord)
     login_val = data.username.strip()
     if "@" in login_val:
-        user = fetchone(db, "SELECT * FROM users WHERE email=? AND email NOT LIKE '%@xtracker.local'", (login_val.lower(),))
+        user = fetchone(db, "SELECT * FROM users WHERE email=? AND email NOT LIKE ?", (login_val.lower(), "%@xtracker.local"))
     else:
-        user = fetchone(db, "SELECT * FROM users WHERE username=? AND email NOT LIKE '%%@xtracker.local'", (login_val,))
+        user = fetchone(db, "SELECT * FROM users WHERE username=? AND email NOT LIKE ?", (login_val, "%@xtracker.local"))
     if not user or not pwd_ctx.verify(data.password, user["password"]):
         db.close()
         raise HTTPException(401, "Email ou mot de passe incorrect")
