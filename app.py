@@ -33,10 +33,10 @@ else:
 SECRET_KEY     = "xtracker-secret-2026-changez-en-prod"
 ALGORITHM      = "HS256"
 TOKEN_EXPIRE   = 60 * 24 * 7
-BRIX_KEY       = "brix_19QIDJYFNsNiRpG2T3Oa6vfPslFoS_-Z_dZai5IS1-DHiJdh"
+BRIX_KEY       = os.getenv("BRIX_API_KEY", "")
 BRIX_BASE      = "https://brixhub.net/api/v1"
-SUMUP_SK = "sup_sk_gMQdrWJZZ6XTmPZ2YUVsygZLe5quVLZQB"
-SUMUP_PK = "sup_pk_dk3GN6qF2DGWfRlKXgDCfv4nLLWJmBYRX"
+SUMUP_SK = os.getenv("SUMUP_SK", "")
+SUMUP_PK = os.getenv("SUMUP_PK", "")
 SUMUP_MERCHANT = "Shop2ToutMHN3Z5RX"
 
 DB_PATH        = "xtracker.db"
