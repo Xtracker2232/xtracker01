@@ -384,6 +384,21 @@ select option{background:var(--bg2)}
     </div>
   </div>
 
+  <!-- PAGE ASSISTANT -->
+  <div class="page" id="page-assistant">
+    <div style="display:flex;flex-direction:column;height:calc(100vh - 90px);max-width:800px;margin:0 auto;width:100%">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 16px;margin-bottom:12px;flex-shrink:0">
+        <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:3px">🤖 Assistant Xtracker</div>
+        <div style="font-size:12px;color:var(--muted2)">Decrivez la personne en langage naturel, l'IA comprend et lance la recherche.</div>
+      </div>
+      <div id="chat-messages" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 2px;margin-bottom:12px"></div>
+      <div style="display:flex;gap:8px;align-items:flex-end;flex-shrink:0">
+        <textarea id="chat-input" placeholder="Trouve Jordan Bardella qui habite a Paris..." style="flex:1;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:11px 14px;font-size:13px;color:var(--text);font-family:inherit;outline:none;resize:none;min-height:46px;max-height:120px;line-height:1.5;transition:border-color .2s" onkeydown="chatKey(event)" rows="1"></textarea>
+        <button id="chat-send" onclick="sendChat()" style="padding:11px 18px;background:linear-gradient(135deg,var(--accent),var(--violet));color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;flex-shrink:0">Envoyer</button>
+      </div>
+    </div>
+  </div>
+
 </div>
 </div>
 
