@@ -2,195 +2,153 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-  <!-- SEO & Open Graph -->
-  <meta name="description" content="Xtracker — Le moteur de recherche #1 du CSINT. Retrouvez n'importe qui en quelques secondes.">
-  <meta property="og:title" content="Xtracker — #1 du CSINT">
-  <meta property="og:description" content="Retrouvez n'importe qui en quelques secondes. 11 milliards d'entrées.">
-  <meta property="og:image" content="https://www.xtracker.digital/preview.png">
-  <meta property="og:url" content="https://www.xtracker.digital">
-  <meta property="og:type" content="website">
-  <meta property="og:site_name" content="Xtracker">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Xtracker — #1 du CSINT">
-  <meta name="twitter:description" content="Retrouvez n'importe qui en quelques secondes.">
-  <meta name="twitter:image" content="https://www.xtracker.digital/preview.png">
-  <link rel="icon" type="image/png" href="/preview.png">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Recherche — Xtracker</title>
+<meta property="og:image" content="https://www.xtracker.digital/preview.png">
+<link rel="icon" type="image/png" href="/preview.png">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#06080f;--bg2:#0a0d1a;--bg3:#0d1020;
-  --border:rgba(255,255,255,0.06);--ba:rgba(99,102,241,0.2);
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.1);
   --text:#f0f2ff;--muted:#4a5280;--muted2:#8892c0;
   --accent:#6366f1;--accent2:#818cf8;--violet:#a78bfa;
-  --green:#22c55e;--yellow:#f59e0b;--red:#ef4444;
 }
-html,body{min-height:100%}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
-body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
-  background:radial-gradient(ellipse 70% 50% at 15% 10%,rgba(99,102,241,0.07),transparent 60%),
-             radial-gradient(ellipse 50% 40% at 85% 90%,rgba(167,139,250,0.05),transparent 60%)}
+html,body{min-height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+a{color:inherit;text-decoration:none}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse 70% 50% at 20% 20%,rgba(99,102,241,0.06),transparent 60%)}
 
-/* NAV */
-nav{
-  position:sticky;top:0;z-index:100;height:58px;padding:0 32px;
-  display:flex;align-items:center;justify-content:space-between;
-  background:rgba(6,8,15,0.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);
-}
-.logo{font-family:'Syne',sans-serif;font-size:19px;font-weight:800;letter-spacing:-0.5px;text-decoration:none;color:var(--text)}
+nav{padding:0 40px;height:58px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:rgba(6,8,15,0.9);backdrop-filter:blur(20px);position:sticky;top:0;z-index:50}
+.logo{font-family:'Syne',sans-serif;font-size:19px;font-weight:800;letter-spacing:-0.5px}
 .logo span{color:var(--accent)}
-.nav-right{display:flex;align-items:center;gap:12px}
-.credits-pill{display:flex;align-items:center;gap:8px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);padding:5px 13px;border-radius:20px;font-size:12px;font-weight:500}
-.c-free{color:var(--accent2)}.c-paid{color:var(--violet)}
-.nav-link{font-size:13px;color:var(--muted2);text-decoration:none;transition:color .2s}
-.nav-link:hover{color:var(--text)}
+.nav-right{display:flex;align-items:center;gap:10px}
+.nav-btn{padding:7px 14px;border-radius:7px;font-size:13px;font-weight:500;border:none;cursor:pointer;font-family:inherit;transition:all .2s}
+.nav-btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted2)}
+.nav-btn-ghost:hover{border-color:var(--border2);color:var(--text)}
+.nav-btn-accent{background:linear-gradient(135deg,var(--accent),var(--violet));color:#fff}
 
-/* LAYOUT */
-.wrap{max-width:980px;margin:0 auto;padding:32px 24px 80px;position:relative;z-index:10;display:grid;grid-template-columns:1fr 420px;gap:24px;align-items:start}
+.wrap{max-width:1000px;margin:0 auto;padding:32px 24px;position:relative;z-index:10}
 
-/* SEARCH PANEL */
-.search-panel{position:sticky;top:74px}
-.panel-header{margin-bottom:20px}
-.panel-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;letter-spacing:-0.5px;margin-bottom:6px}
-.panel-sub{font-size:13px;color:var(--muted2)}
+h1{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;letter-spacing:-0.8px;margin-bottom:6px}
+.page-sub{font-size:14px;color:var(--muted2);margin-bottom:28px;font-weight:300}
 
 /* TABS */
-.tabs{display:flex;gap:0;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:9px;padding:3px;margin-bottom:16px}
-.tab{flex:1;padding:7px 10px;background:transparent;border:none;font-size:12px;font-weight:500;color:var(--muted2);cursor:pointer;border-radius:7px;transition:all .2s;font-family:inherit;white-space:nowrap}
-.tab.active{background:var(--accent);color:#fff;box-shadow:0 2px 10px rgba(99,102,241,0.35)}
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:24px;gap:0}
+.tab{padding:10px 20px;font-size:13px;font-weight:500;color:var(--muted2);cursor:pointer;border:none;background:transparent;font-family:inherit;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s}
+.tab.active{color:var(--accent2);border-bottom-color:var(--accent)}
+.tab:hover{color:var(--text)}
 
-/* SECTIONS ACCORDÉON */
-.sections{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
-.section{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:border-color .2s}
-.section.open{border-color:rgba(99,102,241,0.25)}
-.section-head{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:13px 16px;cursor:pointer;user-select:none;transition:background .15s;
-}
-.section-head:hover{background:rgba(99,102,241,0.05)}
-.section-head-left{display:flex;align-items:center;gap:10px}
-.section-ico{font-size:15px;width:20px;text-align:center}
-.section-name{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;letter-spacing:-0.2px}
-.section-count{font-size:10px;color:var(--accent2);background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);padding:1px 7px;border-radius:10px;font-weight:600}
-.section-arrow{color:var(--muted);font-size:11px;transition:transform .25s}
-.section.open .section-arrow{transform:rotate(180deg)}
-.section-body{display:none;padding:0 14px 14px}
-.section.open .section-body{display:block}
+/* PANEL */
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:20px}
 
-/* FORM */
-.fg{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding-top:12px}
-.fg-1{grid-template-columns:1fr}
-.fg-3{grid-template-columns:repeat(3,1fr)}
+/* ACCORDEONS */
+.acc{border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden;background:var(--bg3)}
+.acc-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;user-select:none;transition:background .15s}
+.acc-head:hover{background:rgba(255,255,255,0.03)}
+.acc-left{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--text)}
+.acc-cnt{font-size:10px;font-weight:700;color:var(--accent2);background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.2);padding:1px 6px;border-radius:4px;display:none}
+.acc-arrow{color:var(--muted);font-size:10px;transition:transform .2s}
+.acc.open .acc-arrow{transform:rotate(180deg)}
+.acc-body{display:none;padding:12px 16px 16px}
+.acc.open .acc-body{display:block}
+
+/* FIELDS */
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fg3{grid-template-columns:1fr 1fr 1fr}
+.fg1{grid-template-columns:1fr}
 .fgroup{display:flex;flex-direction:column;gap:4px}
 .fgroup.full{grid-column:1/-1}
-label{font-size:10px;font-weight:500;color:var(--muted2);letter-spacing:.8px;text-transform:uppercase}
-input,select{
-  background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:7px;
-  padding:9px 11px;font-size:13px;color:var(--text);font-family:inherit;outline:none;transition:all .2s;
-}
-input:focus,select:focus{border-color:rgba(99,102,241,0.5);background:rgba(99,102,241,0.05);box-shadow:0 0 0 2px rgba(99,102,241,0.1)}
+label{font-size:10px;font-weight:600;color:var(--muted2);letter-spacing:.8px;text-transform:uppercase}
+input,select{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;color:var(--text);font-family:inherit;outline:none;width:100%;transition:all .2s}
+input:focus,select:focus{border-color:rgba(99,102,241,0.5);background:rgba(99,102,241,0.05)}
 input::placeholder{color:var(--muted);font-size:12px}
 select option{background:var(--bg2)}
 
-/* BOTTOM BAR */
-.bottom-bar{
-  display:flex;align-items:center;justify-content:space-between;gap:10px;
-  padding-top:6px;
-}
-.flexible-toggle{display:flex;align-items:center;gap:8px;cursor:pointer}
-.tog{width:32px;height:17px;background:rgba(255,255,255,0.1);border-radius:9px;position:relative;flex-shrink:0;transition:background .2s}
-.tog::after{content:'';position:absolute;left:2px;top:2px;width:13px;height:13px;background:var(--muted);border-radius:50%;transition:all .2s}
-input[type=checkbox]:checked+.tog{background:rgba(99,102,241,0.5)}
-input[type=checkbox]:checked+.tog::after{left:17px;background:var(--accent2)}
+/* SEARCH BAR */
+.search-bar{display:flex;align-items:center;justify-content:space-between;padding-top:16px;margin-top:8px;border-top:1px solid var(--border)}
+.flex-toggle{display:flex;align-items:center;gap:8px;cursor:pointer}
+.tog-wrap{width:36px;height:20px;background:var(--muted);border-radius:10px;position:relative;flex-shrink:0;transition:background .25s}
+.tog-wrap.on{background:linear-gradient(135deg,var(--accent),var(--violet))}
+.tog-wrap::after{content:'';position:absolute;left:3px;top:3px;width:14px;height:14px;background:#fff;border-radius:50%;transition:left .25s}
+.tog-wrap.on::after{left:19px}
 input[type=checkbox]{display:none}
-.flex-label{font-size:11px;color:var(--muted2)}
-.flex-label strong{color:var(--text);font-weight:500}
-.btn-clear{padding:8px 16px;background:transparent;border:1px solid var(--border);color:var(--muted2);font-size:13px;font-weight:500;border-radius:7px;cursor:pointer;font-family:inherit;transition:all .2s}
-.btn-clear:hover{border-color:rgba(255,255,255,0.15);color:var(--text)}
-.btn-search{
-  padding:10px 24px;
-  background:linear-gradient(135deg,var(--accent),var(--violet));
-  color:#fff;font-size:13px;font-weight:600;border:none;border-radius:7px;
-  cursor:pointer;font-family:'Syne',sans-serif;transition:all .2s;
-  box-shadow:0 3px 14px rgba(99,102,241,0.3);
-  display:flex;align-items:center;gap:7px;
-}
-.btn-search:hover{box-shadow:0 4px 20px rgba(99,102,241,0.45);transform:translateY(-1px)}
-.btn-search:disabled{opacity:.4;cursor:not-allowed;transform:none}
-.spinner{width:13px;height:13px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
+.flex-label{font-size:12px;color:var(--muted2)}
+.btns{display:flex;gap:8px}
+.btn{padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .2s}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted2)}
+.btn-ghost:hover{border-color:var(--border2);color:var(--text)}
+.btn-accent{background:linear-gradient(135deg,var(--accent),var(--violet));color:#fff;box-shadow:0 3px 14px rgba(99,102,241,0.3)}
+.btn-accent:hover{box-shadow:0 6px 20px rgba(99,102,241,0.4);transform:translateY(-1px)}
+.btn-accent:disabled{opacity:.5;cursor:not-allowed;transform:none}
 
 /* LOOKUP */
-.lookup-panel{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px}
-.lookup-label{font-size:10px;font-weight:500;color:var(--muted2);letter-spacing:.8px;text-transform:uppercase;margin-bottom:6px}
+.lookup-wrap{display:flex;flex-direction:column;gap:12px}
+.lookup-label{font-size:11px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.lookup-input{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:11px 14px;font-size:14px;color:var(--text);font-family:inherit;outline:none;width:100%;transition:all .2s}
+.lookup-input:focus{border-color:rgba(99,102,241,0.5)}
+.lookup-input::placeholder{color:var(--muted);font-size:13px}
 
-/* RESULTS PANEL */
-.results-panel{}
+/* RESULTS */
 .results-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-.results-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;letter-spacing:-0.4px}
-.results-meta{font-size:12px;color:var(--muted)}
+.results-count{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--text)}
+.results-meta{font-size:12px;color:var(--muted2)}
 
-.rcard{border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden;background:var(--bg2);transition:border-color .2s;animation:fadeUp .25s both}
-@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-.rcard:hover{border-color:rgba(99,102,241,0.25)}
-.rcard-top{padding:13px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:background .15s}
-.rcard-top:hover{background:rgba(99,102,241,0.04)}
-.rname{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;letter-spacing:-.2px}
-.rmeta{font-size:11px;color:var(--muted2);margin-top:2px}
-.rtop-right{display:flex;align-items:center;gap:7px}
-.badge{font-size:11px;font-weight:600;padding:2px 9px;border-radius:20px}
-.badge.hi{background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.2)}
-.badge.md{background:rgba(245,158,11,.1);color:var(--yellow);border:1px solid rgba(245,158,11,.2)}
-.badge.lo{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+.rcard{background:var(--bg2);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;transition:border-color .2s;animation:fadeIn .3s both}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.rcard:hover{border-color:rgba(99,102,241,0.2)}
+.rcard-top{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
+.rname{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--text);margin-bottom:3px}
+.rmeta{font-size:12px;color:var(--muted2)}
+.rtop-right{display:flex;align-items:center;gap:8px}
+.src{font-size:10px;font-weight:600;color:var(--accent2);background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);padding:2px 8px;border-radius:4px}
 .rarr{color:var(--muted);font-size:10px;transition:transform .2s}
-.rcard-body{display:none;padding:12px 16px 16px;border-top:1px solid var(--border)}
+.rcard-body{display:none;padding:0 18px 18px;border-top:1px solid var(--border)}
 .rcard-body.open{display:block}
-.rfields{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:12px}
-.rf{display:flex;flex-direction:column;gap:2px}
-.rf-k{font-size:9px;font-weight:500;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
-.rf-v{font-size:12px;font-weight:500;color:var(--text);word-break:break-all}
-.rsources{display:flex;flex-wrap:wrap;gap:4px;padding-top:10px;border-top:1px solid var(--border)}
-.src{font-size:10px;color:var(--muted2);background:rgba(255,255,255,.03);border:1px solid var(--border);padding:2px 7px;border-radius:4px}
+.rfields{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin:14px 0 12px}
+.rf{display:flex;flex-direction:column;gap:3px}
+.rf-k{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.rf-v{font-size:13px;color:var(--text);font-weight:500;word-break:break-all}
+.rsources{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.rsrc{font-size:11px;color:var(--muted2);background:rgba(255,255,255,0.04);border:1px solid var(--border);padding:2px 8px;border-radius:4px}
 
-/* ÉTATS */
-.state-box{text-align:center;padding:48px 20px;background:var(--bg2);border:1px solid var(--border);border-radius:12px}
-.state-ico{font-size:36px;display:block;margin-bottom:12px;opacity:0.4}
-.state-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:6px}
-.state-sub{font-size:13px;color:var(--muted2);line-height:1.6}
-.err-box{padding:12px 14px;border-radius:8px;background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.2);font-size:13px;color:#fca5a5}
-.no-credits-box{text-align:center;padding:32px 20px;background:rgba(99,102,241,.05);border:1px solid rgba(99,102,241,.15);border-radius:10px}
-.no-credits-box h3{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;margin-bottom:8px}
-.no-credits-box p{font-size:13px;color:var(--muted2);margin-bottom:16px}
-.btn-cta{padding:9px 20px;background:linear-gradient(135deg,var(--accent),var(--violet));color:#fff;font-size:13px;font-weight:600;border:none;border-radius:7px;cursor:pointer;font-family:'Syne',sans-serif;text-decoration:none;display:inline-block}
+/* FAMILLE */
+.famille-box{background:rgba(99,102,241,0.05);border:1px solid rgba(99,102,241,0.1);border-radius:8px;padding:12px 14px;margin-bottom:12px}
+.famille-title{font-size:10px;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.famille-member{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:12px;margin-bottom:5px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.fam-name{font-weight:600;color:var(--text)}
+.fam-lien{color:var(--accent2);font-size:11px}
+.fam-detail{color:var(--muted2);font-size:11px}
+
+/* RAW */
+.raw-btn{padding:6px 12px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:rgba(255,255,255,0.03);color:var(--muted2);font-family:inherit;transition:all .15s;margin-right:6px}
+.raw-btn:hover{border-color:var(--border2);color:var(--text)}
+.raw-data{display:none;margin-top:10px;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:8px;padding:14px;font-family:monospace;font-size:11px;color:var(--muted2);white-space:pre-wrap;word-break:break-all;max-height:280px;overflow-y:auto;line-height:1.5}
+
+/* STATE */
+.state{text-align:center;padding:60px 20px;background:var(--bg2);border:1px solid var(--border);border-radius:14px}
+.state-ico{font-size:36px;margin-bottom:14px;opacity:.5}
+.state-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:6px}
+.state-sub{font-size:13px;color:var(--muted2)}
+
+/* SPINNER */
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ERR */
+.err-box{background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:12px 16px;font-size:13px;color:#fca5a5}
 
 /* NOTIF */
-.notif{position:fixed;bottom:24px;right:24px;z-index:200;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:13px;font-weight:500;box-shadow:0 8px 32px rgba(0,0,0,.4);animation:slideIn .3s cubic-bezier(.16,1,.3,1);max-width:280px}
-.notif.ok{border-color:rgba(34,197,94,.3);color:var(--green)}
+.notif{position:fixed;bottom:20px;right:20px;z-index:200;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,.5);animation:slideIn .3s ease;background:var(--bg2);border:1px solid var(--border);max-width:280px}
+.notif.ok{border-color:rgba(34,197,94,.3);color:#86efac}
 .notif.err{border-color:rgba(239,68,68,.3);color:#fca5a5}
-@keyframes slideIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+@keyframes slideIn{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
 
-@media(max-width:800px){
-  .wrap{grid-template-columns:1fr;gap:16px;padding:16px 16px 80px}
-  .search-panel{position:static}
-  .fg{grid-template-columns:1fr 1fr}
-  .fg-3{grid-template-columns:1fr 1fr}
+@media(max-width:680px){
   nav{padding:0 16px}
-  .credits-pill{display:none}
-}
-@media(max-width:480px){
-  .fg,.fg-3{grid-template-columns:1fr}
-  .tabs{gap:2px}
-  .tab{font-size:11px;padding:6px 6px}
-  .bottom-bar{flex-wrap:wrap;gap:8px}
-  .btn-search{width:100%}
-}
-@media(max-width:480px){
-  .wrap{padding:16px 12px 60px}
-  .fg,.fg-3{grid-template-columns:1fr}
-  .tabs{gap:2px}
-  .tab{font-size:11px;padding:6px 8px}
+  .wrap{padding:24px 16px}
+  .fg,.fg3{grid-template-columns:1fr}
+  .rfields{grid-template-columns:1fr 1fr}
 }
 </style>
 </head>
@@ -199,224 +157,74 @@ input[type=checkbox]{display:none}
 <nav>
   <a href="index.html" class="logo">X<span>tracker</span></a>
   <div class="nav-right">
-    <div class="credits-pill" id="credits-pill" style="display:none">
-      <span class="c-free">🎁 <span id="free-left">—</span></span>
-      <span style="color:rgba(255,255,255,0.1)">·</span>
-      <span class="c-paid">⚡ <span id="paid-credits">—</span></span>
-    </div>
-    <a href="https://discord.gg/bYSDCmgcRz" target="_blank" class="nav-link" style="display:flex;align-items:center;gap:5px">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.031.052a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
-      Discord
-    </a>
-    <a href="dashboard.html" class="nav-link" id="link-dash" style="display:none">Dashboard</a>
-    <a href="login.html" class="nav-btn" id="link-login" style="font-size:13px;font-weight:600;padding:7px 16px;background:linear-gradient(135deg,var(--accent),var(--violet));color:#fff;border-radius:7px;text-decoration:none">Connexion</a>
+    <a href="https://discord.gg/bYSDCmgcRz" target="_blank" class="nav-btn nav-btn-ghost">💬 Discord</a>
+    <a href="login.html" class="nav-btn nav-btn-accent">Connexion →</a>
   </div>
 </nav>
 
 <div class="wrap">
+  <h1>Recherche publique</h1>
+  <p class="page-sub">Testez notre moteur de recherche avec vos 5 recherches gratuites.</p>
 
-  <!-- PANNEAU RECHERCHE -->
-  <div class="search-panel">
-    <div class="panel-header">
-      <div class="panel-title">Recherche</div>
-      <div class="panel-sub">Déroulez les sections et remplissez vos critères</div>
-    </div>
+  <div class="tabs">
+    <button class="tab active" id="tab-fr" onclick="switchTab('fr',this)">Recherche FR</button>
+    <button class="tab" id="tab-lookup" onclick="switchTab('lookup',this)">Lookup rapide</button>
+  </div>
 
-    <!-- TABS -->
-    <div class="tabs">
-      <button class="tab active" onclick="switchTab('fr',this)">🇫🇷 Recherche française</button>
-      <button class="tab" onclick="switchTab('email',this)">✉️ Email & Mot de passe</button>
-      <button class="tab" onclick="switchTab('pro',this)">⚡ Recherche Pro</button>
-    </div>
-
-    <!-- TAB FR -->
-    <div id="tab-fr">
-      <div class="sections">
-
-        <!-- IDENTITÉ -->
-        <div class="section open" id="sec-identite">
-          <div class="section-head" onclick="toggleSection('identite')">
-            <div class="section-head-left">
-              <span class="section-ico">👤</span>
-              <span class="section-name">Identité</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <span class="section-count" id="cnt-identite" style="display:none">0</span>
-              <span class="section-arrow">▼</span>
-            </div>
-          </div>
-          <div class="section-body">
-            <div class="fg">
-              <div class="fgroup"><label>Nom</label><input id="f-nom" placeholder="Dupont" oninput="countSection('identite')"></div>
-              <div class="fgroup"><label>Prénom</label><input id="f-prenom" placeholder="Jean" oninput="countSection('identite')"></div>
-              <div class="fgroup"><label>Nom de naissance</label><input id="f-nom_naissance" placeholder="Martin" oninput="countSection('identite')"></div>
-              <div class="fgroup"><label>Nom affiché</label><input id="f-nom_affichage" placeholder="Jean Dupont" oninput="countSection('identite')"></div>
-              <div class="fgroup"><label>Nom d'utilisateur</label><input id="f-nom_utilisateur" placeholder="jean_d" oninput="countSection('identite')"></div>
-              <div class="fgroup"><label>Genre</label>
-                <select id="f-genre" onchange="countSection('identite')">
-                  <option value="">Tous</option>
-                  <option value="M">Masculin</option>
-                  <option value="F">Féminin</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- NAISSANCE -->
-        <div class="section" id="sec-naissance">
-          <div class="section-head" onclick="toggleSection('naissance')">
-            <div class="section-head-left">
-              <span class="section-ico">🎂</span>
-              <span class="section-name">Naissance</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <span class="section-count" id="cnt-naissance" style="display:none">0</span>
-              <span class="section-arrow">▼</span>
-            </div>
-          </div>
-          <div class="section-body">
-            <div class="fg fg-3">
-              <div class="fgroup"><label>Jour</label>
-                <select id="f-jour_naissance" onchange="countSection('naissance')">
-                  <option value="">Jour</option>
-                  <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option><option value="24">24</option><option value="25">25</option><option value="26">26</option><option value="27">27</option><option value="28">28</option><option value="29">29</option><option value="30">30</option><option value="31">31</option>
-                </select>
-              </div>
-              <div class="fgroup"><label>Mois</label>
-                <select id="f-mois_naissance" onchange="countSection('naissance')">
-                  <option value="">Mois</option>
-                  ${['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'].map((m,i)=>`<option value="${i+1}">${m}</option>`).join('')}
-                </select>
-              </div>
-              <div class="fgroup"><label>Année</label><input id="f-annee_naissance" placeholder="1990" maxlength="4" oninput="countSection('naissance')"></div>
-              <div class="fgroup"><label>Date exacte</label><input id="f-date_naissance" placeholder="1990-06-15" oninput="countSection('naissance')"></div>
-              <div class="fgroup"><label>Ville de naissance</label><input id="f-ville_naissance" placeholder="Paris" oninput="countSection('naissance')"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- CONTACT -->
-        <div class="section" id="sec-contact">
-          <div class="section-head" onclick="toggleSection('contact')">
-            <div class="section-head-left">
-              <span class="section-ico">✉️</span>
-              <span class="section-name">Contact</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <span class="section-count" id="cnt-contact" style="display:none">0</span>
-              <span class="section-arrow">▼</span>
-            </div>
-          </div>
-          <div class="section-body">
-            <div class="fg">
-              <div class="fgroup"><label>Email</label><input id="f-email" type="email" placeholder="jean@example.com" oninput="countSection('contact')"></div>
-              <div class="fgroup"><label>Téléphone</label><input id="f-telephone" placeholder="0612345678" oninput="countSection('contact')"></div>
-              <div class="fgroup"><label>Mobile</label><input id="f-mobile" placeholder="0612345678" oninput="countSection('contact')"></div>
-              <div class="fgroup"><label>Adresse IP</label><input id="f-adresse_ip" placeholder="192.168.1.1" oninput="countSection('contact')"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- LOCALISATION -->
-        <div class="section" id="sec-localisation">
-          <div class="section-head" onclick="toggleSection('localisation')">
-            <div class="section-head-left">
-              <span class="section-ico">📍</span>
-              <span class="section-name">Localisation</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <span class="section-count" id="cnt-localisation" style="display:none">0</span>
-              <span class="section-arrow">▼</span>
-            </div>
-          </div>
-          <div class="section-body">
-            <div class="fg">
-              <div class="fgroup full"><label>Adresse</label><input id="f-adresse" placeholder="10 rue de la Paix" oninput="countSection('localisation')"></div>
-              <div class="fgroup"><label>Code postal</label><input id="f-code_postal" placeholder="75001" oninput="countSection('localisation')"></div>
-              <div class="fgroup"><label>Ville</label><input id="f-ville" placeholder="Paris" oninput="countSection('localisation')"></div>
-              <div class="fgroup"><label>Département</label><input id="f-departement" placeholder="75" oninput="countSection('localisation')"></div>
-              <div class="fgroup"><label>Région</label><input id="f-region" placeholder="Ile-de-France" oninput="countSection('localisation')"></div>
-              <div class="fgroup"><label>Pays</label><input id="f-pays" placeholder="FR" maxlength="2" oninput="countSection('localisation')"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- CHAMPS AVANCÉS -->
-        <div class="section" id="sec-avances">
-          <div class="section-head" onclick="toggleSection('avances')">
-            <div class="section-head-left">
-              <span class="section-ico">🔑</span>
-              <span class="section-name">Champs avancés</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <span class="section-count" id="cnt-avances" style="display:none">0</span>
-              <span class="section-arrow">▼</span>
-            </div>
-          </div>
-          <div class="section-body">
-            <div class="fg">
-              <div class="fgroup"><label>NIR (Sécu)</label><input id="f-nir" placeholder="1234567890123" oninput="countSection('avances')"></div>
-              <div class="fgroup"><label>IBAN</label><input id="f-iban" placeholder="FR76..." oninput="countSection('avances')"></div>
-              <div class="fgroup"><label>BIC</label><input id="f-bic" placeholder="BNPAFRPP" oninput="countSection('avances')"></div>
-              <div class="fgroup"><label>SIRET</label><input id="f-siret" placeholder="12345678901234" oninput="countSection('avances')"></div>
-              <div class="fgroup"><label>SIREN</label><input id="f-siren" placeholder="123456789" oninput="countSection('avances')"></div>
-              <div class="fgroup"><label>VIN / Plaque</label><input id="f-vin_plaque" placeholder="AB-123-CD" oninput="countSection('avances')"></div>
-              <div class="fgroup"><label>Société</label><input id="f-societe" placeholder="Ma Société" oninput="countSection('avances')"></div>
-              <div class="fgroup"><label>Profession</label><input id="f-profession" placeholder="Ingénieur" oninput="countSection('avances')"></div>
-            </div>
-          </div>
-        </div>
-
+  <!-- TAB FR -->
+  <div id="pane-fr">
+    <div class="panel">
+      <div class="acc open" id="acc-id"><div class="acc-head" onclick="togAcc('id')"><div class="acc-left"><span>👤</span> Identité <span class="acc-cnt" id="ac-id"></span></div><span class="acc-arrow">▼</span></div>
+        <div class="acc-body"><div class="fg">
+          <div class="fgroup"><label>Nom</label><input id="f-nom" placeholder="Dupont" oninput="cnt('id')"></div>
+          <div class="fgroup"><label>Prénom</label><input id="f-prenom" placeholder="Jean" oninput="cnt('id')"></div>
+          <div class="fgroup"><label>Nom naissance</label><input id="f-nom_naissance" placeholder="Martin" oninput="cnt('id')"></div>
+          <div class="fgroup"><label>Genre</label><select id="f-genre" onchange="cnt('id')"><option value="">Tous</option><option value="M">M</option><option value="F">F</option></select></div>
+        </div></div>
       </div>
-
-      <!-- BOTTOM BAR -->
-      <div class="bottom-bar">
-        <label class="flexible-toggle">
-          <input type="checkbox" id="flexible" checked>
-          <div class="tog"></div>
-          <span class="flex-label">Recherche <strong>flexible</strong></span>
+      <div class="acc" id="acc-contact"><div class="acc-head" onclick="togAcc('contact')"><div class="acc-left"><span>✉️</span> Contact <span class="acc-cnt" id="ac-contact"></span></div><span class="acc-arrow">▼</span></div>
+        <div class="acc-body"><div class="fg">
+          <div class="fgroup"><label>Email</label><input id="f-email" type="email" placeholder="jean@gmail.com" oninput="cnt('contact')"></div>
+          <div class="fgroup"><label>Téléphone</label><input id="f-telephone" placeholder="0612345678" oninput="cnt('contact')"></div>
+        </div></div>
+      </div>
+      <div class="acc" id="acc-loc"><div class="acc-head" onclick="togAcc('loc')"><div class="acc-left"><span>📍</span> Localisation <span class="acc-cnt" id="ac-loc"></span></div><span class="acc-arrow">▼</span></div>
+        <div class="acc-body"><div class="fg">
+          <div class="fgroup full"><label>Adresse</label><input id="f-adresse" placeholder="10 rue de la Paix" oninput="cnt('loc')"></div>
+          <div class="fgroup"><label>Code postal</label><input id="f-code_postal" placeholder="75001" oninput="cnt('loc')"></div>
+          <div class="fgroup"><label>Ville</label><input id="f-ville" placeholder="Paris" oninput="cnt('loc')"></div>
+        </div></div>
+      </div>
+      <div class="search-bar">
+        <label class="flex-toggle" onclick="togFlex()">
+          <div class="tog-wrap" id="flex-tog"></div>
+          <span class="flex-label">Flexible</span>
         </label>
-        <div style="display:flex;gap:8px">
-          <button class="btn-clear" onclick="clearAll()">Effacer</button>
-          <button class="btn-search" id="btn-run" onclick="doSearch()">Rechercher</button>
+        <div class="btns">
+          <button class="btn btn-ghost" onclick="clearAll()">Effacer</button>
+          <button class="btn btn-accent" id="btn-search" onclick="doSearch()">Rechercher</button>
         </div>
-      </div>
-    </div>
-
-    <!-- TAB EMAIL -->
-    <div id="tab-email" style="display:none">
-      <div class="lookup-panel">
-        <div class="lookup-label">Email</div>
-        <input id="lk-email" type="email" placeholder="jean@example.com" style="width:100%;margin-bottom:10px">
-        <div class="lookup-label" style="margin-top:10px">Mot de passe (optionnel)</div>
-        <input id="lk-pass" type="text" placeholder="motdepasse123" style="width:100%">
-      </div>
-      <div class="bottom-bar" style="justify-content:flex-end">
-        <button class="btn-search" id="btn-email" onclick="doEmailSearch()">Rechercher</button>
-      </div>
-    </div>
-
-    <!-- TAB PRO -->
-    <div id="tab-pro" style="display:none">
-      <div class="lookup-panel">
-        <div class="lookup-label">Lookup direct — Email, Téléphone ou IBAN</div>
-        <input id="lk-pro" placeholder="jean@gmail.com  /  0612345678  /  FR76..." style="width:100%">
-      </div>
-      <div class="bottom-bar" style="justify-content:flex-end">
-        <button class="btn-search" id="btn-pro" onclick="doPro()">Lookup</button>
       </div>
     </div>
   </div>
 
-  <!-- RÉSULTATS -->
-  <div class="results-panel" id="results-panel">
-    <div class="state-box" id="state-empty">
-      <span class="state-ico">🔍</span>
-      <div class="state-title">Prêt à rechercher</div>
-      <div class="state-sub">Remplissez au moins un champ<br>et lancez la recherche.</div>
+  <!-- TAB LOOKUP -->
+  <div id="pane-lookup" style="display:none">
+    <div class="panel">
+      <div class="lookup-wrap">
+        <div><div class="lookup-label">Email, téléphone ou IBAN</div><input class="lookup-input" id="l-val" placeholder="jean@gmail.com / 0612345678 / FR76..."></div>
+        <button class="btn btn-accent" id="btn-lookup" onclick="doLookup()" style="align-self:flex-start">Lookup →</button>
+      </div>
     </div>
-    <div id="results" style="display:none"></div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results-area">
+    <div class="state" id="state-empty">
+      <div class="state-ico">🔍</div>
+      <div class="state-title">Prêt à rechercher</div>
+      <div class="state-sub">Remplissez au moins un champ et lancez la recherche.</div>
+    </div>
   </div>
 
 </div>
@@ -424,209 +232,131 @@ input[type=checkbox]{display:none}
 <script>
 const API='';
 const TOKEN=localStorage.getItem('token');
-const USER=JSON.parse(localStorage.getItem('user')||'{}');
-
-// Auth nav
-if(TOKEN){
-  document.getElementById('link-login').style.display='none';
-  document.getElementById('link-dash').style.display='inline';
-  document.getElementById('credits-pill').style.display='flex';
-  document.getElementById('free-left').textContent=USER.free_left??'—';
-  document.getElementById('paid-credits').textContent=USER.credits??'—';
-  fetch(`${API}/api/auth/me`,{headers:{Authorization:'Bearer '+TOKEN}})
-    .then(r=>r.json()).then(d=>{
-      document.getElementById('free-left').textContent=d.free_left??0;
-      document.getElementById('paid-credits').textContent=d.credits??0;
-    }).catch(()=>{});
-}
+let flexible=true;
 
 function g(id){return document.getElementById(id)}
+function hdr(){const h={'Content-Type':'application/json'};if(TOKEN)h['Authorization']='Bearer '+TOKEN;return h}
 
 function notif(msg,type='ok'){
   const el=document.createElement('div');el.className=`notif ${type}`;el.textContent=msg;
-  document.body.appendChild(el);setTimeout(()=>el.remove(),3000);
+  document.body.appendChild(el);setTimeout(()=>el.remove(),3500);
 }
 
-// TABS
 function switchTab(t,btn){
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  ['fr','email','pro'].forEach(id=>g('tab-'+id).style.display=id===t?'block':'none');
-  showState();
+  g('pane-fr').style.display=t==='fr'?'block':'none';
+  g('pane-lookup').style.display=t==='lookup'?'block':'none';
+  g('results-area').innerHTML='<div class="state" id="state-empty"><div class="state-ico">🔍</div><div class="state-title">Prêt à rechercher</div><div class="state-sub">Remplissez un champ et lancez la recherche.</div></div>';
 }
 
-// SECTIONS ACCORDÉON
-function toggleSection(name){
-  const sec=g('sec-'+name);
-  sec.classList.toggle('open');
+function togAcc(id){const a=g('acc-'+id);a.classList.toggle('open')}
+
+function togFlex(){
+  flexible=!flexible;
+  g('flex-tog').classList.toggle('on',flexible);
 }
 
-// COMPTEUR DE CHAMPS
-const sectionFields={
-  identite:['f-nom','f-prenom','f-nom_naissance','f-nom_affichage','f-nom_utilisateur','f-genre'],
-  naissance:['f-jour_naissance','f-mois_naissance','f-annee_naissance','f-date_naissance','f-ville_naissance'],
-  contact:['f-email','f-telephone','f-mobile','f-adresse_ip'],
-  localisation:['f-adresse','f-code_postal','f-ville','f-departement','f-region','f-pays'],
-  avances:['f-nir','f-iban','f-bic','f-siret','f-siren','f-vin_plaque','f-societe','f-profession'],
+const acFields={
+  id:['f-nom','f-prenom','f-nom_naissance','f-genre'],
+  contact:['f-email','f-telephone'],
+  loc:['f-adresse','f-code_postal','f-ville'],
 };
-
-function countSection(name){
-  const fields=sectionFields[name];
-  const filled=fields.filter(id=>{const el=g(id);return el&&el.value.trim()!==''&&el.value!=='';}).length;
-  const cnt=g('cnt-'+name);
-  if(filled>0){cnt.textContent=filled;cnt.style.display='inline'}
-  else{cnt.style.display='none'}
+function cnt(name){
+  const n=(acFields[name]||[]).filter(id=>{const el=g(id);return el&&el.value.trim()}).length;
+  const c=g('ac-'+name);if(c){c.textContent=n;c.style.display=n>0?'inline':'none'}
 }
-
 function clearAll(){
-  Object.values(sectionFields).flat().forEach(id=>{
-    const el=g(id);
-    if(el){el.tagName==='SELECT'?el.value='':el.value=''}
-  });
-  Object.keys(sectionFields).forEach(n=>countSection(n));
-  showState();
+  ['f-nom','f-prenom','f-nom_naissance','f-genre','f-email','f-telephone','f-adresse','f-code_postal','f-ville'].forEach(id=>{const el=g(id);if(el)el.tagName==='SELECT'?el.value='':el.value=''});
+  ['id','contact','loc'].forEach(n=>cnt(n));
+  g('results-area').innerHTML='<div class="state" id="state-empty"><div class="state-ico">🔍</div><div class="state-title">Prêt à rechercher</div><div class="state-sub">Remplissez au moins un champ et lancez la recherche.</div></div>';
 }
 
-// ÉTAT VIDE
-function showState(){
-  g('state-empty').style.display='block';
-  g('results').style.display='none';
-}
+const LABELS={nom_famille:'Nom',prenom:'Prénom',nom_naissance:'Nom naissance',nom_affichage:'Nom affiché',nom_utilisateur:'Utilisateur',genre:'Genre',date_naissance:'Naissance',annee_naissance:'Année',ville_naissance:'Ville naiss.',email:'Email',telephone:'Téléphone',mobile:'Mobile',adresse_ip:'IP',adresse:'Adresse',complement_adresse:'Complément',code_postal:'Code postal',ville:'Ville',pays:'Pays',region:'Région',departement:'Département',nir:'NIR (Sécu)',iban:'IBAN',bic:'BIC',siret:'SIRET',siren:'SIREN',vin_plaque:'VIN/Plaque',immatriculation:'Immat.',marque:'Marque',modele:'Modèle',societe:'Société',profession:'Profession',fonction:'Fonction'};
+const SKIP=new Set(['_confidence','_sources','_es_ids','_source_files','famille','membres_famille','family','flexible','per_page']);
 
-function showResults(html){
-  g('state-empty').style.display='none';
-  g('results').style.display='block';
-  g('results').innerHTML=html;
-}
-
-// AUTH CHECK
-function checkAuth(){
-  if(!TOKEN){
-    showResults(`<div class="no-credits-box">
-      <h3>Connexion requise</h3>
-      <p>Créez un compte gratuit pour accéder aux 5 recherches offertes.</p>
-      <a href="login.html" class="btn-cta">Se connecter</a>
-    </div>`);
-    return false;
-  }
-  return true;
-}
-
-function setLoad(id,on,label){
-  const b=g(id);if(!b)return;b.disabled=on;
-  b.innerHTML=on?'<div class="spinner"></div> Recherche...':label;
-}
-
-function updateCredits(free_left,credits){
-  g('free-left').textContent=free_left;
-  g('paid-credits').textContent=credits;
-}
-
-function renderCards(results,total,took){
-  if(!results.length){
-    return`<div class="state-box"><span class="state-ico">😶</span><div class="state-title">Aucun résultat</div><div class="state-sub">Essayez avec moins de critères<br>ou activez la recherche flexible.</div></div>`;
-  }
-  let html=`<div class="results-header">
-    <div class="results-title">Résultats</div>
-    <div class="results-meta"><strong style="color:var(--text)">${total.toLocaleString()}</strong> trouvé(s) · ${results.length} affiché(s) · ${took}ms</div>
-  </div>`;
-  results.slice(0,8).forEach((p,i)=>{
-    const conf=p._confidence||0;
-    const cls=conf>=70?'hi':conf>=40?'md':'lo';
+function renderResults(results,total,took){
+  const area=g('results-area');
+  if(!results.length){area.innerHTML='<div class="state"><div class="state-ico">😶</div><div class="state-title">Aucun résultat</div><div class="state-sub">Essayez avec moins de critères.</div></div>';return}
+  let html=`<div class="results-header"><div class="results-count">${total.toLocaleString()} résultat${total>1?'s':''}</div><div class="results-meta">${results.length} affiché(s)${took?' · '+took+'ms':''}</div></div>`;
+  results.forEach((p,i)=>{
+    window[`_r${i}`]=p;
     const name=[p.prenom,p.nom_famille].filter(Boolean).join(' ')||'Profil inconnu';
     const sub=[p.email,p.telephone,p.ville].filter(Boolean).join(' · ')||'—';
-    const fmap=[['Nom',p.nom_famille],['Prénom',p.prenom],['Email',p.email],['Téléphone',p.telephone],['Mobile',p.mobile],['Adresse',p.adresse],['Code postal',p.code_postal],['Ville',p.ville],['Région',p.region],['Pays',p.pays],['Naissance',p.date_naissance],['Genre',p.genre],['NIR',p.nir],['IBAN',p.iban],['SIRET',p.siret],['Société',p.societe],['Profession',p.profession],['IP',p.adresse_ip]].filter(([,v])=>v);
+    const srcs=(p._sources||[]).slice(0,3).map(s=>`<span class="src">${s}</span>`).join('');
+    const fmap=Object.entries(p).filter(([k,v])=>!SKIP.has(k)&&v&&typeof v==='string'&&v.trim()&&v!=='undefined').map(([k,v])=>[LABELS[k]||k,v]);
     const fh=fmap.map(([k,v])=>`<div class="rf"><div class="rf-k">${k}</div><div class="rf-v">${v}</div></div>`).join('');
-    const sh=(p._sources||[]).map(s=>`<span class="src">${s}</span>`).join('');
-    html+=`<div class="rcard" style="animation-delay:${i*.05}s">
+    const famille=p.famille||p.membres_famille||p.family||[];
+    let famHtml='';
+    if(famille.length){
+      famHtml=`<div class="famille-box"><div class="famille-title">👨‍👩‍👧 Famille associée (${famille.length})</div>${famille.map(m=>`<div class="famille-member"><span class="fam-name">${[m.prenom,m.nom_famille].filter(Boolean).join(' ')||'—'}</span>${m.lien?`<span class="fam-lien">${m.lien}</span>`:''} ${m.date_naissance?`<span class="fam-detail">${m.date_naissance}</span>`:''} ${m.email?`<span class="fam-detail">${m.email}</span>`:''} ${m.telephone?`<span class="fam-detail">${m.telephone}</span>`:''}</div>`).join('')}</div>`;
+    }
+    const allSrcs=(p._sources||[]).map(s=>`<span class="rsrc">${s}</span>`).join('');
+    html+=`<div class="rcard" style="animation-delay:${i*.04}s">
       <div class="rcard-top" onclick="tog(${i})">
         <div><div class="rname">${name}</div><div class="rmeta">${sub}</div></div>
-        <div class="rtop-right"><span class="badge ${cls}">${conf}%</span><span class="rarr" id="arr${i}">▼</span></div>
+        <div class="rtop-right">${srcs}<span class="rarr" id="arr${i}">▼</span></div>
       </div>
       <div class="rcard-body" id="rb${i}">
-        <div class="rfields">${fh}</div>
-        ${sh?`<div class="rsources">${sh}</div>`:''}
+        <div class="rfields">${fh||'<div style="color:var(--muted);font-size:13px">Aucun champ disponible</div>'}</div>
+        ${allSrcs?`<div class="rsources">${allSrcs}</div>`:''}
+        ${famHtml}
+        <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px;display:flex;gap:8px">
+          <button class="raw-btn" onclick="toggleRaw(${i})">🔍 Approfondir</button>
+          <button class="raw-btn" onclick="copyResult(${i})">📋 Copier</button>
+        </div>
+        <div class="raw-data" id="raw${i}">${JSON.stringify(p,null,2).replace(/</g,'&lt;')}</div>
       </div>
     </div>`;
   });
-  return html;
+  area.innerHTML=html;
 }
 
-function tog(i){
-  const b=g('rb'+i),a=g('arr'+i);
-  b.classList.toggle('open');
-  a.style.transform=b.classList.contains('open')?'rotate(180deg)':'none';
+function tog(i){const b=g('rb'+i),a=g('arr'+i);b.classList.toggle('open');a.style.transform=b.classList.contains('open')?'rotate(180deg)':'none'}
+function toggleRaw(i){const el=g('raw'+i);el.style.display=el.style.display==='block'?'none':'block'}
+function copyResult(i){
+  const p=window[`_r${i}`];if(!p)return;
+  const lines=Object.entries(p).filter(([k,v])=>!SKIP.has(k)&&v&&typeof v==='string'&&v.trim()).map(([k,v])=>`${LABELS[k]||k}: ${v}`);
+  const famille=p.famille||[];
+  if(famille.length){lines.push('--- Famille ---');famille.forEach(m=>lines.push([m.prenom,m.nom_famille,m.lien,m.date_naissance].filter(Boolean).join(' | ')))}
+  navigator.clipboard.writeText(lines.join('\n')).then(()=>notif('Copié 📋')).catch(()=>notif('Erreur copie','err'));
 }
 
-// RECHERCHE FRANÇAISE
+function setLoad(id,on,label){const b=g(id);if(!b)return;b.disabled=on;b.innerHTML=on?`<span class="spinner"></span>Recherche...`:label}
+
 async function doSearch(){
-  if(!checkAuth())return;
-  const payload={flexible:g('flexible').checked,per_page:10};
-  const map={
-    nom_famille:'f-nom',prenom:'f-prenom',nom_naissance:'f-nom_naissance',
-    nom_affichage:'f-nom_affichage',nom_utilisateur:'f-nom_utilisateur',
-    genre:'f-genre',
-    jour_naissance:'f-jour_naissance',mois_naissance:'f-mois_naissance',
-    annee_naissance:'f-annee_naissance',date_naissance:'f-date_naissance',
-    ville_naissance:'f-ville_naissance',
-    email:'f-email',telephone:'f-telephone',mobile:'f-mobile',adresse_ip:'f-adresse_ip',
-    adresse:'f-adresse',code_postal:'f-code_postal',ville:'f-ville',
-    departement:'f-departement',region:'f-region',pays:'f-pays',
-    nir:'f-nir',iban:'f-iban',bic:'f-bic',siret:'f-siret',siren:'f-siren',
-    vin_plaque:'f-vin_plaque',societe:'f-societe',profession:'f-profession',
-  };
-  Object.entries(map).forEach(([k,id])=>{const v=g(id)?.value?.trim();if(v&&v.length>=2)payload[k]=v});
-  const emailV=g('f-email')?.value?.trim();
-  if(emailV&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailV)){showResults('<div class="err-box">⚠ Email invalide.</div>');return}
-  if(Object.keys(payload).length<=2){showResults('<div class="err-box">⚠ Remplissez au moins un champ (2 caractères min).</div>');return}
-  setLoad('btn-run',true,'Rechercher');
+  const payload={flexible,per_page:100};
+  const map={nom_famille:'f-nom',prenom:'f-prenom',nom_naissance:'f-nom_naissance',genre:'f-genre',email:'f-email',telephone:'f-telephone',adresse:'f-adresse',code_postal:'f-code_postal',ville:'f-ville'};
+  Object.entries(map).forEach(([k,id])=>{const v=g(id)?.value?.trim();if(v)payload[k]=v});
+  if(Object.keys(payload).length<=2){g('results-area').innerHTML='<div class="err-box">Remplissez au moins un champ.</div>';return}
+  setLoad('btn-search',true,'Rechercher');
   try{
-    const r=await fetch(`${API}/api/search`,{method:'POST',headers:{Authorization:'Bearer '+TOKEN,'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const r=await fetch(`${API}/api/search`,{method:'POST',headers:hdr(),body:JSON.stringify(payload)});
     const d=await r.json();
-    if(r.status===402){showResults(`<div class="no-credits-box"><h3>Plus de crédits 💸</h3><p>Rechargez votre compte.</p><a href="dashboard.html" class="btn-cta">Acheter des crédits</a></div>`);return}
-    if(!r.ok){showResults(`<div class="err-box">⚠ ${d.detail||'Erreur API'}</div>`);return}
-    updateCredits(d.free_left,d.credits);
-    showResults(renderCards(d.results,d.total,d.took_ms));
-  }catch(e){showResults(`<div class="err-box">⚠ Erreur réseau : ${e.message}</div>`)}
-  finally{setLoad('btn-run',false,'Rechercher')}
+    if(r.status===402){g('results-area').innerHTML='<div class="state"><div class="state-ico">💸</div><div class="state-title">Plus de crédits</div><div class="state-sub"><a href="login.html" style="color:var(--accent2)">Connectez-vous</a> pour recharger.</div></div>';return}
+    if(d.protected){g('results-area').innerHTML=`<div class="state"><div class="state-ico">😏</div><div class="state-title">${d.message}</div></div>`;return}
+    if(!r.ok){g('results-area').innerHTML=`<div class="err-box">${d.detail||'Erreur API'}</div>`;return}
+    renderResults(d.results,d.total,d.took_ms);
+  }catch(e){g('results-area').innerHTML=`<div class="err-box">Erreur réseau : ${e.message}</div>`}
+  finally{setLoad('btn-search',false,'Rechercher')}
 }
 
-// RECHERCHE EMAIL
-async function doEmailSearch(){
-  if(!checkAuth())return;
-  const email=g('lk-email').value.trim();
-  if(!email){showResults('<div class="err-box">⚠ Entrez un email.</div>');return}
-  setLoad('btn-email',true,'Rechercher');
+async function doLookup(){
+  const val=g('l-val')?.value?.trim();
+  if(!val){g('results-area').innerHTML='<div class="err-box">Entrez un identifiant.</div>';return}
+  setLoad('btn-lookup',true,'Lookup');
   try{
-    const r=await fetch(`${API}/api/lookup`,{method:'POST',headers:{Authorization:'Bearer '+TOKEN,'Content-Type':'application/json'},body:JSON.stringify({value:email})});
+    const r=await fetch(`${API}/api/lookup`,{method:'POST',headers:hdr(),body:JSON.stringify({value:val})});
     const d=await r.json();
-    if(r.status===402){showResults(`<div class="no-credits-box"><h3>Plus de crédits 💸</h3><p>Rechargez votre compte.</p><a href="dashboard.html" class="btn-cta">Acheter</a></div>`);return}
-    if(!r.ok){showResults(`<div class="err-box">⚠ ${d.detail||'Erreur'}</div>`);return}
-    updateCredits(d.free_left,d.credits);
-    showResults(renderCards(d.results,d.total,0));
-  }catch(e){showResults(`<div class="err-box">⚠ Erreur réseau : ${e.message}</div>`)}
-  finally{setLoad('btn-email',false,'Rechercher')}
+    if(r.status===402){g('results-area').innerHTML='<div class="state"><div class="state-ico">💸</div><div class="state-title">Plus de crédits</div><div class="state-sub"><a href="login.html" style="color:var(--accent2)">Connectez-vous</a> pour recharger.</div></div>';return}
+    if(!r.ok){g('results-area').innerHTML=`<div class="err-box">${d.detail||'Erreur'}</div>`;return}
+    renderResults(d.results,d.total,0);
+  }catch(e){g('results-area').innerHTML=`<div class="err-box">Erreur réseau</div>`}
+  finally{setLoad('btn-lookup',false,'Lookup →')}
 }
 
-// LOOKUP PRO
-async function doPro(){
-  if(!checkAuth())return;
-  const val=g('lk-pro').value.trim();
-  if(!val){showResults('<div class="err-box">⚠ Entrez un identifiant.</div>');return}
-  setLoad('btn-pro',true,'Lookup');
-  try{
-    const r=await fetch(`${API}/api/lookup`,{method:'POST',headers:{Authorization:'Bearer '+TOKEN,'Content-Type':'application/json'},body:JSON.stringify({value:val})});
-    const d=await r.json();
-    if(r.status===402){showResults(`<div class="no-credits-box"><h3>Plus de crédits 💸</h3><p>Rechargez votre compte.</p><a href="dashboard.html" class="btn-cta">Acheter</a></div>`);return}
-    if(!r.ok){showResults(`<div class="err-box">⚠ ${d.detail||'Erreur'}</div>`);return}
-    updateCredits(d.free_left,d.credits);
-    showResults(renderCards(d.results,d.total,0));
-  }catch(e){showResults(`<div class="err-box">⚠ Erreur réseau : ${e.message}</div>`)}
-  finally{setLoad('btn-pro',false,'Lookup')}
-}
-
-// Ouvrir Identité par défaut
-document.getElementById('sec-identite').classList.add('open');
+// Init flex toggle
+g('flex-tog').classList.add('on');
 </script>
 </body>
 </html>
