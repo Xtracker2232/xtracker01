@@ -615,10 +615,11 @@ async function buyPack(packId){
   }catch(e){notif('Erreur reseau','err')}
 }
 
-async function replaySearch(id, label){
+async function replayById(id){
+
   goTo('search', document.getElementById('nav-search'));
   g('state-empty').style.display='none';
-  g('results').innerHTML='<div class="state"><div class="state-ico">🔍</div><div class="state-title">Rechargement de : '+label+'</div></div>';
+  g('results').innerHTML='<div class="state"><div class="state-ico">🔍</div><div class="state-title">Rechargement...</div></div>';
   try{
     const r=await fetch(API+'/api/history/'+id+'/replay',{method:'POST',headers:hdr()});
     const d=await r.json();
@@ -633,14 +634,13 @@ async function loadHistory(){
     const d=await r.json();
     const el=g('history-list');
     if(!d.length){el.innerHTML='<div class="state"><div class="state-ico">📋</div><div class="state-title">Aucun historique</div></div>';return}
-    el.innerHTML=d.map(s=>{
+    el.innerHTML=d.map(function(s){
       const q=JSON.parse(s.query_data||'{}');
-      const label=Object.entries(q).filter(([k])=>!['flexible','per_page'].includes(k)).map(([,v])=>v).join(', ')||'—';
+      const label=Object.entries(q).filter(function(e){return !['flexible','per_page'].includes(e[0])}).map(function(e){return e[1]}).join(', ')||'—';
       const date=new Date(s.created_at).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-      return '<div class="history-item" style="cursor:pointer" onclick="replaySearch('+s.id+',''+label+'')">'+
-        '<div><div class="history-q">'+label+'</div><div style="font-size:11px;color:var(--muted2);margin-top:2px">Cliquer pour revoir les fiches · gratuit</div></div>'+
-        '<div class="history-meta"><span>'+s.result_count+' res.</span><span>'+date+'</span><span style="color:'+(s.cost===0?'var(--green)':'var(--accent2)')+'">'+( s.cost===0?'Gratuit':s.cost+' cr')+'</span></div>'+
-      '</div>';
+      const cost=s.cost===0?'Gratuit':s.cost+' cr';
+      const color=s.cost===0?'var(--green)':'var(--accent2)';
+      return '<div class="history-item" style="cursor:pointer" data-sid="'+s.id+'" onclick="replayById(this.dataset.sid)"><div><div class="history-q">'+label+'</div><div style="font-size:11px;color:var(--muted2);margin-top:2px">Cliquer pour revoir · gratuit</div></div><div class="history-meta"><span>'+s.result_count+' res.</span><span>'+date+'</span><span style="color:'+color+'">'+cost+'</span></div></div>';
     }).join('');
   }catch(e){}
 }
