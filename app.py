@@ -506,26 +506,17 @@ async def login(data: LoginModel):
     db.close()
     user = dict(user) if not isinstance(user, dict) else user
     token = create_token(user["id"], user["role"])
-    from fastapi.responses import JSONResponse
-    resp = JSONResponse({
-        "ok": True,
+    return {
         "token": token,
         "user": {
+            "id": user["id"],
+            "email": user["email"],
             "username": user["username"],
             "role": user["role"],
             "credits": user["credits"],
             "free_left": user["free_left"]
         }
-    })
-    resp.set_cookie(
-        key="xtoken",
-        value=token,
-        httponly=True,
-        secure=False,
-        samesite="lax",
-        max_age=86400 * 7  # 7 jours
-    )
-    return resp
+    }
 
 @app.get("/api/auth/me")
 async def me(user=Depends(get_current_user)):
