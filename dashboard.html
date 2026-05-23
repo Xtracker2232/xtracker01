@@ -258,6 +258,7 @@ select option{background:var(--bg2)}
     <a href="https://discord.gg/bYSDCmgcRz" target="_blank" class="nav-btn">Discord</a>
   </div>
   <div class="navbar-right">
+    <a href="admin.html" id="admin-btn" style="display:none;padding:6px 12px;border-radius:7px;font-size:12px;font-weight:600;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#ef4444;text-decoration:none">Panel Admin</a>
     <div class="credits-pill desktop-only"><span>⚡</span><span id="paid-credits">—</span></div>
     <span id="user-name" style="font-size:12px;color:var(--muted2)" class="desktop-only"></span>
     <button class="hamburger" onclick="openDrawer()">
@@ -891,11 +892,10 @@ async function init(){
     if(!r.ok){localStorage.clear();window.location.href='login.html';return}
     const d=await r.json();
     USER=d;
-    // Si admin, rediriger vers panel admin
-    if(d.role==='admin'){window.location.href='admin.html';return}
     g('paid-credits').textContent=(parseInt(d.free_left)||0)+(parseInt(d.credits)||0);
     g('card-total').textContent=(parseInt(d.free_left)||0)+(parseInt(d.credits)||0);
     g('user-name').textContent=d.username||'';
+    if(d.role==='admin'){const ab=g('admin-btn');if(ab)ab.style.display='block'}
     const params=new URLSearchParams(window.location.search);
     if(params.get('payment')==='success'){notif('Paiement reussi! Credits ajoutes','ok');init()}
     if(params.get('payment')==='cancel')notif('Paiement annule.','err');
