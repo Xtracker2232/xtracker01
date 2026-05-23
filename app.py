@@ -1237,6 +1237,21 @@ async def debug_users():
     db.close()
     return {"users": [dict(r) for r in rows]}
 
+@app.get("/api/secret-debug-login-xtracker2026")
+async def debug_login():
+    db = get_db()
+    # Simuler le login avec admin@xtracker.io
+    login_val = "admin@xtracker.io"
+    u1 = fetchone(db, "SELECT id, email, username, role FROM users WHERE email=? AND email NOT LIKE \'%%@xtracker.local\'", (login_val.lower(),))
+    u2 = fetchone(db, "SELECT id, email, username, role FROM users WHERE email=?", (login_val.lower(),))
+    all_admin = fetchall(db, "SELECT id, email, username, role FROM users WHERE email LIKE \'%%admin%%\' OR username LIKE \'%%admin%%\' OR username LIKE \'%%Admin%%\'", ())
+    db.close()
+    return {
+        "avec_filtre": dict(u1) if u1 else None,
+        "sans_filtre": dict(u2) if u2 else None,
+        "comptes_admin": [dict(r) for r in all_admin]
+    }
+
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
 
 if __name__ == "__main__":
