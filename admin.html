@@ -416,7 +416,7 @@ function toggleMaintenance(){
 function logout(){localStorage.clear();window.location.href='login.html'}
 
 function init(){
-  fetch(API+'/api/auth/me',{headers:hdr(),credentials:"include"}).then(function(r){
+  fetch(API+'/api/auth/me',{headers:hdr()}).then(function(r){
     if(!r.ok){logout();return}
     return r.json();
   }).then(function(d){

@@ -647,7 +647,7 @@ async function loadHistory(){
 
 async function loadCredits(){
   try{
-    const r=await fetch(API+'/api/auth/me',{headers:hdr(),credentials:'include'});
+    const r=await fetch(API+'/api/auth/me',{headers:hdr()});
     const d=await r.json();
     g('card-total').textContent=(parseInt(d.free_left)||0)+(parseInt(d.credits)||0);
     g('paid-credits').textContent=(parseInt(d.free_left)||0)+(parseInt(d.credits)||0);
@@ -656,7 +656,7 @@ async function loadCredits(){
 
 async function loadProfile(){
   try{
-    const r=await fetch(API+'/api/auth/me',{headers:hdr(),credentials:'include'});
+    const r=await fetch(API+'/api/auth/me',{headers:hdr()});
     const d=await r.json();
     g('p-email').textContent=d.email||'—';g('p-username').textContent=d.username||'—';
     g('p-role').textContent=d.role||'—';g('p-date').textContent=d.created_at?new Date(d.created_at).toLocaleDateString('fr-FR'):'—';
@@ -887,8 +887,8 @@ window.addEventListener('resize', checkMobile);
 
 async function init(){
   try{
-    const r=await fetch(API+'/api/auth/me',{headers:hdr(),credentials:'include'});
-    if(!r.ok){logout();return}
+    const r=await fetch(API+'/api/auth/me',{headers:hdr()});
+    if(!r.ok){localStorage.clear();window.location.href='login.html';return}
     const d=await r.json();
     USER=d;
     g('paid-credits').textContent=(parseInt(d.free_left)||0)+(parseInt(d.credits)||0);
