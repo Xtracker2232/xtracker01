@@ -376,7 +376,7 @@ def get_current_user(request: Request, creds: HTTPAuthorizationCredentials = Dep
     except Exception:
         raise HTTPException(401, "Token invalide")
     db = get_db()
-    user = fetchone(db, "SELECT id, email, username, role, credits, free_left, banned FROM users WHERE id=?", (uid,))
+    user = fetchone(db, "SELECT * FROM users WHERE id=?", (uid,))
     db.close()
     if not user: raise HTTPException(401, "Introuvable")
     if user["banned"]: raise HTTPException(403, "Compte banni")
