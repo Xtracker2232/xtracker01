@@ -272,10 +272,17 @@ async function loadStats(){
 
 async function loadUsers(){
   try{
-    const r=await fetch(API+'/api/admin/users',{headers:hdr()});
-    const d=await r.json();
-    allUsers=d.users||d;
-    const total=d.total||allUsers.length;
+    let all=[],page=1,total=0;
+    while(true){
+      const r=await fetch(API+'/api/admin/users?page='+page,{headers:hdr()});
+      const d=await r.json();
+      const users=d.users||d;
+      total=d.total||users.length;
+      all=all.concat(users);
+      if(all.length>=total||users.length===0)break;
+      page++;
+    }
+    allUsers=all;
     g('user-count').textContent=total+' utilisateurs';
     renderUsers(allUsers);
   }catch(e){}
