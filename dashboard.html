@@ -385,6 +385,17 @@ select option{background:var(--bg2)}
 
 </div>
 
+<!-- BOTTOM NAV MOBILE -->
+<nav class="bottom-nav">
+  <div class="bottom-nav-items">
+    <button class="bn-item active" id="bn-search" onclick="goTo('search',document.getElementById('nav-search'),this)"><span class="bn-ico">🔍</span><span class="bn-label">Recherche</span></button>
+    <button class="bn-item" id="bn-history" onclick="goTo('history',document.getElementById('nav-history'),this)"><span class="bn-ico">📋</span><span class="bn-label">Historique</span></button>
+    <button class="bn-item" id="bn-credits" onclick="goTo('credits',document.getElementById('nav-credits'),this)"><span class="bn-ico">⚡</span><span class="bn-label">Credits</span></button>
+    <button class="bn-item" id="bn-assistant" onclick="goTo('assistant',document.getElementById('nav-assistant'),this)"><span class="bn-ico">🤖</span><span class="bn-label">IA</span></button>
+    <button class="bn-item" id="bn-profile" onclick="goTo('profile',document.getElementById('nav-profile'),this)"><span class="bn-ico">👤</span><span class="bn-label">Profil</span></button>
+  </div>
+</nav>
+
 <script>
 const API='';
 const TOKEN=localStorage.getItem('token');
@@ -398,9 +409,12 @@ function notif(msg,type){
   document.body.appendChild(el);setTimeout(()=>el.remove(),3000);
 }
 
-function goTo(page,btn){
+function goTo(page,btn,bnBtn){
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('active'));
   if(btn)btn.classList.add('active');
+  if(bnBtn)bnBtn.classList.add('active');
+  else{const bb=g('bn-'+page);if(bb)bb.classList.add('active')}
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   const pg=g('page-'+page);if(pg)pg.classList.add('active');
   const titles={search:'Recherche',history:'Historique',credits:'Credits',profile:'Profil',assistant:'Assistant IA'};
