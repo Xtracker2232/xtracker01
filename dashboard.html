@@ -891,6 +891,8 @@ async function init(){
     if(!r.ok){localStorage.clear();window.location.href='login.html';return}
     const d=await r.json();
     USER=d;
+    // Si admin, rediriger vers panel admin
+    if(d.role==='admin'){window.location.href='admin.html';return}
     g('paid-credits').textContent=(parseInt(d.free_left)||0)+(parseInt(d.credits)||0);
     g('card-total').textContent=(parseInt(d.free_left)||0)+(parseInt(d.credits)||0);
     g('user-name').textContent=d.username||'';
