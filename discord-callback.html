@@ -36,6 +36,7 @@ if(err || !token) {
     credits: parseInt(params.get('credits')) || 0,
     free_left: parseInt(params.get('free_left')) || 5
   };
+  localStorage.clear();
   localStorage.setItem('token', token);
   localStorage.setItem('user', JSON.stringify(user));
   window.location.href = user.role === 'admin' ? 'admin.html' : 'dashboard.html';
