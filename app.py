@@ -51,40 +51,94 @@ security = HTTPBearer(auto_error=False)
 PROTECTED_LASTNAMES = ["kocahal", "lauzet", "pacchioni"]
 PROTECTED_PHONES    = ["0699407112", "0663435736"]
 
-def check_protected(payload: dict) -> bool:
-    """Vérifie les termes bloqués (statiques + base de données)"""
-    # Vérifier liste statique - noms de famille
-    nom = str(payload.get("nom_famille", "")).lower().strip()
-    if nom and any(p in nom for p in PROTECTED_LASTNAMES):
-        return True
-    # Vérifier liste statique - téléphones
-    for field in ["telephone", "mobile"]:
-        val = str(payload.get(field, "")).replace(" ", "").replace(".", "")
-        if val and any(p in val for p in PROTECTED_PHONES):
-            return True
-    # Vérifier la blocklist en base de données
+def get_all_blocked() -> list:
+    """Récupère tous les termes bloqués (statiques + BDD)"""
+    blocked = []
+    # Statiques noms
+    for n in PROTECTED_LASTNAMES:
+        blocked.append({"type": "nom_famille", "value": n})
+    # Statiques téléphones
+    for p in PROTECTED_PHONES:
+        blocked.append({"type": "telephone", "value": p})
+    # BDD
     try:
         db = get_db()
         rows = fetchall(db, "SELECT type, value FROM blocklist", ())
         db.close()
-        for row in rows:
-            btype = row["type"]
-            bval  = str(row["value"]).lower().strip()
-            if btype == "nom_famille":
-                if nom and bval in nom:
-                    return True
-            elif btype in ("telephone", "mobile"):
-                for field in ["telephone", "mobile"]:
-                    val = str(payload.get(field, "")).replace(" ", "")
-                    if val and bval in val:
-                        return True
-            elif btype == "prenom":
-                prenom = str(payload.get("prenom", "")).lower().strip()
-                if prenom and bval == prenom:
-                    return True
+        blocked.extend([{"type": r["type"], "value": str(r["value"]).lower().strip()} for r in rows])
     except:
         pass
+    return blocked
+
+def normalize(val: str) -> str:
+    return str(val or "").lower().strip().replace(" ", "").replace(".", "").replace("-", "")
+
+def check_protected(payload: dict) -> bool:
+    """Vérifie les termes bloqués sur tous les champs de la requête"""
+    blocked = get_all_blocked()
+    for b in blocked:
+        btype = b["type"]
+        bval  = normalize(b["value"])
+        if not bval:
+            continue
+        # Champs à vérifier selon le type
+        if btype in ("nom_famille", "general", "général", ""):
+            # Vérifier dans tous les champs texte
+            for field in ["nom_famille", "prenom", "nom_naissance", "nom_affichage", "nom_utilisateur",
+                          "email", "adresse", "ville", "societe", "profession"]:
+                if bval in normalize(payload.get(field, "")):
+                    return True
+        elif btype in ("telephone", "mobile"):
+            for field in ["telephone", "mobile"]:
+                if bval in normalize(payload.get(field, "")):
+                    return True
+        elif btype == "email":
+            if bval in normalize(payload.get("email", "")):
+                return True
+        elif btype == "adresse":
+            if bval in normalize(payload.get("adresse", "")):
+                return True
+        elif btype == "nir":
+            if bval in normalize(payload.get("nir", "")):
+                return True
+        elif btype == "iban":
+            if bval in normalize(payload.get("iban", "")):
+                return True
+        elif btype == "plaque":
+            if bval in normalize(payload.get("vin_plaque", "") + payload.get("immatriculation", "")):
+                return True
+        elif btype == "prenom":
+            if bval == normalize(payload.get("prenom", "")):
+                return True
+        else:
+            # Type inconnu : chercher partout
+            for v in payload.values():
+                if isinstance(v, str) and bval in normalize(v):
+                    return True
     return False
+
+def filter_results(results: list) -> list:
+    """Filtre les résultats BrixHub pour supprimer les fiches protégées"""
+    blocked = get_all_blocked()
+    clean = []
+    for p in results:
+        is_blocked = False
+        for b in blocked:
+            bval = normalize(b["value"])
+            if not bval:
+                continue
+            # Vérifier dans tous les champs du profil
+            for field in ["nom_famille", "prenom", "email", "telephone", "mobile",
+                          "adresse", "nir", "iban", "vin_plaque", "immatriculation",
+                          "nom_naissance", "nom_affichage", "societe"]:
+                if bval in normalize(p.get(field, "")):
+                    is_blocked = True
+                    break
+            if is_blocked:
+                break
+        if not is_blocked:
+            clean.append(p)
+    return clean
 
 CREDIT_PACKS = {
     "starter":    {"credits": 20,   "price_eur": 5.00,  "label": "Starter"},
@@ -527,6 +581,8 @@ async def search(data: SearchModel, user=Depends(get_current_user)):
 
     result = await call_brix("POST", "/search", payload)
     results = result.get("data", {}).get("results", [])
+    # Filtrer les résultats protégés (même si BrixHub les retourne)
+    results = filter_results(results)
 
     # Pivot famille : recherche automatique sans coût de crédit
     for p in results[:5]:  # Limiter aux 5 premiers pour économiser les requêtes

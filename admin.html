@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Admin — Xtracker</title>
 <link rel="icon" type="image/png" href="/preview.png">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
@@ -217,8 +217,19 @@ tr:hover td{background:rgba(255,255,255,0.02)}
     <div class="table-wrap">
       <div class="table-head"><div class="table-title">Blocklist dynamique</div></div>
       <div class="bl-add">
-        <input class="bl-input" id="bl-val" placeholder="Terme a bloquer (nom, email, telephone...)">
-        <input class="bl-input" id="bl-reason" placeholder="Raison (optionnel)" style="max-width:200px">
+        <select class="bl-input" id="bl-type" style="max-width:160px">
+          <option value="general">General (tout)</option>
+          <option value="nom_famille">Nom de famille</option>
+          <option value="prenom">Prenom</option>
+          <option value="email">Email</option>
+          <option value="telephone">Telephone / Mobile</option>
+          <option value="adresse">Adresse</option>
+          <option value="nir">NIR (Secu)</option>
+          <option value="iban">IBAN</option>
+          <option value="plaque">Plaque / VIN</option>
+        </select>
+        <input class="bl-input" id="bl-val" placeholder="Valeur a bloquer...">
+        <input class="bl-input" id="bl-reason" placeholder="Raison (optionnel)" style="max-width:160px">
         <button class="btn btn-a" onclick="addBlocklist()">Ajouter</button>
       </div>
       <div id="blocklist-items"><div style="padding:14px 16px;color:var(--muted);text-align:center">Chargement...</div></div>
@@ -369,10 +380,10 @@ async function loadBlocklist(){
 }
 
 async function addBlocklist(){
-  const val=g('bl-val').value.trim(),reason=g('bl-reason').value.trim();
+  const val=g('bl-val').value.trim(),reason=g('bl-reason').value.trim(),type=g('bl-type').value;
   if(!val)return;
   try{
-    const r=await fetch(API+'/api/admin/blocklist',{method:'POST',headers:hdr(),body:JSON.stringify({value:val,reason,type:'general'})});
+    const r=await fetch(API+'/api/admin/blocklist',{method:'POST',headers:hdr(),body:JSON.stringify({value:val,reason,type})});
     if(r.ok){notif('Terme ajoute');g('bl-val').value='';g('bl-reason').value='';loadBlocklist()}else notif('Erreur','err');
   }catch(e){notif('Erreur reseau','err')}
 }
