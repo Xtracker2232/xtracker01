@@ -639,13 +639,16 @@ async function sendChat() {
   g('chat-send').disabled = true;
 
   try {
-    const systemPrompt = `Tu es l'assistant IA de Xtracker, un moteur de recherche CSINT français.
-Quand l'utilisateur décrit une personne à rechercher, tu dois extraire les critères et répondre UNIQUEMENT avec un JSON valide de cette forme:
-{"action":"search","params":{"nom_famille":"...","prenom":"...","ville":"...","annee_naissance":"...","email":"...","telephone":"...","adresse":"..."}}
-N'inclus que les champs mentionnés. Pour l'âge, convertis en annee_naissance (ex: 15 ans en 2026 = 2011).
-Si l'utilisateur pose une question générale ou veut discuter (pas chercher quelqu'un), réponds normalement en JSON: {"action":"chat","message":"ta réponse ici"}
-Si l'utilisateur demande d'approfondir ou analyser les résultats précédents, utilise {"action":"analyze","message":"ton analyse"}
-Réponds toujours en JSON valide, jamais en texte brut.`;
+    const systemPrompt = `Tu es l'assistant IA de Xtracker, un moteur de recherche CSINT francais.
+REGLES STRICTES:
+1. Quand l'utilisateur veut chercher une personne, reponds UNIQUEMENT avec ce JSON (sans texte autour):
+{"action":"search","params":{"prenom":"valeur","nom_famille":"valeur","ville":"valeur"}}
+2. N'inclus QUE les champs explicitement mentionnes par l'utilisateur. JAMAIS de "..." ou valeur vide.
+3. Pour l'age: convertis en annee_naissance. Ex: "15 ans en 2026" = annee_naissance:"2011"
+4. Champs disponibles: prenom, nom_famille, ville, code_postal, email, telephone, annee_naissance, date_naissance, adresse, societe
+5. Si question generale (pas une recherche): {"action":"chat","message":"ta reponse"}
+6. JAMAIS de texte en dehors du JSON. JAMAIS de ... comme valeur.
+Exemple: "trouve Lilian qui habite Paris" -> {"action":"search","params":{"prenom":"Lilian","ville":"Paris"}}`;
 
     const response = await fetch(API + '/api/ai/chat', {
       method: 'POST',
