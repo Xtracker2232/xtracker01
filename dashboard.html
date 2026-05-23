@@ -647,12 +647,10 @@ Si l'utilisateur pose une question générale ou veut discuter (pas chercher que
 Si l'utilisateur demande d'approfondir ou analyser les résultats précédents, utilise {"action":"analyze","message":"ton analyse"}
 Réponds toujours en JSON valide, jamais en texte brut.`;
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch(API + '/api/ai/chat', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: hdr(),
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
         system: systemPrompt,
         messages: chatHistory
       })
