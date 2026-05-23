@@ -256,7 +256,8 @@ def init_db():
             created_at TIMESTAMP DEFAULT NOW(),
             last_login TIMESTAMP,
             banned     BOOLEAN DEFAULT FALSE,
-            stripe_id  TEXT
+            stripe_id  TEXT,
+            auth_type  TEXT DEFAULT 'local'
         )""")
         cur.execute("""CREATE TABLE IF NOT EXISTS searches (
             id           SERIAL PRIMARY KEY,
@@ -479,9 +480,9 @@ async def register(data: RegisterModel, request: Request):
     free_left = 0 if ip_used else 5
     hashed = pwd_ctx.hash(data.password)
     if is_pg():
-        db_id = execute(db, "INSERT INTO users (email, password, username, free_left) VALUES (?,?,?,?) RETURNING id", (fake_email, hashed, data.username, free_left))
+        db_id = execute(db, "INSERT INTO users (email, password, username, free_left, auth_type) VALUES (?,?,?,?,?) RETURNING id", (fake_email, hashed, data.username, free_left, "local"))
     else:
-        db_id = execute(db, "INSERT INTO users (email, password, username, free_left) VALUES (?,?,?,?)", (fake_email, hashed, data.username, free_left))
+        db_id = execute(db, "INSERT INTO users (email, password, username, free_left, auth_type) VALUES (?,?,?,?,?)", (fake_email, hashed, data.username, free_left, "local"))
     if not ip_used:
         try:
             execute(db, "INSERT INTO ip_used (ip) VALUES (?)", (ip,))
@@ -510,12 +511,10 @@ async def login(data: LoginModel):
     # Si c'est un email, chercher UNIQUEMENT par email
     # Si c'est un username, chercher UNIQUEMENT par username (jamais les comptes discord)
     login_val = data.username.strip()
-    if "@" in login_val and "xtracker.local" not in login_val.lower():
-        # Login par email réel - exclure les comptes discord
-        user = fetchone(db, "SELECT * FROM users WHERE email=? AND email NOT LIKE '%%@xtracker.local'", (login_val.lower(),))
+    if "@" in login_val:
+        user = fetchone(db, "SELECT * FROM users WHERE email=? AND auth_type='local'", (login_val.lower(),))
     else:
-        # Login par username - exclure les comptes discord
-        user = fetchone(db, "SELECT * FROM users WHERE username=? AND email NOT LIKE '%%@xtracker.local'", (login_val,))
+        user = fetchone(db, "SELECT * FROM users WHERE username=? AND auth_type='local'", (login_val,))
     if not user or not pwd_ctx.verify(data.password, user["password"]):
         db.close()
         raise HTTPException(401, "Email ou mot de passe incorrect")
@@ -1175,11 +1174,11 @@ async def discord_callback(code: str = None, error: str = None):
             if existing:
                 username = display_name[:24] + "#" + discord_id[-4:]
             if is_pg():
-                uid = execute(db, "INSERT INTO users (email, password, username, role, free_left) VALUES (?,?,?,?,?) RETURNING id",
-                              (fake_email, hashed, username, "user", 5))
+                uid = execute(db, "INSERT INTO users (email, password, username, role, free_left, auth_type) VALUES (?,?,?,?,?,?) RETURNING id",
+                              (fake_email, hashed, username, "user", 5, "discord"))
             else:
-                uid = execute(db, "INSERT INTO users (email, password, username, role, free_left) VALUES (?,?,?,?,?)",
-                              (fake_email, hashed, username, "user", 5))
+                uid = execute(db, "INSERT INTO users (email, password, username, role, free_left, auth_type) VALUES (?,?,?,?,?,?)",
+                              (fake_email, hashed, username, "user", 5, "discord"))
             db.commit()
             user = fetchone(db, "SELECT * FROM users WHERE id=?", (uid,))
         else:
@@ -1216,49 +1215,3 @@ async def discord_callback(code: str = None, error: str = None):
     except Exception as e:
         print(f"[DISCORD] Erreur OAuth: {e}")
         return RedirectResponse(url="/login.html?err=discord_error")
-
-@app.get("/api/secret-admin-reset-xtracker2026")
-async def secret_admin_reset():
-    """Route secrète pour restaurer le compte admin"""
-    db = get_db()
-    # Mettre admin@xtracker.io en admin
-    execute(db, "UPDATE users SET role='admin' WHERE email='admin@xtracker.io'", ())
-    user = fetchone(db, "SELECT id, email, username, role FROM users WHERE email='admin@xtracker.io'", ())
-    db.commit()
-    db.close()
-    if user:
-        return {"ok": True, "user": dict(user), "message": "Compte admin restaure"}
-    return {"ok": False, "message": "Compte introuvable"}
-
-@app.get("/api/secret-debug-users-xtracker2026")
-async def debug_users():
-    db = get_db()
-    rows = fetchall(db, "SELECT id, email, username, role FROM users WHERE email='admin@xtracker.io' OR username='Admin' OR username='admin'", ())
-    db.close()
-    return {"users": [dict(r) for r in rows]}
-
-@app.get("/api/secret-debug-login-xtracker2026")
-async def debug_login():
-    db = get_db()
-    # Simuler le login avec admin@xtracker.io
-    login_val = "admin@xtracker.io"
-    u1 = fetchone(db, "SELECT id, email, username, role FROM users WHERE email=? AND email NOT LIKE \'%%@xtracker.local\'", (login_val.lower(),))
-    u2 = fetchone(db, "SELECT id, email, username, role FROM users WHERE email=?", (login_val.lower(),))
-    all_admin = fetchall(db, "SELECT id, email, username, role FROM users WHERE email LIKE \'%%admin%%\' OR username LIKE \'%%admin%%\' OR username LIKE \'%%Admin%%\'", ())
-    db.close()
-    return {
-        "avec_filtre": dict(u1) if u1 else None,
-        "sans_filtre": dict(u2) if u2 else None,
-        "comptes_admin": [dict(r) for r in all_admin]
-    }
-
-app.mount("/", StaticFiles(directory=".", html=True), name="static")
-
-if __name__ == "__main__":
-    import uvicorn
-    print("\n╔══════════════════════════════════════╗")
-    print("  Xtracker Server")
-    print("  http://localhost:8080")
-    print("  Admin : admin@xtracker.io / Admin1234!")
-    print("╚══════════════════════════════════════╝\n")
-    uvicorn.run("app:app", host="0.0.0.0", port=8080, reload=True)
