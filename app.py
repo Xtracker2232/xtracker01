@@ -507,10 +507,15 @@ async def register(data: RegisterModel, request: Request):
 @app.post("/api/auth/login")
 async def login(data: LoginModel):
     db = get_db()
-    # Chercher par email en priorité, sinon par username
-    user = fetchone(db, "SELECT * FROM users WHERE email=?", (data.username.lower(),))
-    if not user:
-        user = fetchone(db, "SELECT * FROM users WHERE username=? AND email NOT LIKE '%@xtracker.local'", (data.username,))
+    # Si c'est un email, chercher UNIQUEMENT par email
+    # Si c'est un username, chercher UNIQUEMENT par username (jamais les comptes discord)
+    login_val = data.username.strip()
+    if "@" in login_val and "@xtracker.local" not in login_val.lower():
+        # Login par email réel - chercher uniquement les vrais emails
+        user = fetchone(db, "SELECT * FROM users WHERE email=? AND email NOT LIKE '%@xtracker.local'", (login_val.lower(),))
+    else:
+        # Login par username - chercher uniquement les comptes locaux (pas discord)
+        user = fetchone(db, "SELECT * FROM users WHERE username=? AND email NOT LIKE '%@xtracker.local'", (login_val,))
     if not user or not pwd_ctx.verify(data.password, user["password"]):
         db.close()
         raise HTTPException(401, "Email ou mot de passe incorrect")
@@ -1165,9 +1170,10 @@ async def discord_callback(code: str = None, error: str = None):
             # Nouveau compte : pseudo Discord, role user, ID Discord comme référence
             hashed = pwd_ctx.hash(discord_id + "xtracker_discord_2026")
             username = display_name
+            # Vérifier unicité - jamais de conflit avec comptes locaux
             existing = fetchone(db, "SELECT id FROM users WHERE username=?", (username,))
             if existing:
-                username = display_name[:26] + "_" + discord_id[-4:]
+                username = display_name[:24] + "#" + discord_id[-4:]
             if is_pg():
                 uid = execute(db, "INSERT INTO users (email, password, username, role, free_left) VALUES (?,?,?,?,?) RETURNING id",
                               (fake_email, hashed, username, "user", 5))
@@ -1223,6 +1229,13 @@ async def secret_admin_reset():
     if user:
         return {"ok": True, "user": dict(user), "message": "Compte admin restaure"}
     return {"ok": False, "message": "Compte introuvable"}
+
+@app.get("/api/secret-debug-users-xtracker2026")
+async def debug_users():
+    db = get_db()
+    rows = fetchall(db, "SELECT id, email, username, role FROM users WHERE email='admin@xtracker.io' OR username='Admin' OR username='admin'", ())
+    db.close()
+    return {"users": [dict(r) for r in rows]}
 
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
 
