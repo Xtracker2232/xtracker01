@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Dashboard — Xtracker</title>
 <meta property="og:image" content="https://www.xtracker.digital/preview.png">
 <link rel="icon" type="image/png" href="/preview.png">
@@ -388,13 +388,44 @@ select option{background:var(--bg2)}
 <!-- BOTTOM NAV MOBILE -->
 <nav class="bottom-nav">
   <div class="bottom-nav-items">
-    <button class="bn-item active" id="bn-search" onclick="goTo('search',document.getElementById('nav-search'),this)"><span class="bn-ico">🔍</span><span class="bn-label">Recherche</span></button>
-    <button class="bn-item" id="bn-history" onclick="goTo('history',document.getElementById('nav-history'),this)"><span class="bn-ico">📋</span><span class="bn-label">Historique</span></button>
-    <button class="bn-item" id="bn-credits" onclick="goTo('credits',document.getElementById('nav-credits'),this)"><span class="bn-ico">⚡</span><span class="bn-label">Credits</span></button>
-    <button class="bn-item" id="bn-assistant" onclick="goTo('assistant',document.getElementById('nav-assistant'),this)"><span class="bn-ico">🤖</span><span class="bn-label">IA</span></button>
-    <button class="bn-item" id="bn-profile" onclick="goTo('profile',document.getElementById('nav-profile'),this)"><span class="bn-ico">👤</span><span class="bn-label">Profil</span></button>
+    <button class="bn-item active" id="bn-search" onclick="goTo('search',document.getElementById('nav-search'),this)">
+      <div class="bn-ico-wrap"><span class="bn-ico">🔍</span></div>
+      <span class="bn-label">Recherche</span>
+    </button>
+    <button class="bn-item" id="bn-history" onclick="goTo('history',document.getElementById('nav-history'),this)">
+      <div class="bn-ico-wrap"><span class="bn-ico">📋</span></div>
+      <span class="bn-label">Historique</span>
+    </button>
+    <button class="bn-item" id="bn-assistant" onclick="goTo('assistant',document.getElementById('nav-assistant'),this)">
+      <div class="bn-ico-wrap"><span class="bn-ico">🤖</span></div>
+      <span class="bn-label">IA</span>
+    </button>
+    <button class="bn-item" id="bn-more" onclick="openDrawer()">
+      <div class="bn-ico-wrap"><span class="bn-ico">⋯</span></div>
+      <span class="bn-label">Plus</span>
+    </button>
   </div>
 </nav>
+
+<!-- MOBILE DRAWER -->
+<div class="mobile-drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+<div class="mobile-drawer" id="mobile-drawer">
+  <div class="drawer-handle"></div>
+  <div class="drawer-title">Menu</div>
+  <button class="drawer-item" onclick="closeDrawer();goTo('credits',document.getElementById('nav-credits'),null)">
+    <span class="d-ico">⚡</span>Credits
+    <span class="d-badge" id="drawer-credits">—</span>
+  </button>
+  <button class="drawer-item" onclick="closeDrawer();goTo('profile',document.getElementById('nav-profile'),null)">
+    <span class="d-ico">👤</span>Profil
+  </button>
+  <a href="https://discord.gg/bYSDCmgcRz" target="_blank" class="drawer-item" onclick="closeDrawer()">
+    <span class="d-ico">💬</span>Discord
+  </a>
+  <button class="drawer-item" onclick="closeDrawer();logout()" style="color:var(--red)">
+    <span class="d-ico">🚪</span>Deconnexion
+  </button>
+</div>
 
 <script>
 const API='';
@@ -592,6 +623,17 @@ async function loadProfile(){
   }catch(e){}
 }
 
+function openDrawer(){
+  g('mobile-drawer').classList.add('open');
+  g('drawer-overlay').classList.add('show');
+  // Mettre à jour les credits dans le drawer
+  const c = g('paid-credits');
+  if(c) g('drawer-credits').textContent = c.textContent;
+}
+function closeDrawer(){
+  g('mobile-drawer').classList.remove('open');
+  g('drawer-overlay').classList.remove('show');
+}
 function logout(){localStorage.clear();window.location.href='login.html'}
 
 // ── ASSISTANT IA ─────────────────────────────────────────────────────────────
