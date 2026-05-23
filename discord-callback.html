@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#04050d;color:#eef0ff;font-family:'DM Sans',sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh}
+body{background:#04050d;color:#eef0ff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh}
 .wrap{text-align:center}
 .logo{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;margin-bottom:16px}
 .logo span{color:#818cf8}
@@ -23,24 +23,45 @@ body{background:#04050d;color:#eef0ff;font-family:'DM Sans',sans-serif;display:f
   <div class="spin"></div>
 </div>
 <script>
-const params = new URLSearchParams(window.location.search);
-const token = params.get('token');
-const err = params.get('err');
+(function(){
+  var params = new URLSearchParams(window.location.search);
+  var token = params.get('token');
+  var err = params.get('err');
 
-if(err || !token) {
-  window.location.href = 'login.html?err=' + (err || 'unknown');
-} else {
-  const user = {
+  if(err || !token){
+    window.location.href = 'login.html';
+    return;
+  }
+
+  var user = {
     username: params.get('username') || '',
     role: params.get('role') || 'user',
     credits: parseInt(params.get('credits')) || 0,
     free_left: parseInt(params.get('free_left')) || 5
   };
+
+  // Tout effacer et stocker le nouveau token
   localStorage.clear();
   localStorage.setItem('token', token);
   localStorage.setItem('user', JSON.stringify(user));
-  window.location.href = user.role === 'admin' ? 'admin.html' : 'dashboard.html';
-}
+
+  // Vérifier que c'est bien stocké
+  var check = localStorage.getItem('token');
+  if(!check){
+    // Réessayer
+    setTimeout(function(){
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+      redirect(user.role);
+    }, 200);
+  } else {
+    redirect(user.role);
+  }
+
+  function redirect(role){
+    window.location.href = role === 'admin' ? 'admin.html' : 'dashboard.html';
+  }
+})();
 </script>
 </body>
 </html>

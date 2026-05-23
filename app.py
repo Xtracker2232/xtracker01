@@ -1183,8 +1183,9 @@ async def discord_callback(code: str = None, error: str = None):
         user = dict(user)
         jwt_token = create_token(user["id"], user["role"])
 
-        # Rediriger vers dashboard avec token dans l'URL (stocké en JS)
+        # Stocker dans un cookie de session ET rediriger
         import urllib.parse
+        from fastapi.responses import RedirectResponse as RR
         params = urllib.parse.urlencode({
             "token": jwt_token,
             "username": user["username"],
@@ -1192,7 +1193,16 @@ async def discord_callback(code: str = None, error: str = None):
             "credits": user["credits"],
             "free_left": user["free_left"]
         })
-        return RedirectResponse(url=f"/discord-callback.html?{params}")
+        resp = RR(url=f"/discord-callback.html?{params}")
+        resp.set_cookie(
+            key="xtoken",
+            value=jwt_token,
+            httponly=False,
+            secure=False,
+            samesite="lax",
+            max_age=86400 * 7
+        )
+        return resp
 
     except Exception as e:
         print(f"[DISCORD] Erreur OAuth: {e}")
