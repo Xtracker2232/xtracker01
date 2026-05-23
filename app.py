@@ -883,16 +883,20 @@ async def ai_chat(data: ChatModel, user=Depends(get_current_user)):
             msgs.append({"role": "system", "content": data.system})
         for m in data.messages:
             msgs.append({"role": m["role"], "content": m["content"]})
+        print(f"[AI] Calling Groq, key={groq_key[:10]}..., msgs={len(msgs)}")
         async with httpx.AsyncClient(timeout=30) as client:
             r = await client.post(
                 "https://api.groq.com/openai/v1/chat/completions",
                 headers={"Authorization": f"Bearer {groq_key}", "Content-Type": "application/json"},
                 json={"model": "llama-3.1-8b-instant", "max_tokens": 1000, "messages": msgs}
             )
+            print(f"[AI] Groq status: {r.status_code}")
             groq_data = r.json()
+            print(f"[AI] Groq response: {str(groq_data)[:200]}")
             text = groq_data.get("choices", [{}])[0].get("message", {}).get("content", "")
             return {"content": [{"type": "text", "text": text}]}
     except Exception as e:
+        print(f"[AI] Error: {e}")
         raise HTTPException(500, str(e))
 
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
