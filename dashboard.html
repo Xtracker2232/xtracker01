@@ -228,7 +228,7 @@ select option{background:var(--bg2)}
   </div>
   <div class="navbar-right">
     <div class="credits-pill"><span>⚡</span><span id="paid-credits">—</span></div>
-    <span id="user-name" style="font-size:12px;color:var(--muted2)"></span>
+    <span id="user-name" style="font-size:12px;color:var(--muted2);display:none" class="desktop-only"></span>
   </div>
 </nav>
 
@@ -411,19 +411,24 @@ select option{background:var(--bg2)}
 <div class="mobile-drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
 <div class="mobile-drawer" id="mobile-drawer">
   <div class="drawer-handle"></div>
-  <div class="drawer-title">Menu</div>
+  <div class="drawer-title">Menu <span id="drawer-user" style="font-size:12px;color:var(--muted2);font-weight:400"></span></div>
   <button class="drawer-item" onclick="closeDrawer();goTo('credits',document.getElementById('nav-credits'),null)">
-    <span class="d-ico">⚡</span>Credits
+    <span class="d-ico">⚡</span>
+    <span>Credits</span>
     <span class="d-badge" id="drawer-credits">—</span>
   </button>
   <button class="drawer-item" onclick="closeDrawer();goTo('profile',document.getElementById('nav-profile'),null)">
-    <span class="d-ico">👤</span>Profil
+    <span class="d-ico">👤</span>
+    <span>Profil</span>
   </button>
   <a href="https://discord.gg/bYSDCmgcRz" target="_blank" class="drawer-item" onclick="closeDrawer()">
-    <span class="d-ico">💬</span>Discord
+    <span class="d-ico">💬</span>
+    <span>Discord</span>
   </a>
-  <button class="drawer-item" onclick="closeDrawer();logout()" style="color:var(--red)">
-    <span class="d-ico">🚪</span>Deconnexion
+  <div style="height:1px;background:var(--border);margin:6px 20px"></div>
+  <button class="drawer-item" onclick="closeDrawer();logout()" style="color:#ef4444">
+    <span class="d-ico">🚪</span>
+    <span>Deconnexion</span>
   </button>
 </div>
 
@@ -626,9 +631,8 @@ async function loadProfile(){
 function openDrawer(){
   g('mobile-drawer').classList.add('open');
   g('drawer-overlay').classList.add('show');
-  // Mettre à jour les credits dans le drawer
-  const c = g('paid-credits');
-  if(c) g('drawer-credits').textContent = c.textContent;
+  const c=g('paid-credits');if(c)g('drawer-credits').textContent=c.textContent+' credits';
+  const u=g('user-name');if(u&&g('drawer-user'))g('drawer-user').textContent=u.textContent;
 }
 function closeDrawer(){
   g('mobile-drawer').classList.remove('open');
