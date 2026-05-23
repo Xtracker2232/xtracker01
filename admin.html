@@ -347,6 +347,14 @@ async function addCredits(id,email){
   }catch(e){notif('Erreur reseau','err')}
 }
 
+async function setRole(id, currentRole){
+  const newRole = currentRole==='admin' ? 'user' : 'admin';
+  if(!confirm('Passer ce compte en '+newRole+' ?'))return;
+  try{
+    const r=await fetch(API+'/api/admin/users/'+id+'/set-role',{method:'POST',headers:hdr(),body:JSON.stringify({role:newRole})});
+    if(r.ok){notif('Role mis a jour : '+newRole);loadUsers()}else notif('Erreur','err');
+  }catch(e){notif('Erreur reseau','err')}
+}
 async function resetCredits(id,email){
   if(!confirm('Remettre les credits de '+email+' a zero ?'))return;
   try{

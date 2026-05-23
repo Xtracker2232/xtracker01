@@ -158,9 +158,22 @@ async def maintenance_middleware(request, call_next):
     except:
         maintenance = os.getenv("MAINTENANCE", "false").lower() == "true"
     if maintenance:
-        # Laisser passer les admins et les fichiers statiques
         path = request.url.path
-        if path.startswith("/api/admin") or path == "/maintenance.html" or path.startswith("/preview"):
+        # Laisser passer les routes API admin, maintenance.html, preview, et assets
+        if path.startswith("/api/admin") or path.startswith("/api/auth") or path == "/maintenance.html" or path.startswith("/preview"):
+            return await call_next(request)
+        # Vérifier si l'utilisateur est admin via token JWT
+        try:
+            auth = request.headers.get("authorization","")
+            if auth.startswith("Bearer "):
+                token = auth.split(" ")[1]
+                payload = jwt.decode(token, SECRET_KEY, [ALGORITHM])
+                if payload.get("role") == "admin":
+                    return await call_next(request)
+        except:
+            pass
+        # Laisser passer les pages admin et dashboard pour les admins
+        if path in ["/admin.html", "/dashboard.html", "/login.html"]:
             return await call_next(request)
         from fastapi.responses import HTMLResponse
         with open("maintenance.html", "r", encoding="utf-8") as f:
@@ -1041,6 +1054,18 @@ async def admin_reset_credits(user_id: int, admin=Depends(require_admin)):
     db.commit()
     db.close()
     return {"ok": True, "message": "Credits remis a zero"}
+
+@app.post("/api/admin/users/{user_id}/set-role")
+async def admin_set_role(user_id: int, request: Request, admin=Depends(require_admin)):
+    body = await request.json()
+    role = body.get("role", "user")
+    if role not in ["user", "admin"]:
+        raise HTTPException(400, "Role invalide")
+    db = get_db()
+    execute(db, "UPDATE users SET role=? WHERE id=?", (role, user_id))
+    db.commit()
+    db.close()
+    return {"ok": True, "message": f"Role mis a jour: {role}"}
 
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
 
