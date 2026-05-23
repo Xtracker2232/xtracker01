@@ -783,8 +783,8 @@ EXEMPLES:
       const p0 = results[0];
       const p0name = [p0.prenom, p0.nom_famille].filter(Boolean).join(' ') || 'ce profil';
       const intro = results.length === 1
-        ? '<div style="font-size:13px;font-weight:600;color:var(--accent2);margin-bottom:10px">Voici la fiche de <strong style=\'color:var(--text)\'>' + p0name + '</strong></div>'
-        : '<div style="font-size:13px;font-weight:600;color:var(--accent2);margin-bottom:10px">Voici les ' + results.length + ' fiches que j\'ai trouvées <span style=\'color:var(--muted2);font-weight:400\'>(' + total.toLocaleString() + ' au total)</span></div>';
+        ? `<div style="font-size:13px;font-weight:600;color:var(--accent2);margin-bottom:10px">Voici la fiche de <strong style="color:var(--text)">${p0name}</strong></div>`
+        : `<div style="font-size:13px;font-weight:600;color:var(--accent2);margin-bottom:10px">Voici les ${results.length} fiches que j'ai trouvées <span style="color:var(--muted2);font-weight:400">(${total.toLocaleString()} au total)</span></div>`;
       let html = intro;
       results.slice(0, 5).forEach(p => {
         const name = [p.prenom, p.nom_famille].filter(Boolean).join(' ') || 'Profil inconnu';
