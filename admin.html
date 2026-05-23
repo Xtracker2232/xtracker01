@@ -329,122 +329,23 @@ async function loadUsers(){
 
 function renderUsers(users){
   const tb=g('users-tbody');
-  if(!users.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">Aucun utilisateur</td></tr>';return}
-  tb.innerHTML=users.map(u=>'<tr><td>'+(u.username||'—')+'</td><td style="font-family:monospace;font-size:11px">'+u.email+'</td><td>'+(u.credits||0)+'</td><td>'+(u.free_left||0)+'</td><td><span class="badge b-'+(u.role||'user')+'">'+(u.role||'user')+'</span></td><td><span class="badge '+(u.banned?'b-ban':'b-ok')+'">'+(u.banned?'Banni':'Actif')+'</span></td><td><button class="act-btn" onclick="addCredits('+u.id+',\''+u.email+'\')">+Credits</button><button class="act-btn '+(u.banned?'success':'danger')+'" onclick="toggleBan('+u.id+','+u.banned+')">'+(u.banned?'Debannir':'Bannir')+'</button></td></tr>').join('');
+  if(!users.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--muted)">Aucun utilisateur</td></tr>';return}
+  tb.innerHTML=users.map(function(u){
+    const role=u.role||'user';
+    const banned=u.banned;
+    return '<tr>'+
+      '<td>'+(u.username||'—')+'</td>'+
+      '<td style="font-family:monospace;font-size:11px">'+u.email+'</td>'+
+      '<td>'+(u.credits||0)+'</td>'+
+      '<td>'+(u.free_left||0)+'</td>'+
+      '<td><span class="badge b-'+role+'">'+role+'</span></td>'+
+      '<td><span class="badge '+(banned?'b-ban':'b-ok')+'">'+(banned?'Banni':'Actif')+'</span></td>'+
+      '<td>'+
+        '<button class="act-btn" onclick="addCredits('+u.id+')">+Credits</button>'+
+        '<button class="act-btn danger" onclick="resetCredits('+u.id+')">Reset</button>'+
+        '<button class="act-btn '+(role==='admin'?'danger':'success')+'" onclick="setRole('+u.id+',''+role+'')">'+(role==='admin'?'- Admin':'+ Admin')+'</button>'+
+        '<button class="act-btn '+(banned?'success':'danger')+'" onclick="toggleBan('+u.id+','+banned+')">'+(banned?'Debannir':'Bannir')+'</button>'+
+      '</td>'+
+    '</tr>';
+  }).join('');
 }
-
-function filterUsers(){
-  const q=g('user-search').value.toLowerCase();
-  renderUsers(allUsers.filter(u=>(u.email||'').includes(q)||(u.username||'').toLowerCase().includes(q)));
-}
-
-async function addCredits(id,email){
-  const n=prompt('Ajouter des credits a '+email+' :');
-  if(!n||isNaN(parseInt(n)))return;
-  try{
-    const r=await fetch(API+'/api/admin/users/'+id,{method:'PATCH',headers:hdr(),body:JSON.stringify({credits:parseInt(n)})});
-    if(r.ok){notif(n+' credits ajoutes');loadUsers()}else notif('Erreur','err');
-  }catch(e){notif('Erreur reseau','err')}
-}
-
-async function setRole(id, currentRole){
-  const newRole = currentRole==='admin' ? 'user' : 'admin';
-  if(!confirm('Passer ce compte en '+newRole+' ?'))return;
-  try{
-    const r=await fetch(API+'/api/admin/users/'+id+'/set-role',{method:'POST',headers:hdr(),body:JSON.stringify({role:newRole})});
-    if(r.ok){notif('Role mis a jour : '+newRole);loadUsers()}else notif('Erreur','err');
-  }catch(e){notif('Erreur reseau','err')}
-}
-async function resetCredits(id,email){
-  if(!confirm('Remettre les credits de '+email+' a zero ?'))return;
-  try{
-    const r=await fetch(API+'/api/admin/users/'+id+'/reset-credits',{method:'POST',headers:hdr()});
-    if(r.ok){notif('Credits remis a zero');loadUsers()}else notif('Erreur','err');
-  }catch(e){notif('Erreur reseau','err')}
-}
-async function toggleBan(id,banned){
-  try{
-    const r=await fetch(API+'/api/admin/users/'+id,{method:'PATCH',headers:hdr(),body:JSON.stringify({banned:!banned})});
-    if(r.ok){notif(banned?'Compte debanni':'Compte banni');loadUsers()}else notif('Erreur','err');
-  }catch(e){notif('Erreur reseau','err')}
-}
-
-async function loadHistory(){
-  try{
-    const r=await fetch(API+'/api/admin/history',{headers:hdr()});
-    const d=await r.json();
-    const tb=g('history-tbody');
-    if(!d.length){tb.innerHTML='<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--muted)">Aucun historique</td></tr>';return}
-    tb.innerHTML=d.map(s=>{
-      const q=JSON.parse(s.query_data||'{}');
-      const label=Object.entries(q).filter(([k])=>!['flexible','per_page'].includes(k)).map(([,v])=>v).slice(0,3).join(', ')||'—';
-      const date=new Date(s.created_at).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-      return '<tr><td>'+(s.username||s.user_id)+'</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+label+'</td><td>'+s.result_count+'</td><td style="color:'+(s.cost===0?'var(--green)':'var(--accent2)')+'">'+( s.cost===0?'Gratuit':s.cost+' cr')+'</td><td>'+date+'</td></tr>';
-    }).join('');
-  }catch(e){}
-}
-
-async function loadBlocklist(){
-  try{
-    const r=await fetch(API+'/api/admin/blocklist',{headers:hdr()});
-    const d=await r.json();
-    const el=g('blocklist-items');
-    if(!d.length){el.innerHTML='<div style="padding:14px 16px;color:var(--muted);text-align:center">Aucun terme bloque</div>';return}
-    el.innerHTML=d.map(b=>'<div class="bl-item"><div><span class="bl-val">'+b.value+'</span>'+(b.reason?'<span class="bl-reason">'+b.reason+'</span>':'')+'</div><button class="act-btn danger" onclick="removeBlocklist('+b.id+')">Supprimer</button></div>').join('');
-  }catch(e){}
-}
-
-async function addBlocklist(){
-  const val=g('bl-val').value.trim(),reason=g('bl-reason').value.trim(),type=g('bl-type').value;
-  if(!val)return;
-  try{
-    const r=await fetch(API+'/api/admin/blocklist',{method:'POST',headers:hdr(),body:JSON.stringify({value:val,reason,type})});
-    if(r.ok){notif('Terme ajoute');g('bl-val').value='';g('bl-reason').value='';loadBlocklist()}else notif('Erreur','err');
-  }catch(e){notif('Erreur reseau','err')}
-}
-
-async function removeBlocklist(id){
-  try{
-    const r=await fetch(API+'/api/admin/blocklist/'+id,{method:'DELETE',headers:hdr()});
-    if(r.ok){notif('Terme supprime');loadBlocklist()}else notif('Erreur','err');
-  }catch(e){notif('Erreur reseau','err')}
-}
-
-async function loadMaintenance(){
-  try{
-    const r=await fetch(API+'/api/admin/maintenance',{headers:hdr()});
-    const d=await r.json();
-    g('maint-toggle').classList.toggle('on',d.maintenance);
-  }catch(e){}
-}
-
-async function toggleMaintenance(){
-  const t=g('maint-toggle');const on=t.classList.contains('on');
-  try{
-    const r=await fetch(API+'/api/admin/maintenance',{method:'POST',headers:hdr(),body:JSON.stringify({enabled:!on})});
-    if(r.ok){t.classList.toggle('on');notif(on?'Maintenance desactivee':'Maintenance activee')}else notif('Erreur','err');
-  }catch(e){notif('Erreur reseau','err')}
-}
-
-function toggleSb(){
-  const sb=document.querySelector('.sb');
-  const ov=g('sb-overlay');
-  sb.classList.toggle('open');
-  ov.classList.toggle('show');
-}
-function logout(){localStorage.clear();window.location.href='login.html'}
-
-async function init(){
-  try{
-    const r=await fetch(API+'/api/auth/me',{headers:hdr()});
-    if(!r.ok){logout();return}
-    const d=await r.json();
-    if(d.role!=='admin'){window.location.href='dashboard.html';return}
-    g('admin-name').textContent=d.username||d.email;
-    loadStats();
-  }catch(e){logout()}
-}
-init();
-</script>
-</body>
-</html>

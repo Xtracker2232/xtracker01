@@ -250,12 +250,12 @@ select option{background:var(--bg2)}
 <nav class="navbar">
   <div class="navbar-logo" onclick="goTo('search',document.getElementById('nav-search'))">X<span>tracker</span></div>
   <div class="navbar-nav">
-    <button class="nav-btn active" id="nav-search" onclick="goTo('search',this)"><span class="i">🔍</span><span class="label">Recherche</span></button>
-    <button class="nav-btn" id="nav-history" onclick="goTo('history',this)"><span class="i">📋</span><span class="label">Historique</span></button>
-    <button class="nav-btn" id="nav-credits" onclick="goTo('credits',this)"><span class="i">⚡</span><span class="label">Credits</span></button>
-    <button class="nav-btn" id="nav-assistant" onclick="goTo('assistant',this)"><span class="i">🤖</span><span class="label">Assistant IA</span></button>
-    <button class="nav-btn" id="nav-profile" onclick="goTo('profile',this)"><span class="i">👤</span><span class="label">Profil</span></button>
-    <a href="https://discord.gg/bYSDCmgcRz" target="_blank" class="nav-btn"><span class="i">💬</span><span class="label">Discord</span></a>
+    <button class="nav-btn active" id="nav-search" onclick="goTo('search',this)">Recherche</button>
+    <button class="nav-btn" id="nav-history" onclick="goTo('history',this)">Historique</button>
+    <button class="nav-btn" id="nav-credits" onclick="goTo('credits',this)">Credits</button>
+    <button class="nav-btn" id="nav-assistant" onclick="goTo('assistant',this)">Assistant IA</button>
+    <button class="nav-btn" id="nav-profile" onclick="goTo('profile',this)">Profil</button>
+    <a href="https://discord.gg/bYSDCmgcRz" target="_blank" class="nav-btn">Discord</a>
   </div>
   <div class="navbar-right">
     <div class="credits-pill desktop-only"><span>⚡</span><span id="paid-credits">—</span></div>
@@ -427,29 +427,29 @@ select option{background:var(--bg2)}
   <div class="drawer-handle"></div>
   <div class="drawer-title">Menu <span id="drawer-user" style="font-size:12px;color:var(--muted2);font-weight:400"></span></div>
   <button class="drawer-item" onclick="closeDrawer();goTo('search',document.getElementById('nav-search'))">
-    <span class="d-ico">🔍</span><span>Recherche</span>
+    <span>Recherche</span>
   </button>
   <button class="drawer-item" onclick="closeDrawer();goTo('history',document.getElementById('nav-history'))">
-    <span class="d-ico">📋</span><span>Historique</span>
+    <span>Historique</span>
   </button>
   <button class="drawer-item" onclick="closeDrawer();goTo('assistant',document.getElementById('nav-assistant'))">
-    <span class="d-ico">🤖</span><span>Assistant IA</span>
+    <span>Assistant IA</span>
   </button>
   <div style="height:1px;background:var(--border);margin:4px 20px"></div>
   <button class="drawer-item" onclick="closeDrawer();goTo('credits',document.getElementById('nav-credits'))">
-    <span class="d-ico">⚡</span>
+    
     <span>Credits</span>
     <span class="d-badge" id="drawer-credits">—</span>
   </button>
   <button class="drawer-item" onclick="closeDrawer();goTo('profile',document.getElementById('nav-profile'))">
-    <span class="d-ico">👤</span><span>Profil</span>
+    <span>Profil</span>
   </button>
   <a href="https://discord.gg/bYSDCmgcRz" target="_blank" class="drawer-item" onclick="closeDrawer()">
-    <span class="d-ico">💬</span><span>Discord</span>
+    <span>Discord</span>
   </a>
   <div style="height:1px;background:var(--border);margin:4px 20px"></div>
   <button class="drawer-item" onclick="closeDrawer();logout()" style="color:#ef4444">
-    <span class="d-ico">🚪</span><span>Deconnexion</span>
+    <span>Deconnexion</span>
   </button>
 </div>
 
