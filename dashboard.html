@@ -220,8 +220,8 @@ select option{background:var(--bg2)}
 /* MOBILE DRAWER */
 .mobile-drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200}
 .mobile-drawer-overlay.show{display:block}
-.mobile-drawer{position:fixed;bottom:0;left:0;right:0;z-index:201;background:var(--bg2);border-top:1px solid var(--border);border-radius:20px 20px 0 0;padding:12px 0 24px;transform:translateY(100%);transition:transform .3s cubic-bezier(.16,1,.3,1)}
-.mobile-drawer.open{transform:translateY(0)}
+.mobile-drawer{display:none;position:fixed;bottom:0;left:0;right:0;z-index:201;background:var(--bg2);border-top:1px solid var(--border);border-radius:20px 20px 0 0;padding:12px 0 24px;transform:translateY(100%);transition:transform .3s cubic-bezier(.16,1,.3,1)}
+.mobile-drawer.open{display:block;transform:translateY(0)}
 .drawer-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 14px}
 .drawer-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;padding:0 20px 12px;border-bottom:1px solid var(--border);margin-bottom:6px;display:flex;align-items:center;justify-content:space-between}
 .drawer-item{display:flex;align-items:center;gap:12px;padding:13px 20px;font-size:14px;font-weight:500;color:var(--text);cursor:pointer;border:none;background:transparent;width:100%;font-family:inherit;transition:background .15s;text-decoration:none;text-align:left}
@@ -405,27 +405,7 @@ select option{background:var(--bg2)}
 
 </div>
 
-<!-- BOTTOM NAV MOBILE -->
-<nav class="bottom-nav">
-  <div class="bottom-nav-items">
-    <button class="bn-item active" id="bn-search" onclick="goTo('search',document.getElementById('nav-search'),this)">
-      <div class="bn-ico-wrap"><span class="bn-ico">🔍</span></div>
-      <span class="bn-label">Recherche</span>
-    </button>
-    <button class="bn-item" id="bn-history" onclick="goTo('history',document.getElementById('nav-history'),this)">
-      <div class="bn-ico-wrap"><span class="bn-ico">📋</span></div>
-      <span class="bn-label">Historique</span>
-    </button>
-    <button class="bn-item" id="bn-assistant" onclick="goTo('assistant',document.getElementById('nav-assistant'),this)">
-      <div class="bn-ico-wrap"><span class="bn-ico">🤖</span></div>
-      <span class="bn-label">IA</span>
-    </button>
-    <button class="bn-item" id="bn-more" onclick="openDrawer()">
-      <div class="bn-ico-wrap"><span class="bn-ico">⋯</span></div>
-      <span class="bn-label">Plus</span>
-    </button>
-  </div>
-</nav>
+
 
 <!-- MOBILE DRAWER -->
 <div class="mobile-drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
@@ -472,12 +452,11 @@ function notif(msg,type){
   document.body.appendChild(el);setTimeout(()=>el.remove(),3000);
 }
 
-function goTo(page,btn,bnBtn){
+function goTo(page,btn){
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('active'));
+
   if(btn)btn.classList.add('active');
-  if(bnBtn)bnBtn.classList.add('active');
-  else{const bb=g('bn-'+page);if(bb)bb.classList.add('active')}
+
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   const pg=g('page-'+page);if(pg)pg.classList.add('active');
   const titles={search:'Recherche',history:'Historique',credits:'Credits',profile:'Profil',assistant:'Assistant IA'};
