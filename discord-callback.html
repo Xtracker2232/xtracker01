@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Connexion Discord — Xtracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#04050d;color:#eef0ff;font-family:'DM Sans',sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh}
+.wrap{text-align:center}
+.logo{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;margin-bottom:16px}
+.logo span{color:#818cf8}
+.msg{font-size:14px;color:#6b75a8;margin-bottom:24px}
+.spin{display:inline-block;width:32px;height:32px;border:3px solid rgba(99,102,241,0.2);border-top-color:#6366f1;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo">X<span>tracker</span></div>
+  <div class="msg">Connexion Discord en cours...</div>
+  <div class="spin"></div>
+</div>
+<script>
+const params = new URLSearchParams(window.location.search);
+const token = params.get('token');
+const err = params.get('err');
+
+if(err || !token) {
+  window.location.href = 'login.html?err=' + (err || 'unknown');
+} else {
+  const user = {
+    username: params.get('username') || '',
+    role: params.get('role') || 'user',
+    credits: parseInt(params.get('credits')) || 0,
+    free_left: parseInt(params.get('free_left')) || 5
+  };
+  localStorage.setItem('token', token);
+  localStorage.setItem('user', JSON.stringify(user));
+  window.location.href = user.role === 'admin' ? 'admin.html' : 'dashboard.html';
+}
+</script>
+</body>
+</html>

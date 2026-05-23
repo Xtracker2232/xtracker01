@@ -389,12 +389,11 @@ def require_admin(user=Depends(get_current_user)):
 
 # ── MODELS ────────────────────────────────────────────────────────────────────
 class RegisterModel(BaseModel):
-    email: str
-    password: str
     username: str
+    password: str
 
 class LoginModel(BaseModel):
-    email: str
+    username: str
     password: str
 
 class SearchModel(BaseModel):
@@ -456,29 +455,33 @@ class AdminUserUpdate(BaseModel):
 # ── AUTH ROUTES ───────────────────────────────────────────────────────────────
 @app.post("/api/auth/register")
 async def register(data: RegisterModel, request: Request):
-    import re
+    import re, secrets, string
+    if len(data.username) < 2:
+        raise HTTPException(400, "Nom d utilisateur trop court (2 caractères min)")
     if len(data.password) < 8:
         raise HTTPException(400, "Mot de passe trop court (8 caractères min)")
-    if not re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', data.email):
-        raise HTTPException(400, "Adresse email invalide")
-    if len(data.username) < 2:
-        raise HTTPException(400, "Nom d'utilisateur trop court")
-    # Récupérer l'IP du client
+    if not re.match(r"^[a-zA-Z0-9_\-\.]{2,32}$", data.username):
+        raise HTTPException(400, "Nom d utilisateur invalide (lettres, chiffres, _ - . uniquement)")
+    # Générer un ID unique lisible
+    uid_chars = string.ascii_uppercase + string.digits
+    user_uid = "XT-" + "".join(secrets.choice(uid_chars) for _ in range(8))
+    # Email fictif basé sur username pour compatibilité DB
+    fake_email = data.username.lower() + "@xtracker.local"
     ip = request.headers.get("CF-Connecting-IP") or request.headers.get("X-Forwarded-For","").split(",")[0].strip() or request.client.host
     db = get_db()
-    existing = fetchone(db, "SELECT id FROM users WHERE email=?", (data.email.lower(),))
+    # Vérifier username unique
+    existing = fetchone(db, "SELECT id FROM users WHERE username=?", (data.username,))
     if existing:
         db.close()
-        raise HTTPException(400, "Email déjà utilisé")
-    # Vérifier si cette IP a déjà eu des crédits gratuits
+        raise HTTPException(400, "Nom d utilisateur déjà pris")
+    # Vérifier IP
     ip_used = fetchone(db, "SELECT id FROM ip_used WHERE ip=?", (ip,))
     free_left = 0 if ip_used else 5
     hashed = pwd_ctx.hash(data.password)
     if is_pg():
-        uid = execute(db, "INSERT INTO users (email, password, username, free_left) VALUES (?,?,?,?) RETURNING id", (data.email.lower(), hashed, data.username, free_left))
+        db_id = execute(db, "INSERT INTO users (email, password, username, free_left) VALUES (?,?,?,?) RETURNING id", (fake_email, hashed, data.username, free_left))
     else:
-        uid = execute(db, "INSERT INTO users (email, password, username, free_left) VALUES (?,?,?,?)", (data.email.lower(), hashed, data.username, free_left))
-    # Marquer l'IP comme utilisée si c'est la première fois
+        db_id = execute(db, "INSERT INTO users (email, password, username, free_left) VALUES (?,?,?,?)", (fake_email, hashed, data.username, free_left))
     if not ip_used:
         try:
             execute(db, "INSERT INTO ip_used (ip) VALUES (?)", (ip,))
@@ -486,13 +489,25 @@ async def register(data: RegisterModel, request: Request):
             pass
     db.commit()
     db.close()
-    token = create_token(uid, "user")
-    return {"token": token, "message": "Compte créé — 10 recherches gratuites !"}
+    token = create_token(db_id, "user")
+    return {
+        "token": token,
+        "user_id": user_uid,
+        "user": {
+            "id": db_id,
+            "email": fake_email,
+            "username": data.username,
+            "role": "user",
+            "credits": 0,
+            "free_left": free_left
+        },
+        "message": "Compte créé avec succès !"
+    }
 
 @app.post("/api/auth/login")
 async def login(data: LoginModel):
     db = get_db()
-    user = fetchone(db, "SELECT * FROM users WHERE email=?", (data.email.lower(),))
+    user = fetchone(db, "SELECT * FROM users WHERE username=?", (data.username,))
     if not user or not pwd_ctx.verify(data.password, user["password"]):
         db.close()
         raise HTTPException(401, "Email ou mot de passe incorrect")
@@ -1080,6 +1095,106 @@ async def logout():
     resp = JSONResponse({"ok": True})
     resp.delete_cookie("xtoken")
     return resp
+
+# ── DISCORD OAUTH2 ────────────────────────────────────────────────────────────
+DISCORD_CLIENT_ID     = os.getenv("DISCORD_CLIENT_ID", "")
+DISCORD_CLIENT_SECRET = os.getenv("DISCORD_CLIENT_SECRET", "")
+DISCORD_REDIRECT_URI  = "https://www.xtracker.digital/api/auth/discord/callback"
+
+@app.get("/api/auth/discord")
+async def discord_auth():
+    """Redirige vers la page d'autorisation Discord"""
+    from fastapi.responses import RedirectResponse
+    params = {
+        "client_id": DISCORD_CLIENT_ID,
+        "redirect_uri": DISCORD_REDIRECT_URI,
+        "response_type": "code",
+        "scope": "identify"
+    }
+    import urllib.parse
+    url = "https://discord.com/api/oauth2/authorize?" + urllib.parse.urlencode(params)
+    return RedirectResponse(url=url)
+
+@app.get("/api/auth/discord/callback")
+async def discord_callback(code: str = None, error: str = None):
+    """Callback OAuth2 Discord"""
+    from fastapi.responses import RedirectResponse
+    if error or not code:
+        return RedirectResponse(url="/login.html?err=discord")
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            # Echanger le code contre un token
+            r = await client.post(
+                "https://discord.com/api/oauth2/token",
+                data={
+                    "client_id": DISCORD_CLIENT_ID,
+                    "client_secret": os.getenv("DISCORD_CLIENT_SECRET", ""),
+                    "grant_type": "authorization_code",
+                    "code": code,
+                    "redirect_uri": DISCORD_REDIRECT_URI,
+                },
+                headers={"Content-Type": "application/x-www-form-urlencoded"}
+            )
+            if r.status_code != 200:
+                return RedirectResponse(url="/login.html?err=discord_token")
+            token_data = r.json()
+            access_token = token_data.get("access_token")
+
+            # Récupérer les infos de l'utilisateur Discord
+            r2 = await client.get(
+                "https://discord.com/api/users/@me",
+                headers={"Authorization": f"Bearer {access_token}"}
+            )
+            if r2.status_code != 200:
+                return RedirectResponse(url="/login.html?err=discord_user")
+            discord_user = r2.json()
+
+        discord_id  = discord_user["id"]
+        discord_tag = discord_user.get("username", f"user_{discord_id}")
+        # Utiliser global_name si disponible
+        display_name = discord_user.get("global_name") or discord_tag
+
+        # Email fictif basé sur l'ID Discord
+        fake_email = f"discord_{discord_id}@xtracker.local"
+
+        db = get_db()
+        # Chercher si le compte existe déjà
+        user = fetchone(db, "SELECT * FROM users WHERE email=?", (fake_email,))
+        if not user:
+            # Créer le compte
+            hashed = pwd_ctx.hash(discord_id + "xtracker_discord")
+            username = display_name[:32]
+            # Si username déjà pris, ajouter suffixe
+            existing = fetchone(db, "SELECT id FROM users WHERE username=?", (username,))
+            if existing:
+                username = username[:28] + "_" + discord_id[-3:]
+            if is_pg():
+                uid = execute(db, "INSERT INTO users (email, password, username, free_left) VALUES (?,?,?,?) RETURNING id",
+                              (fake_email, hashed, username, 5))
+            else:
+                uid = execute(db, "INSERT INTO users (email, password, username, free_left) VALUES (?,?,?,?)",
+                              (fake_email, hashed, username, 5))
+            db.commit()
+            user = fetchone(db, "SELECT * FROM users WHERE id=?", (uid,))
+        db.close()
+
+        user = dict(user)
+        jwt_token = create_token(user["id"], user["role"])
+
+        # Rediriger vers dashboard avec token dans l'URL (stocké en JS)
+        import urllib.parse
+        params = urllib.parse.urlencode({
+            "token": jwt_token,
+            "username": user["username"],
+            "role": user["role"],
+            "credits": user["credits"],
+            "free_left": user["free_left"]
+        })
+        return RedirectResponse(url=f"/discord-callback.html?{params}")
+
+    except Exception as e:
+        print(f"[DISCORD] Erreur OAuth: {e}")
+        return RedirectResponse(url="/login.html?err=discord_error")
 
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
 
