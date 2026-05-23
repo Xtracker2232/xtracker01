@@ -682,22 +682,23 @@ async function sendChat() {
   g('chat-send').disabled = true;
 
   try {
-    const systemPrompt = `Tu es l'assistant IA de Xtracker, un moteur de recherche CSINT francais. Tu reponds TOUJOURS en JSON valide, JAMAIS en texte brut.
+    const systemPrompt = `Tu es l'assistant de Xtracker. Tu reponds TOUJOURS en JSON. JAMAIS de texte brut. JAMAIS de questions a l'utilisateur.
 
-REGLES:
-1. Si l'utilisateur veut chercher une personne (mots cles: trouve, cherche, recherche, qui est, infos sur...):
-{"action":"search","params":{"prenom":"X","nom_famille":"X","ville":"X","annee_naissance":"X","email":"X","telephone":"X","adresse":"X","societe":"X"}}
-N'inclus QUE les champs mentionnes. JAMAIS de "..." comme valeur. Pour l'age: 15 ans en 2026 = annee_naissance "2011".
+REGLE 1 - Recherche (trouve, cherche, recherche, qui est, info sur, localise):
+Reponds avec: {"action":"search","params":{"prenom":"X","nom_famille":"X","ville":"X","code_postal":"X","annee_naissance":"X","email":"X","telephone":"X"}}
+- N'inclus QUE les champs mentionnes par l'utilisateur
+- JAMAIS de valeur vide ou "..."
+- Age en annee_naissance: si 13 ans en 2026 = "2013"
+- Lance TOUJOURS la recherche meme si peu d'infos. NE DEMANDE JAMAIS d'infos supplementaires.
 
-2. Pour toute autre conversation (salutations, questions, discussions):
-{"action":"chat","message":"ta reponse en francais ici"}
+REGLE 2 - Conversation (salut, merci, comment ca marche, etc):
+Reponds avec: {"action":"chat","message":"reponse courte en francais"}
 
 EXEMPLES:
-"Salut" -> {"action":"chat","message":"Bonjour ! Comment puis-je vous aider ?"}
-"trouve Jordan Bardella Paris" -> {"action":"search","params":{"prenom":"Jordan","nom_famille":"Bardella","ville":"Paris"}}
-"comment ca marche ?" -> {"action":"chat","message":"Je peux rechercher des personnes..."}
-
-IMPORTANT: Les recherches coutent 1 credit. Les messages normaux sont gratuits.`;
+"trouve Leo 06530 ne en 2013" -> {"action":"search","params":{"prenom":"Leo","code_postal":"06530","annee_naissance":"2013"}}
+"cherche dupont paris" -> {"action":"search","params":{"nom_famille":"Dupont","ville":"Paris"}}
+"salut" -> {"action":"chat","message":"Bonjour ! Decrivez la personne a rechercher."}
+"0612345678" -> {"action":"search","params":{"telephone":"0612345678"}}`;
 
     const response = await fetch(API + '/api/ai/chat', {
       method: 'POST',
