@@ -274,9 +274,10 @@ async function loadUsers(){
   try{
     const r=await fetch(API+'/api/admin/users',{headers:hdr()});
     const d=await r.json();
-    allUsers=d;
-    g('user-count').textContent=d.length+' utilisateurs';
-    renderUsers(d);
+    allUsers=d.users||d;
+    const total=d.total||allUsers.length;
+    g('user-count').textContent=total+' utilisateurs';
+    renderUsers(allUsers);
   }catch(e){}
 }
 
@@ -295,14 +296,14 @@ async function addCredits(id,email){
   const n=prompt('Ajouter des credits a '+email+' :');
   if(!n||isNaN(parseInt(n)))return;
   try{
-    const r=await fetch(API+'/api/admin/users/'+id,{method:'PUT',headers:hdr(),body:JSON.stringify({credits:parseInt(n)})});
+    const r=await fetch(API+'/api/admin/users/'+id,{method:'PATCH',headers:hdr(),body:JSON.stringify({credits:parseInt(n)})});
     if(r.ok){notif(n+' credits ajoutes');loadUsers()}else notif('Erreur','err');
   }catch(e){notif('Erreur reseau','err')}
 }
 
 async function toggleBan(id,banned){
   try{
-    const r=await fetch(API+'/api/admin/users/'+id,{method:'PUT',headers:hdr(),body:JSON.stringify({banned:!banned})});
+    const r=await fetch(API+'/api/admin/users/'+id,{method:'PATCH',headers:hdr(),body:JSON.stringify({banned:!banned})});
     if(r.ok){notif(banned?'Compte debanni':'Compte banni');loadUsers()}else notif('Erreur','err');
   }catch(e){notif('Erreur reseau','err')}
 }
