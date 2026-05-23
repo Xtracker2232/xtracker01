@@ -867,6 +867,34 @@ async def get_maintenance(admin=Depends(require_admin)):
     return {"maintenance": status}
 
 # ── STATIC ────────────────────────────────────────────────────────────────────
+# ── AI ASSISTANT ──────────────────────────────────────────────────────────────
+class ChatModel(BaseModel):
+    messages: list
+    system: str = ""
+
+@app.post("/api/ai/chat")
+async def ai_chat(data: ChatModel, user=Depends(get_current_user)):
+    groq_key = os.getenv("GROQ_API_KEY", "")
+    if not groq_key:
+        raise HTTPException(500, "GROQ_API_KEY manquante")
+    try:
+        msgs = []
+        if data.system:
+            msgs.append({"role": "system", "content": data.system})
+        for m in data.messages:
+            msgs.append({"role": m["role"], "content": m["content"]})
+        async with httpx.AsyncClient(timeout=30) as client:
+            r = await client.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={"Authorization": f"Bearer {groq_key}", "Content-Type": "application/json"},
+                json={"model": "llama-3.1-8b-instant", "max_tokens": 1000, "messages": msgs}
+            )
+            groq_data = r.json()
+            text = groq_data.get("choices", [{}])[0].get("message", {}).get("content", "")
+            return {"content": [{"type": "text", "text": text}]}
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
 
 if __name__ == "__main__":
