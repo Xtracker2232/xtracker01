@@ -692,6 +692,43 @@ async def history(user=Depends(get_current_user)):
     db.close()
     return rows
 
+@app.post("/api/history/{search_id}/replay")
+async def history_replay(search_id: int, user=Depends(get_current_user)):
+    """Rejoue une recherche depuis l'historique SANS deduire de credits"""
+    db = get_db()
+    row = fetchone(db, "SELECT query_data FROM searches WHERE id=? AND user_id=?", (search_id, user["id"]))
+    db.close()
+    if not row:
+        raise HTTPException(404, "Recherche introuvable")
+    payload = json.loads(row["query_data"])
+    payload["per_page"] = 100
+    # Appeler BrixHub sans deduire de credits
+    result = await call_brix("POST", "/search", payload)
+    results = result.get("data", {}).get("results", [])
+    results = filter_results(results)
+    # Pivot famille sans credit
+    for p in results[:5]:
+        famille = []
+        if p.get("adresse") and p.get("code_postal"):
+            try:
+                pr = await call_brix("POST", "/search", {"adresse": p["adresse"], "code_postal": p["code_postal"], "flexible": False, "per_page": 10})
+                for m in pr.get("data", {}).get("results", []):
+                    if m.get("nom_famille") == p.get("nom_famille") and m.get("prenom") == p.get("prenom"):
+                        continue
+                    membre = {"prenom": m.get("prenom",""), "nom_famille": m.get("nom_famille",""), "date_naissance": m.get("date_naissance",""), "email": m.get("email",""), "telephone": m.get("telephone",""), "lien": "Meme adresse"}
+                    if not any(x["prenom"]==membre["prenom"] and x["nom_famille"]==membre["nom_famille"] for x in famille):
+                        famille.append(membre)
+            except: pass
+        if famille:
+            p["famille"] = famille
+    return {
+        "results": results,
+        "total": result.get("meta", {}).get("total", 0),
+        "took_ms": result.get("meta", {}).get("took_ms", 0),
+        "free_left": user["free_left"],
+        "credits": user["credits"],
+    }
+
 # ── STRIPE ────────────────────────────────────────────────────────────────────
 @app.post("/api/credits/confirm")
 async def confirm_paygate(request: Request, user=Depends(get_current_user)):

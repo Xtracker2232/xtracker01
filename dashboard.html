@@ -615,6 +615,18 @@ async function buyPack(packId){
   }catch(e){notif('Erreur reseau','err')}
 }
 
+async function replaySearch(id, label){
+  goTo('search', document.getElementById('nav-search'));
+  g('state-empty').style.display='none';
+  g('results').innerHTML='<div class="state"><div class="state-ico">🔍</div><div class="state-title">Rechargement de : '+label+'</div></div>';
+  try{
+    const r=await fetch(API+'/api/history/'+id+'/replay',{method:'POST',headers:hdr()});
+    const d=await r.json();
+    if(!r.ok){showErr(d.detail||'Erreur');return}
+    renderResults(d.results,d.total,d.took_ms,d.free_left,d.credits);
+  }catch(e){showErr('Erreur reseau')}
+}
+
 async function loadHistory(){
   try{
     const r=await fetch(API+'/api/history',{headers:hdr()});
@@ -625,7 +637,10 @@ async function loadHistory(){
       const q=JSON.parse(s.query_data||'{}');
       const label=Object.entries(q).filter(([k])=>!['flexible','per_page'].includes(k)).map(([,v])=>v).join(', ')||'—';
       const date=new Date(s.created_at).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-      return '<div class="history-item"><div class="history-q">'+label+'</div><div class="history-meta"><span>'+s.result_count+' res.</span><span>'+date+'</span><span style="color:'+(s.cost===0?'var(--green)':'var(--accent2)')+'">'+( s.cost===0?'Gratuit':s.cost+' cr')+'</span></div></div>';
+      return '<div class="history-item" style="cursor:pointer" onclick="replaySearch('+s.id+',''+label+'')">'+
+        '<div><div class="history-q">'+label+'</div><div style="font-size:11px;color:var(--muted2);margin-top:2px">Cliquer pour revoir les fiches · gratuit</div></div>'+
+        '<div class="history-meta"><span>'+s.result_count+' res.</span><span>'+date+'</span><span style="color:'+(s.cost===0?'var(--green)':'var(--accent2)')+'">'+( s.cost===0?'Gratuit':s.cost+' cr')+'</span></div>'+
+      '</div>';
     }).join('');
   }catch(e){}
 }
