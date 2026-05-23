@@ -405,11 +405,18 @@ function goTo(page,btn){
   if(btn)btn.classList.add('active');
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   const pg=g('page-'+page);if(pg)pg.classList.add('active');
-  const titles={search:'Recherche',history:'Historique',credits:'Credits',profile:'Profil'};
+  const titles={search:'Recherche',history:'Historique',credits:'Credits',profile:'Profil',assistant:'Assistant IA'};
   g('page-title').textContent=titles[page]||page;
   if(page==='history')loadHistory();
   if(page==='credits')loadCredits();
   if(page==='profile')loadProfile();
+  if(page==='assistant' && !chatWelcomeDone){
+    chatWelcomeDone=true;
+    const welcome=document.createElement('div');
+    welcome.className='chat-msg chat-ai';
+    welcome.innerHTML='Bonjour ! Je suis l\'assistant Xtracker.<br><br>Decrivez-moi la personne que vous cherchez en langage naturel :<br><strong style="color:var(--accent2)">"Trouve Jordan Bardella qui habite a Paris"</strong><br><br>Je vais extraire les criteres et lancer la recherche automatiquement.';
+    g('chat-messages').appendChild(welcome);
+  }
 }
 
 function switchPTab(t,btn){
@@ -660,7 +667,7 @@ Réponds toujours en JSON valide, jamais en texte brut.`;
       const d = await r.json();
 
       if (r.status === 402) {
-        addMsg('Plus de credits disponibles. Rechargez depuis l'onglet Credits.', 'ai');
+        addMsg('Plus de credits disponibles. Rechargez depuis l\'onglet Credits.', 'ai');
         return;
       }
 
@@ -668,7 +675,7 @@ Réponds toujours en JSON valide, jamais en texte brut.`;
       const total = d.total || 0;
 
       if (!results.length) {
-        addMsg('Aucun résultat trouvé pour ces critères. Essayez avec moins d'informations.', 'ai');
+        addMsg('Aucun resultat trouve pour ces criteres. Essayez avec moins d\'informations.', 'ai');
         chatHistory.push({ role: 'assistant', content: 'Aucun résultat trouvé.' });
         return;
       }
@@ -716,7 +723,7 @@ setTimeout(() => {
   if (document.getElementById('page-assistant')) {
     const welcome = document.createElement('div');
     welcome.className = 'chat-msg chat-ai';
-    welcome.innerHTML = 'Bonjour ! Je suis l'assistant Xtracker.<br><br>Décrivez-moi la personne que vous cherchez en langage naturel :<br><strong style="color:var(--accent2)">"Trouve Jordan Bardella qui habite à Paris, il a environ 30 ans"</strong><br><br>Je vais extraire les critères et lancer la recherche automatiquement.';
+    welcome.innerHTML = 'Bonjour ! Je suis l\'assistant Xtracker.<br><br>Decrivez-moi la personne que vous cherchez en langage naturel :<br><strong style="color:var(--accent2)">Trouve Jordan Bardella qui habite a Paris</strong><br><br>Je vais extraire les criteres et lancer la recherche automatiquement.';
     g('chat-messages').appendChild(welcome);
   }
 }, 500);
