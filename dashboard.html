@@ -183,6 +183,18 @@ select option{background:var(--bg2)}
 .burger{display:none;background:none;border:none;cursor:pointer;color:var(--muted2);font-size:20px;padding:4px}
 .sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:49}
 .sb-overlay.show{display:block}
+.chat-msg{padding:10px 14px;border-radius:10px;font-size:13px;line-height:1.6;max-width:85%;animation:fadeIn .2s both}
+.chat-user{background:linear-gradient(135deg,var(--accent),var(--violet));color:#fff;align-self:flex-end;border-radius:10px 10px 2px 10px}
+.chat-ai{background:var(--bg2);border:1px solid var(--border);color:var(--text);align-self:flex-start;border-radius:10px 10px 10px 2px}
+.chat-loading{display:flex;gap:4px;align-items:center;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px 10px 10px 2px;align-self:flex-start}
+.chat-dot{width:6px;height:6px;background:var(--muted2);border-radius:50%;animation:chatdot .8s infinite}
+.chat-dot:nth-child(2){animation-delay:.15s}
+.chat-dot:nth-child(3){animation-delay:.3s}
+@keyframes chatdot{0%,80%,100%{opacity:.2;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
+.chat-result{background:var(--bg3);border:1px solid rgba(99,102,241,0.2);border-radius:8px;padding:10px 12px;margin-top:8px;font-size:12px}
+.chat-result-name{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;margin-bottom:4px}
+.chat-result-field{color:var(--muted2);margin-bottom:2px}
+.chat-result-field strong{color:var(--text)}
 
 @media(max-width:900px){
   .burger{display:block}
@@ -217,6 +229,7 @@ select option{background:var(--bg2)}
     <button class="sb-item" id="nav-history" onclick="goTo('history',this)"><span class="i">📋</span>Historique</button>
     <button class="sb-item" id="nav-credits" onclick="goTo('credits',this)"><span class="i">⚡</span>Credits</button>
     <button class="sb-item" id="nav-profile" onclick="goTo('profile',this)"><span class="i">👤</span>Profil</button>
+    <button class="sb-item" id="nav-assistant" onclick="goTo('assistant',this)"><span class="i">🤖</span>Assistant IA</button>
     <a href="https://discord.gg/bYSDCmgcRz" target="_blank" class="sb-item"><span class="i">💬</span>Discord</a>
   </div>
   <div class="sb-bottom" style="padding:10px 8px">
@@ -567,6 +580,146 @@ function toggleSb(){
   ov.classList.toggle('show');
 }
 function logout(){localStorage.clear();window.location.href='login.html'}
+
+// ── ASSISTANT IA ─────────────────────────────────────────────────────────────
+let chatHistory = [];
+
+function addMsg(text, role, html) {
+  const el = document.createElement('div');
+  el.className = 'chat-msg chat-' + role;
+  if (html) el.innerHTML = html;
+  else el.textContent = text;
+  g('chat-messages').appendChild(el);
+  g('chat-messages').scrollTop = g('chat-messages').scrollHeight;
+  return el;
+}
+
+function chatKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+}
+
+async function sendChat() {
+  const input = g('chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  input.style.height = '46px';
+
+  addMsg(msg, 'user');
+  chatHistory.push({ role: 'user', content: msg });
+
+  // Loader
+  const loader = document.createElement('div');
+  loader.className = 'chat-loading';
+  loader.innerHTML = '<div class="chat-dot"></div><div class="chat-dot"></div><div class="chat-dot"></div>';
+  g('chat-messages').appendChild(loader);
+  g('chat-messages').scrollTop = g('chat-messages').scrollHeight;
+  g('chat-send').disabled = true;
+
+  try {
+    const systemPrompt = `Tu es l'assistant IA de Xtracker, un moteur de recherche CSINT français.
+Quand l'utilisateur décrit une personne à rechercher, tu dois extraire les critères et répondre UNIQUEMENT avec un JSON valide de cette forme:
+{"action":"search","params":{"nom_famille":"...","prenom":"...","ville":"...","annee_naissance":"...","email":"...","telephone":"...","adresse":"..."}}
+N'inclus que les champs mentionnés. Pour l'âge, convertis en annee_naissance (ex: 15 ans en 2026 = 2011).
+Si l'utilisateur pose une question générale ou veut discuter (pas chercher quelqu'un), réponds normalement en JSON: {"action":"chat","message":"ta réponse ici"}
+Si l'utilisateur demande d'approfondir ou analyser les résultats précédents, utilise {"action":"analyze","message":"ton analyse"}
+Réponds toujours en JSON valide, jamais en texte brut.`;
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: chatHistory
+      })
+    });
+
+    const data = await response.json();
+    loader.remove();
+
+    const rawText = data.content.map(c => c.text || '').join('');
+    let parsed;
+    try {
+      const clean = rawText.replace(/```json|```/g, '').trim();
+      parsed = JSON.parse(clean);
+    } catch(e) {
+      parsed = { action: 'chat', message: rawText };
+    }
+
+    if (parsed.action === 'search' && parsed.params) {
+      const params = parsed.params;
+      const desc = Object.entries(params).map(([k,v]) => v).filter(Boolean).join(', ');
+      addMsg('', 'ai', '<div style="margin-bottom:6px">Recherche en cours pour <strong>' + desc + '</strong>...</div>');
+      chatHistory.push({ role: 'assistant', content: rawText });
+
+      // Lancer la recherche
+      const payload = { flexible: true, per_page: 10, ...params };
+      const r = await fetch(API + '/api/search', { method: 'POST', headers: hdr(), body: JSON.stringify(payload) });
+      const d = await r.json();
+
+      if (r.status === 402) {
+        addMsg('Plus de credits disponibles. Rechargez depuis l'onglet Credits.', 'ai');
+        return;
+      }
+
+      const results = d.results || [];
+      const total = d.total || 0;
+
+      if (!results.length) {
+        addMsg('Aucun résultat trouvé pour ces critères. Essayez avec moins d'informations.', 'ai');
+        chatHistory.push({ role: 'assistant', content: 'Aucun résultat trouvé.' });
+        return;
+      }
+
+      // Mettre à jour les crédits
+      if (d.free_left !== undefined) {
+        g('paid-credits').textContent = (parseInt(d.free_left)||0) + (parseInt(d.credits)||0);
+      }
+
+      // Afficher les résultats
+      let html = '<div style="margin-bottom:8px;font-size:12px;color:var(--muted2)"><strong style="color:var(--text)">' + total.toLocaleString() + ' résultat' + (total > 1 ? 's' : '') + '</strong> trouvé' + (total > 1 ? 's' : '') + ' · ' + results.length + ' affiché' + (results.length > 1 ? 's' : '') + '</div>';
+      results.slice(0, 5).forEach(p => {
+        const name = [p.prenom, p.nom_famille].filter(Boolean).join(' ') || 'Profil inconnu';
+        const fields = [];
+        if (p.email) fields.push('<div class="chat-result-field"><strong>Email:</strong> ' + p.email + '</div>');
+        if (p.telephone) fields.push('<div class="chat-result-field"><strong>Tel:</strong> ' + p.telephone + '</div>');
+        if (p.adresse) fields.push('<div class="chat-result-field"><strong>Adresse:</strong> ' + p.adresse + (p.ville ? ', ' + p.ville : '') + '</div>');
+        else if (p.ville) fields.push('<div class="chat-result-field"><strong>Ville:</strong> ' + p.ville + '</div>');
+        if (p.date_naissance) fields.push('<div class="chat-result-field"><strong>Naissance:</strong> ' + p.date_naissance + '</div>');
+        if (p.societe) fields.push('<div class="chat-result-field"><strong>Societe:</strong> ' + p.societe + '</div>');
+        const srcs = (p._sources || []).slice(0, 2).join(', ');
+        html += '<div class="chat-result"><div class="chat-result-name">' + name + '</div>' + fields.join('') + (srcs ? '<div style="margin-top:4px;font-size:10px;color:var(--accent2)">' + srcs + '</div>' : '') + '</div>';
+      });
+      if (results.length > 5) html += '<div style="font-size:11px;color:var(--muted2);margin-top:6px">+ ' + (results.length - 5) + ' autre(s) résultat(s)</div>';
+
+      addMsg('', 'ai', html);
+      chatHistory.push({ role: 'assistant', content: total + ' résultats trouvés pour ' + desc });
+
+    } else {
+      addMsg(parsed.message || rawText, 'ai');
+      chatHistory.push({ role: 'assistant', content: parsed.message || rawText });
+    }
+
+  } catch(e) {
+    loader.remove();
+    addMsg('Erreur de connexion. Réessayez.', 'ai');
+  } finally {
+    g('chat-send').disabled = false;
+    g('chat-messages').scrollTop = g('chat-messages').scrollHeight;
+  }
+}
+
+// Message de bienvenue
+setTimeout(() => {
+  if (document.getElementById('page-assistant')) {
+    const welcome = document.createElement('div');
+    welcome.className = 'chat-msg chat-ai';
+    welcome.innerHTML = 'Bonjour ! Je suis l'assistant Xtracker.<br><br>Décrivez-moi la personne que vous cherchez en langage naturel :<br><strong style="color:var(--accent2)">"Trouve Jordan Bardella qui habite à Paris, il a environ 30 ans"</strong><br><br>Je vais extraire les critères et lancer la recherche automatiquement.';
+    g('chat-messages').appendChild(welcome);
+  }
+}, 500);
 
 async function init(){
   try{
