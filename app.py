@@ -363,16 +363,20 @@ def create_token(user_id: int, role: str) -> str:
     exp = datetime.utcnow() + timedelta(minutes=TOKEN_EXPIRE)
     return jwt.encode({"sub": str(user_id), "role": role, "exp": exp}, SECRET_KEY, ALGORITHM)
 
-def get_current_user(creds: HTTPAuthorizationCredentials = Depends(security)):
-    if not creds:
+def get_current_user(request: Request, creds: HTTPAuthorizationCredentials = Depends(HTTPBearer(auto_error=False))):
+    # Cookie httpOnly en priorité, sinon header Authorization
+    token = request.cookies.get("xtoken")
+    if not token and creds:
+        token = creds.credentials
+    if not token:
         raise HTTPException(401, "Non authentifié")
     try:
-        payload = jwt.decode(creds.credentials, SECRET_KEY, [ALGORITHM])
+        payload = jwt.decode(token, SECRET_KEY, [ALGORITHM])
         uid = int(payload["sub"])
-    except JWTError:
+    except Exception:
         raise HTTPException(401, "Token invalide")
     db = get_db()
-    user = fetchone(db, "SELECT * FROM users WHERE id=?", (uid,))
+    user = fetchone(db, "SELECT id, email, username, role, credits, free_left, banned FROM users WHERE id=?", (uid,))
     db.close()
     if not user: raise HTTPException(401, "Introuvable")
     if user["banned"]: raise HTTPException(403, "Compte banni")
@@ -502,14 +506,25 @@ async def login(data: LoginModel):
     db.close()
     user = dict(user) if not isinstance(user, dict) else user
     token = create_token(user["id"], user["role"])
-    return {
-        "token": token,
+    from fastapi.responses import JSONResponse
+    resp = JSONResponse({
+        "ok": True,
         "user": {
-            "id": user["id"], "email": user["email"],
-            "username": user["username"], "role": user["role"],
-            "credits": user["credits"], "free_left": user["free_left"]
+            "username": user["username"],
+            "role": user["role"],
+            "credits": user["credits"],
+            "free_left": user["free_left"]
         }
-    }
+    })
+    resp.set_cookie(
+        key="xtoken",
+        value=token,
+        httponly=True,
+        secure=True,
+        samesite="strict",
+        max_age=86400 * 7  # 7 jours
+    )
+    return resp
 
 @app.get("/api/auth/me")
 async def me(user=Depends(get_current_user)):
@@ -1066,6 +1081,13 @@ async def admin_set_role(user_id: int, request: Request, admin=Depends(require_a
     db.commit()
     db.close()
     return {"ok": True, "message": f"Role mis a jour: {role}"}
+
+@app.post("/api/auth/logout")
+async def logout():
+    from fastapi.responses import JSONResponse
+    resp = JSONResponse({"ok": True})
+    resp.delete_cookie("xtoken")
+    return resp
 
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
 

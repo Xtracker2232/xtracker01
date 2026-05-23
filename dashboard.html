@@ -455,11 +455,10 @@ select option{background:var(--bg2)}
 
 <script>
 const API='';
-const TOKEN=localStorage.getItem('token');
 let USER=JSON.parse(localStorage.getItem('user')||'{}');
-if(!TOKEN){window.location.href='login.html'}
 function g(id){return document.getElementById(id)}
-function hdr(){return{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'}}
+function hdr(){return{'Content-Type':'application/json'}}
+// Le token est dans un cookie httpOnly - invisible depuis JS
 
 function notif(msg,type){
   const el=document.createElement('div');el.className='notif '+(type||'ok');el.textContent=msg;
@@ -568,7 +567,7 @@ async function doSearch(){
   if(Object.keys(payload).length<=2){showErr('Remplissez au moins un champ.');return}
   setLoad('btn-search',true,'Rechercher');
   try{
-    const r=await fetch(API+'/api/search',{method:'POST',headers:hdr(),body:JSON.stringify(payload)});
+    const r=await fetch(API+'/api/search',{method:'POST',headers:hdr(),credentials:'include',body:JSON.stringify(payload)});
     const d=await r.json();
     if(r.status===402){showNoCredits();return}
     if(d.protected){g('state-empty').style.display='none';g('results').innerHTML='<div class="state"><div class="state-ico">😏</div><div class="state-title">'+d.message+'</div></div>';return}
@@ -608,7 +607,7 @@ async function doLookup(){
 
 async function buyPack(packId){
   try{
-    const r=await fetch(API+'/api/credits/checkout/'+packId,{method:'POST',headers:hdr()});
+    const r=await fetch(API+'/api/credits/checkout/'+packId,{method:'POST',headers:hdr(),credentials:'include'});
     const d=await r.json();
     if(d.checkout_url)window.location.href=d.checkout_url;
     else notif(d.detail||'Erreur paiement','err');
@@ -621,7 +620,7 @@ async function replayById(id){
   g('state-empty').style.display='none';
   g('results').innerHTML='<div class="state"><div class="state-ico">🔍</div><div class="state-title">Rechargement...</div></div>';
   try{
-    const r=await fetch(API+'/api/history/'+id+'/replay',{method:'POST',headers:hdr()});
+    const r=await fetch(API+'/api/history/'+id+'/replay',{method:'POST',headers:hdr(),credentials:'include'});
     const d=await r.json();
     if(!r.ok){showErr(d.detail||'Erreur');return}
     renderResults(d.results,d.total,d.took_ms,d.free_left,d.credits);
@@ -630,7 +629,7 @@ async function replayById(id){
 
 async function loadHistory(){
   try{
-    const r=await fetch(API+'/api/history',{headers:hdr()});
+    const r=await fetch(API+'/api/history',{headers:hdr(),credentials:'include'});
     const d=await r.json();
     const el=g('history-list');
     if(!d.length){el.innerHTML='<div class="state"><div class="state-ico">📋</div><div class="state-title">Aucun historique</div></div>';return}
@@ -647,7 +646,7 @@ async function loadHistory(){
 
 async function loadCredits(){
   try{
-    const r=await fetch(API+'/api/auth/me',{headers:hdr()});
+    const r=await fetch(API+'/api/auth/me',{headers:hdr(),credentials:'include'});
     const d=await r.json();
     g('card-total').textContent=(parseInt(d.free_left)||0)+(parseInt(d.credits)||0);
     g('paid-credits').textContent=(parseInt(d.free_left)||0)+(parseInt(d.credits)||0);
@@ -656,7 +655,7 @@ async function loadCredits(){
 
 async function loadProfile(){
   try{
-    const r=await fetch(API+'/api/auth/me',{headers:hdr()});
+    const r=await fetch(API+'/api/auth/me',{headers:hdr(),credentials:'include'});
     const d=await r.json();
     g('p-email').textContent=d.email||'—';g('p-username').textContent=d.username||'—';
     g('p-role').textContent=d.role||'—';g('p-date').textContent=d.created_at?new Date(d.created_at).toLocaleDateString('fr-FR'):'—';
@@ -673,7 +672,7 @@ function closeDrawer(){
   g('mobile-drawer').classList.remove('open');
   g('drawer-overlay').classList.remove('show');
 }
-function logout(){localStorage.clear();window.location.href='login.html'}
+function logout(){fetch('/api/auth/logout',{method:'POST',credentials:'include'}).finally(()=>{localStorage.clear();window.location.href='login.html'})}
 
 // ── ASSISTANT IA ─────────────────────────────────────────────────────────────
 let chatHistory = [];
@@ -887,7 +886,7 @@ window.addEventListener('resize', checkMobile);
 
 async function init(){
   try{
-    const r=await fetch(API+'/api/auth/me',{headers:hdr()});
+    const r=await fetch(API+'/api/auth/me',{headers:hdr(),credentials:'include'});
     if(!r.ok){logout();return}
     const d=await r.json();
     USER=d;

@@ -225,12 +225,10 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 
 <script>
 var API='';
-var TOKEN=localStorage.getItem('token');
-if(!TOKEN){window.location.href='login.html'}
 var allUsers=[];
 
 function g(id){return document.getElementById(id)}
-function hdr(){return{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'}}
+function hdr(){return{'Content-Type':'application/json'}}
 
 function notif(msg,type){
   var el=document.createElement('div');
@@ -254,7 +252,7 @@ function goTo(page,btn){
 }
 
 function loadStats(){
-  fetch(API+'/api/admin/stats',{headers:hdr()}).then(function(r){return r.json()}).then(function(d){
+  fetch(API+'/api/admin/stats',{headers:hdr(),credentials:"include"}).then(function(r){return r.json()}).then(function(d){
     g('s-users').textContent=(d.total_users||0).toLocaleString();
     g('s-searches').textContent=(d.total_searches||0).toLocaleString();
     g('s-revenue').textContent=(d.revenue_eur||0).toFixed(2)+'EUR';
@@ -269,7 +267,7 @@ function loadStats(){
 function loadUsers(){
   var all=[];var page=1;var total=0;
   function fetchPage(){
-    fetch(API+'/api/admin/users?page='+page,{headers:hdr()}).then(function(r){return r.json()}).then(function(d){
+    fetch(API+'/api/admin/users?page='+page,{headers:hdr(),credentials:"include"}).then(function(r){return r.json()}).then(function(d){
       var users=d.users||d;
       total=d.total||users.length;
       all=all.concat(users);
@@ -334,7 +332,7 @@ function addCredits(id){
 
 function resetCredits(id){
   if(!confirm('Remettre les credits a zero ?'))return;
-  fetch(API+'/api/admin/users/'+id+'/reset-credits',{method:'POST',headers:hdr()})
+  fetch(API+'/api/admin/users/'+id+'/reset-credits',{method:'POST',headers:hdr(),credentials:"include"})
     .then(function(r){if(r.ok){notif('Credits remis a zero');loadUsers()}else notif('Erreur','err')})
     .catch(function(){notif('Erreur reseau','err')});
 }
@@ -354,7 +352,7 @@ function toggleBan(id,doBan){
 }
 
 function loadHistory(){
-  fetch(API+'/api/admin/history',{headers:hdr()}).then(function(r){return r.json()}).then(function(d){
+  fetch(API+'/api/admin/history',{headers:hdr(),credentials:"include"}).then(function(r){return r.json()}).then(function(d){
     var tb=g('history-tbody');
     if(!d.length){tb.innerHTML='<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--muted)">Aucun historique</td></tr>';return}
     var html='';
@@ -372,7 +370,7 @@ function loadHistory(){
 }
 
 function loadBlocklist(){
-  fetch(API+'/api/admin/blocklist',{headers:hdr()}).then(function(r){return r.json()}).then(function(d){
+  fetch(API+'/api/admin/blocklist',{headers:hdr(),credentials:"include"}).then(function(r){return r.json()}).then(function(d){
     var el=g('blocklist-items');
     if(!d.length){el.innerHTML='<div style="padding:14px 16px;color:var(--muted);text-align:center">Aucun terme bloque</div>';return}
     var html='';
@@ -395,13 +393,13 @@ function addBlocklist(){
 }
 
 function removeBlocklist(id){
-  fetch(API+'/api/admin/blocklist/'+id,{method:'DELETE',headers:hdr()})
+  fetch(API+'/api/admin/blocklist/'+id,{method:'DELETE',headers:hdr(),credentials:"include"})
     .then(function(r){if(r.ok){notif('Terme supprime');loadBlocklist()}else notif('Erreur','err')})
     .catch(function(){notif('Erreur reseau','err')});
 }
 
 function loadMaintenance(){
-  fetch(API+'/api/admin/maintenance',{headers:hdr()}).then(function(r){return r.json()}).then(function(d){
+  fetch(API+'/api/admin/maintenance',{headers:hdr(),credentials:"include"}).then(function(r){return r.json()}).then(function(d){
     g('maint-toggle').classList.toggle('on',d.maintenance);
   }).catch(function(){});
 }
@@ -414,10 +412,10 @@ function toggleMaintenance(){
     .catch(function(){notif('Erreur reseau','err')});
 }
 
-function logout(){localStorage.clear();window.location.href='login.html'}
+function logout(){fetch('/api/auth/logout',{method:'POST',credentials:'include'}).finally(function(){localStorage.clear();window.location.href='login.html'})}
 
 function init(){
-  fetch(API+'/api/auth/me',{headers:hdr()}).then(function(r){
+  fetch(API+'/api/auth/me',{headers:hdr(),credentials:"include"}).then(function(r){
     if(!r.ok){logout();return}
     return r.json();
   }).then(function(d){
