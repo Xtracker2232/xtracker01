@@ -21,7 +21,7 @@ except ImportError:
     USE_PG = False
 
 # Force PostgreSQL
-_DB_URL = os.environ.get("DATABASE_URL", "") or os.environ.get("POSTGRES_URL", "") or "postgresql://postgres:XQnMuhKjHBYBGBhuwOUOEmWtwzXxHniB@postgres.railway.internal:5432/railway"
+_DB_URL = os.environ.get("DATABASE_URL", "") or os.environ.get("POSTGRES_URL", "")
 if _DB_URL and "postgresql" in _DB_URL:
     USE_PG = True
     print(f"[DB] PostgreSQL: {_DB_URL[:40]}...")
