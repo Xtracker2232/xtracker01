@@ -30,7 +30,7 @@ else:
     print("[DB] SQLite fallback")
 
 # ── CONFIG ────────────────────────────────────────────────────────────────────
-SECRET_KEY     = "xtracker-secret-2026-changez-en-prod"
+SECRET_KEY     = os.getenv("SECRET_KEY", "")
 ALGORITHM      = "HS256"
 TOKEN_EXPIRE   = 60 * 24 * 7
 BRIX_KEY       = os.getenv("BRIX_API_KEY", "")
