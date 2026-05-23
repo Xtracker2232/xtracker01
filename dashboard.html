@@ -456,13 +456,16 @@ select option{background:var(--bg2)}
 <script>
 const API='';
 let USER=JSON.parse(localStorage.getItem('user')||'{}');
-const _T=localStorage.getItem('_xt')||'';
 function g(id){return document.getElementById(id)}
+function getToken(){return localStorage.getItem('_xt')||''}
 function hdr(){
   const h={'Content-Type':'application/json'};
-  if(_T)h['Authorization']='Bearer '+_T;
+  const t=getToken();
+  if(t)h['Authorization']='Bearer '+t;
   return h;
 }
+// Vérif rapide - si pas de token du tout, aller au login
+if(!getToken()){window.location.href='login.html'}
 
 function notif(msg,type){
   const el=document.createElement('div');el.className='notif '+(type||'ok');el.textContent=msg;

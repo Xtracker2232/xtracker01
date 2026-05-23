@@ -226,13 +226,15 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 <script>
 var API='';
 var allUsers=[];
-var _T=localStorage.getItem('_xt')||'';
 function g(id){return document.getElementById(id)}
+function getToken(){return localStorage.getItem('_xt')||''}
 function hdr(){
   var h={'Content-Type':'application/json'};
-  if(_T)h['Authorization']='Bearer '+_T;
+  var t=getToken();
+  if(t)h['Authorization']='Bearer '+t;
   return h;
 }
+if(!getToken()){window.location.href='login.html'}
 
 function notif(msg,type){
   var el=document.createElement('div');
