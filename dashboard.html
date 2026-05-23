@@ -180,15 +180,33 @@ select option{background:var(--bg2)}
 .search-layout{display:grid;grid-template-columns:360px 1fr;gap:18px;align-items:start}
 .search-col{position:sticky;top:70px}
 
+.burger{display:none;background:none;border:none;cursor:pointer;color:var(--muted2);font-size:20px;padding:4px}
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:49}
+.sb-overlay.show{display:block}
+
 @media(max-width:900px){
-  .sb{display:none}.main{margin-left:0}
+  .burger{display:block}
+  .sb{transform:translateX(-100%);transition:transform .25s;z-index:51}
+  .sb.open{transform:none}
+  .main{margin-left:0}
+  .page{padding:14px}
+  .topbar{padding:0 14px}
   .search-layout{grid-template-columns:1fr}
   .search-col{position:static}
   .packs-grid{grid-template-columns:1fr}
+  .stat-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:480px){
+  .stat-grid{grid-template-columns:1fr}
+  .fg{grid-template-columns:1fr}
+  .fg3{grid-template-columns:1fr}
+  .rfields{grid-template-columns:1fr 1fr}
+  .topbar-user{display:none}
 }
 </style>
 </head>
 <body>
+<div class="sb-overlay" id="sb-overlay" onclick="toggleSb()"></div>
 <div class="layout">
 
 <div class="sb">
@@ -211,7 +229,10 @@ select option{background:var(--bg2)}
 
 <div class="main">
   <div class="topbar">
-    <div class="topbar-title" id="page-title">Recherche</div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <button class="burger" onclick="toggleSb()">☰</button>
+      <div class="topbar-title" id="page-title">Recherche</div>
+    </div>
     <div class="topbar-right">
       <span class="topbar-user" id="user-name"></span>
       <button onclick="logout()" style="padding:5px 10px;border-radius:5px;font-size:11px;border:1px solid var(--border);background:transparent;color:var(--muted2);cursor:pointer;font-family:inherit">Deconnexion</button>
@@ -532,6 +553,12 @@ async function loadProfile(){
   }catch(e){}
 }
 
+function toggleSb(){
+  const sb=document.querySelector('.sb');
+  const ov=g('sb-overlay');
+  sb.classList.toggle('open');
+  ov.classList.toggle('show');
+}
 function logout(){localStorage.clear();window.location.href='login.html'}
 
 async function init(){
