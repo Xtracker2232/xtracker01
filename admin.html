@@ -13,42 +13,34 @@
   --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.1);
   --text:#f0f2ff;--muted:#4a5280;--muted2:#8892c0;
   --accent:#6366f1;--accent2:#818cf8;--violet:#a78bfa;
-  --red:#ef4444;--green:#22c55e;--yellow:#eab308;
+  --red:#ef4444;--green:#22c55e;
 }
 html,body{min-height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:13px}
 a{color:inherit;text-decoration:none}
-
 .layout{display:flex;min-height:100vh}
-
 .sb{width:220px;background:rgba(10,13,26,0.95);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50}
 .sb-logo{padding:18px 16px;font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:var(--text);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.sb-logo-text span{color:var(--accent)}
-.sb-badge{font-size:9px;font-weight:700;color:var(--red);background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);padding:2px 6px;border-radius:4px;letter-spacing:.5px}
+.sb-logo span{color:var(--accent)}
+.sb-badge{font-size:9px;font-weight:700;color:var(--red);background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);padding:2px 6px;border-radius:4px}
 .sb-nav{padding:10px 8px;flex:1;display:flex;flex-direction:column;gap:1px;overflow-y:auto}
 .sb-sec{font-size:10px;font-weight:600;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;padding:10px 8px 4px}
 .sb-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;font-size:13px;font-weight:500;color:var(--muted2);cursor:pointer;border:none;background:transparent;width:100%;text-align:left;font-family:inherit;transition:all .15s}
 .sb-item:hover{background:rgba(255,255,255,0.04);color:var(--text)}
 .sb-item.active{background:rgba(99,102,241,0.12);color:var(--accent2)}
-.sb-item .i{width:18px;text-align:center;flex-shrink:0}
 .sb-bottom{padding:10px 8px;border-top:1px solid var(--border)}
-.sb-logout{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;font-size:13px;color:var(--red);cursor:pointer;border:none;background:transparent;width:100%;font-family:inherit;transition:all .15s}
+.sb-logout{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;font-size:13px;color:var(--red);cursor:pointer;border:none;background:transparent;width:100%;font-family:inherit}
 .sb-logout:hover{background:rgba(239,68,68,0.08)}
-
 .main{margin-left:220px;flex:1;display:flex;flex-direction:column}
 .topbar{height:52px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:rgba(6,8,15,0.8);position:sticky;top:0;z-index:40}
 .topbar-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700}
-.topbar-right{display:flex;align-items:center;gap:8px}
 .badge-admin{font-size:10px;font-weight:600;color:var(--red);background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);padding:3px 8px;border-radius:4px}
-
 .page{display:none;padding:22px 24px;flex:1}
 .page.active{display:flex;flex-direction:column;gap:16px}
-
 .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 .stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px}
 .stat-label{font-size:10px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
 .stat-val{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--text)}
 .stat-sub{font-size:11px;color:var(--muted);margin-top:3px}
-
 .table-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
 .table-head{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
 .table-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700}
@@ -58,34 +50,30 @@ td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--muted2);ve
 td:first-child{color:var(--text);font-weight:500}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:rgba(255,255,255,0.02)}
-
-.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;text-transform:uppercase}
 .b-admin{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:var(--red)}
 .b-user{background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);color:var(--accent2)}
 .b-ban{background:rgba(239,68,68,0.15);color:var(--red)}
 .b-ok{background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);color:var(--green)}
-
 .act-btn{padding:4px 8px;border-radius:4px;font-size:11px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted2);font-family:inherit;transition:all .15s;margin-right:3px}
 .act-btn:hover{border-color:var(--border2);color:var(--text)}
-.act-btn.danger{color:var(--red);border-color:rgba(239,68,68,0.2)}
+.act-btn.danger{color:var(--red);border-color:rgba(239,68,68,0.3)}
 .act-btn.danger:hover{background:rgba(239,68,68,0.08)}
-.act-btn.success{color:var(--green);border-color:rgba(34,197,94,0.2)}
+.act-btn.success{color:var(--green);border-color:rgba(34,197,94,0.3)}
 .act-btn.success:hover{background:rgba(34,197,94,0.08)}
-
+.act-btn.accent{color:var(--accent2);border-color:rgba(99,102,241,0.3)}
+.act-btn.accent:hover{background:rgba(99,102,241,0.08)}
 .search-bar{display:flex;gap:8px;margin-bottom:14px}
-.search-input{flex:1;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:7px;padding:7px 12px;font-size:12px;color:var(--text);font-family:inherit;outline:none;transition:all .15s}
+.search-input{flex:1;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:7px;padding:7px 12px;font-size:12px;color:var(--text);font-family:inherit;outline:none}
 .search-input:focus{border-color:rgba(99,102,241,0.4)}
 .search-input::placeholder{color:var(--muted)}
-
 .bl-add{display:flex;gap:8px;margin:14px 16px}
 .bl-input{flex:1;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:7px;padding:7px 12px;font-size:12px;color:var(--text);font-family:inherit;outline:none}
-.bl-input:focus{border-color:rgba(99,102,241,0.4)}
 .bl-input::placeholder{color:var(--muted)}
 .bl-item{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid var(--border)}
 .bl-item:last-child{border-bottom:none}
 .bl-val{font-size:12px;color:var(--text);font-weight:500}
 .bl-reason{font-size:11px;color:var(--muted2);margin-left:8px}
-
 .toggle-row{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;display:flex;align-items:center;justify-content:space-between}
 .toggle-info{font-size:13px;color:var(--text);font-weight:500}
 .toggle-sub{font-size:11px;color:var(--muted2);margin-top:3px}
@@ -93,78 +81,42 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 .toggle-sw.on{background:linear-gradient(135deg,var(--accent),var(--violet))}
 .toggle-sw::after{content:'';position:absolute;left:3px;top:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:left .3s}
 .toggle-sw.on::after{left:23px}
-
 .btn{padding:7px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .2s}
 .btn-a{background:linear-gradient(135deg,var(--accent),var(--violet));color:#fff}
-.btn-a:hover{box-shadow:0 4px 14px rgba(99,102,241,0.4)}
 .btn-g{background:transparent;border:1px solid var(--border);color:var(--muted2)}
 .btn-g:hover{border-color:var(--border2);color:var(--text)}
-
 .notif{position:fixed;bottom:20px;right:20px;z-index:200;padding:10px 14px;border-radius:8px;font-size:12px;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,.5);animation:slideIn .25s ease;background:var(--bg2);border:1px solid var(--border)}
 .notif.ok{border-color:rgba(34,197,94,.3);color:#86efac}
 .notif.err{border-color:rgba(239,68,68,.3);color:#fca5a5}
 @keyframes slideIn{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
-
-/* BURGER */
-.burger{display:none;background:none;border:none;cursor:pointer;color:var(--muted2);font-size:20px;padding:4px}
-.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:49}
-.sb-overlay.show{display:block}
-
-@media(max-width:900px){
-  .burger{display:block}
-  .sb{transform:translateX(-100%);transition:transform .25s;z-index:51}
-  .sb.open{transform:none}
-  .main{margin-left:0}
-  .topbar{padding:0 14px}
-  .page{padding:14px}
-  .stat-grid{grid-template-columns:1fr 1fr}
-  table{display:block;overflow-x:auto;white-space:nowrap}
-  .search-bar{flex-direction:column}
-  .search-input{width:100%}
-  .bl-add{flex-direction:column}
-  .bl-input{width:100%}
-}
-@media(max-width:480px){
-  .stat-grid{grid-template-columns:1fr}
-  .topbar-right{gap:6px}
-  .topbar-right span{display:none}
-}
+@media(max-width:900px){.sb{display:none}.main{margin-left:0}.stat-grid{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
-<div class="sb-overlay" id="sb-overlay" onclick="toggleSb()"></div>
 <div class="layout">
-
 <div class="sb">
-  <div class="sb-logo">
-    <div class="sb-logo-text">X<span>tracker</span></div>
-    <span class="sb-badge">ADMIN</span>
-  </div>
+  <div class="sb-logo"><div>X<span>tracker</span></div><span class="sb-badge">ADMIN</span></div>
   <div class="sb-nav">
     <span class="sb-sec">Dashboard</span>
-    <button class="sb-item active" onclick="goTo('stats',this)"><span class="i">📊</span>Statistiques</button>
-    <button class="sb-item" onclick="goTo('users',this)"><span class="i">👥</span>Utilisateurs</button>
-    <button class="sb-item" onclick="goTo('history',this)"><span class="i">📋</span>Historique</button>
+    <button class="sb-item active" onclick="goTo('stats',this)">Statistiques</button>
+    <button class="sb-item" onclick="goTo('users',this)">Utilisateurs</button>
+    <button class="sb-item" onclick="goTo('history',this)">Historique</button>
     <span class="sb-sec">Securite</span>
-    <button class="sb-item" onclick="goTo('blocklist',this)"><span class="i">🚫</span>Blocklist</button>
-    <button class="sb-item" onclick="goTo('maintenance',this)"><span class="i">🔧</span>Maintenance</button>
+    <button class="sb-item" onclick="goTo('blocklist',this)">Blocklist</button>
+    <button class="sb-item" onclick="goTo('maintenance',this)">Maintenance</button>
     <span class="sb-sec">Site</span>
-    <a href="index.html" class="sb-item"><span class="i">🌐</span>Voir le site</a>
-    <a href="dashboard.html" class="sb-item"><span class="i">🔍</span>Dashboard</a>
-    <a href="https://discord.gg/bYSDCmgcRz" target="_blank" class="sb-item"><span class="i">💬</span>Discord</a>
+    <a href="index.html" class="sb-item">Voir le site</a>
+    <a href="dashboard.html" class="sb-item">Dashboard</a>
+    <a href="https://discord.gg/bYSDCmgcRz" target="_blank" class="sb-item">Discord</a>
   </div>
   <div class="sb-bottom">
-    <button class="sb-logout" onclick="logout()"><span class="i">🚪</span>Deconnexion</button>
+    <button class="sb-logout" onclick="logout()">Deconnexion</button>
   </div>
 </div>
-
 <div class="main">
   <div class="topbar">
-    <div style="display:flex;align-items:center;gap:10px">
-      <button class="burger" onclick="toggleSb()">☰</button>
-      <div class="topbar-title" id="page-title">Statistiques</div>
-    </div>
-    <div class="topbar-right">
+    <div class="topbar-title" id="page-title">Statistiques</div>
+    <div style="display:flex;align-items:center;gap:8px">
       <span class="badge-admin">ADMIN</span>
       <span id="admin-name" style="font-size:12px;color:var(--muted2)"></span>
     </div>
@@ -179,8 +131,8 @@ tr:hover td{background:rgba(255,255,255,0.02)}
       <div class="stat-card"><div class="stat-label">Bannis</div><div class="stat-val" id="s-banned">—</div><div class="stat-sub">comptes</div></div>
     </div>
     <div class="stat-grid">
-      <div class="stat-card"><div class="stat-label">Nouveaux aujourd hui</div><div class="stat-val" id="s-new">—</div></div>
-      <div class="stat-card"><div class="stat-label">Recherches aujourd hui</div><div class="stat-val" id="s-today">—</div></div>
+      <div class="stat-card"><div class="stat-label">Nouveaux aujourd'hui</div><div class="stat-val" id="s-new">—</div></div>
+      <div class="stat-card"><div class="stat-label">Recherches aujourd'hui</div><div class="stat-val" id="s-today">—</div></div>
       <div class="stat-card"><div class="stat-label">Credits vendus</div><div class="stat-val" id="s-credits">—</div></div>
       <div class="stat-card"><div class="stat-label">Comptes actifs</div><div class="stat-val" id="s-active">—</div></div>
     </div>
@@ -194,10 +146,12 @@ tr:hover td{background:rgba(255,255,255,0.02)}
     </div>
     <div class="table-wrap">
       <div class="table-head"><div class="table-title">Utilisateurs</div><span id="user-count" style="font-size:12px;color:var(--muted2)"></span></div>
-      <table>
-        <thead><tr><th>Utilisateur</th><th>Email</th><th>Credits</th><th>Gratuites</th><th>Role</th><th>Statut</th><th>Actions</th></tr></thead>
-        <tbody id="users-tbody"><tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">Chargement...</td></tr></tbody>
-      </table>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>Utilisateur</th><th>Email</th><th>Credits</th><th>Gratuites</th><th>Role</th><th>Statut</th><th>Actions</th></tr></thead>
+          <tbody id="users-tbody"><tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">Chargement...</td></tr></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -205,10 +159,12 @@ tr:hover td{background:rgba(255,255,255,0.02)}
   <div class="page" id="page-history">
     <div class="table-wrap">
       <div class="table-head"><div class="table-title">Historique des recherches</div></div>
-      <table>
-        <thead><tr><th>Utilisateur</th><th>Recherche</th><th>Resultats</th><th>Cout</th><th>Date</th></tr></thead>
-        <tbody id="history-tbody"><tr><td colspan="5" style="text-align:center;padding:24px;color:var(--muted)">Chargement...</td></tr></tbody>
-      </table>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>Utilisateur</th><th>Recherche</th><th>Resultats</th><th>Cout</th><th>Date</th></tr></thead>
+          <tbody id="history-tbody"><tr><td colspan="5" style="text-align:center;padding:24px;color:var(--muted)">Chargement...</td></tr></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -217,19 +173,19 @@ tr:hover td{background:rgba(255,255,255,0.02)}
     <div class="table-wrap">
       <div class="table-head"><div class="table-title">Blocklist dynamique</div></div>
       <div class="bl-add">
-        <select class="bl-input" id="bl-type" style="max-width:160px">
-          <option value="general">General (tout)</option>
-          <option value="nom_famille">Nom de famille</option>
+        <select class="bl-input" id="bl-type" style="max-width:150px">
+          <option value="general">General</option>
+          <option value="nom_famille">Nom famille</option>
           <option value="prenom">Prenom</option>
           <option value="email">Email</option>
-          <option value="telephone">Telephone / Mobile</option>
+          <option value="telephone">Telephone</option>
           <option value="adresse">Adresse</option>
-          <option value="nir">NIR (Secu)</option>
+          <option value="nir">NIR</option>
           <option value="iban">IBAN</option>
-          <option value="plaque">Plaque / VIN</option>
+          <option value="plaque">Plaque</option>
         </select>
         <input class="bl-input" id="bl-val" placeholder="Valeur a bloquer...">
-        <input class="bl-input" id="bl-reason" placeholder="Raison (optionnel)" style="max-width:160px">
+        <input class="bl-input" id="bl-reason" placeholder="Raison" style="max-width:150px">
         <button class="btn btn-a" onclick="addBlocklist()">Ajouter</button>
       </div>
       <div id="blocklist-items"><div style="padding:14px 16px;color:var(--muted);text-align:center">Chargement...</div></div>
@@ -249,7 +205,7 @@ tr:hover td{background:rgba(255,255,255,0.02)}
     <div class="toggle-row">
       <div>
         <div class="toggle-info">Mode maintenance</div>
-        <div class="toggle-sub">Affiche une page de maintenance a tous les visiteurs</div>
+        <div class="toggle-sub">Affiche une page de maintenance aux visiteurs (les admins passent toujours)</div>
       </div>
       <button class="toggle-sw" id="maint-toggle" onclick="toggleMaintenance()"></button>
     </div>
@@ -268,24 +224,28 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 </div>
 
 <script>
-const API='';
-const TOKEN=localStorage.getItem('token');
+var API='';
+var TOKEN=localStorage.getItem('token');
 if(!TOKEN){window.location.href='login.html'}
-let allUsers=[];
+var allUsers=[];
+
 function g(id){return document.getElementById(id)}
 function hdr(){return{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'}}
 
 function notif(msg,type){
-  const el=document.createElement('div');el.className='notif '+(type||'ok');el.textContent=msg;
-  document.body.appendChild(el);setTimeout(()=>el.remove(),3500);
+  var el=document.createElement('div');
+  el.className='notif '+(type||'ok');
+  el.textContent=msg;
+  document.body.appendChild(el);
+  setTimeout(function(){el.remove()},3500);
 }
 
 function goTo(page,btn){
-  document.querySelectorAll('.sb-item').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(function(b){b.classList.remove('active')});
   if(btn)btn.classList.add('active');
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  const pg=g('page-'+page);if(pg)pg.classList.add('active');
-  const titles={stats:'Statistiques',users:'Utilisateurs',history:'Historique',blocklist:'Blocklist',maintenance:'Maintenance'};
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
+  var pg=g('page-'+page);if(pg)pg.classList.add('active');
+  var titles={stats:'Statistiques',users:'Utilisateurs',history:'Historique',blocklist:'Blocklist',maintenance:'Maintenance'};
   g('page-title').textContent=titles[page]||page;
   if(page==='users')loadUsers();
   if(page==='history')loadHistory();
@@ -293,11 +253,8 @@ function goTo(page,btn){
   if(page==='maintenance')loadMaintenance();
 }
 
-async function loadStats(){
-  try{
-    const r=await fetch(API+'/api/admin/stats',{headers:hdr()});
-    if(!r.ok)return;
-    const d=await r.json();
+function loadStats(){
+  fetch(API+'/api/admin/stats',{headers:hdr()}).then(function(r){return r.json()}).then(function(d){
     g('s-users').textContent=(d.total_users||0).toLocaleString();
     g('s-searches').textContent=(d.total_searches||0).toLocaleString();
     g('s-revenue').textContent=(d.revenue_eur||0).toFixed(2)+'EUR';
@@ -306,46 +263,171 @@ async function loadStats(){
     g('s-today').textContent=(d.searches_today||0);
     g('s-credits').textContent=(d.credits_sold||0);
     g('s-active').textContent=(d.active_users||0);
-  }catch(e){}
+  }).catch(function(){});
 }
 
-async function loadUsers(){
-  try{
-    let all=[],page=1,total=0;
-    while(true){
-      const r=await fetch(API+'/api/admin/users?page='+page,{headers:hdr()});
-      const d=await r.json();
-      const users=d.users||d;
+function loadUsers(){
+  var all=[];var page=1;var total=0;
+  function fetchPage(){
+    fetch(API+'/api/admin/users?page='+page,{headers:hdr()}).then(function(r){return r.json()}).then(function(d){
+      var users=d.users||d;
       total=d.total||users.length;
       all=all.concat(users);
-      if(all.length>=total||users.length===0)break;
-      page++;
-    }
-    allUsers=all;
-    g('user-count').textContent=total+' utilisateurs';
-    renderUsers(allUsers);
-  }catch(e){}
+      if(all.length>=total||users.length===0){
+        allUsers=all;
+        g('user-count').textContent=total+' utilisateurs';
+        renderUsers(allUsers);
+      } else {
+        page++;
+        fetchPage();
+      }
+    }).catch(function(){});
+  }
+  fetchPage();
 }
 
 function renderUsers(users){
-  const tb=g('users-tbody');
-  if(!users.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--muted)">Aucun utilisateur</td></tr>';return}
-  tb.innerHTML=users.map(function(u){
-    const role=u.role||'user';
-    const banned=u.banned;
-    return '<tr>'+
-      '<td>'+(u.username||'—')+'</td>'+
-      '<td style="font-family:monospace;font-size:11px">'+u.email+'</td>'+
-      '<td>'+(u.credits||0)+'</td>'+
-      '<td>'+(u.free_left||0)+'</td>'+
-      '<td><span class="badge b-'+role+'">'+role+'</span></td>'+
-      '<td><span class="badge '+(banned?'b-ban':'b-ok')+'">'+(banned?'Banni':'Actif')+'</span></td>'+
-      '<td>'+
-        '<button class="act-btn" onclick="addCredits('+u.id+')">+Credits</button>'+
-        '<button class="act-btn danger" onclick="resetCredits('+u.id+')">Reset</button>'+
-        '<button class="act-btn '+(role==='admin'?'danger':'success')+'" onclick="setRole('+u.id+',''+role+'')">'+(role==='admin'?'- Admin':'+ Admin')+'</button>'+
-        '<button class="act-btn '+(banned?'success':'danger')+'" onclick="toggleBan('+u.id+','+banned+')">'+(banned?'Debannir':'Bannir')+'</button>'+
-      '</td>'+
-    '</tr>';
-  }).join('');
+  var tb=g('users-tbody');
+  if(!users.length){
+    tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">Aucun utilisateur</td></tr>';
+    return;
+  }
+  var html='';
+  for(var i=0;i<users.length;i++){
+    var u=users[i];
+    var role=u.role||'user';
+    var banned=u.banned?true:false;
+    var adminBtn='<button class="act-btn '+(role==='admin'?'danger':'accent')+'" onclick="setRole('+u.id+','+(role==='admin'?'0':'1')+')">'+(role==='admin'?'- Admin':'+ Admin')+'</button>';
+    var banBtn='<button class="act-btn '+(banned?'success':'danger')+'" onclick="toggleBan('+u.id+','+(banned?'0':'1')+')">'+(banned?'Debannir':'Bannir')+'</button>';
+    html+='<tr>';
+    html+='<td>'+(u.username||'—')+'</td>';
+    html+='<td style="font-family:monospace;font-size:11px">'+u.email+'</td>';
+    html+='<td>'+(u.credits||0)+'</td>';
+    html+='<td>'+(u.free_left||0)+'</td>';
+    html+='<td><span class="badge b-'+role+'">'+role+'</span></td>';
+    html+='<td><span class="badge '+(banned?'b-ban':'b-ok')+'">'+(banned?'Banni':'Actif')+'</span></td>';
+    html+='<td>';
+    html+='<button class="act-btn" onclick="addCredits('+u.id+')">+Credits</button>';
+    html+='<button class="act-btn danger" onclick="resetCredits('+u.id+')">Reset</button>';
+    html+=adminBtn;
+    html+=banBtn;
+    html+='</td>';
+    html+='</tr>';
+  }
+  tb.innerHTML=html;
 }
+
+function filterUsers(){
+  var q=g('user-search').value.toLowerCase();
+  renderUsers(allUsers.filter(function(u){
+    return (u.email||'').includes(q)||(u.username||'').toLowerCase().includes(q);
+  }));
+}
+
+function addCredits(id){
+  var n=prompt('Ajouter des credits :');
+  if(!n||isNaN(parseInt(n)))return;
+  fetch(API+'/api/admin/users/'+id,{method:'PATCH',headers:hdr(),body:JSON.stringify({credits:parseInt(n)})})
+    .then(function(r){if(r.ok){notif('Credits ajoutes');loadUsers()}else notif('Erreur','err')})
+    .catch(function(){notif('Erreur reseau','err')});
+}
+
+function resetCredits(id){
+  if(!confirm('Remettre les credits a zero ?'))return;
+  fetch(API+'/api/admin/users/'+id+'/reset-credits',{method:'POST',headers:hdr()})
+    .then(function(r){if(r.ok){notif('Credits remis a zero');loadUsers()}else notif('Erreur','err')})
+    .catch(function(){notif('Erreur reseau','err')});
+}
+
+function setRole(id,makeAdmin){
+  var newRole=makeAdmin?'admin':'user';
+  if(!confirm('Passer en '+newRole+' ?'))return;
+  fetch(API+'/api/admin/users/'+id+'/set-role',{method:'POST',headers:hdr(),body:JSON.stringify({role:newRole})})
+    .then(function(r){if(r.ok){notif('Role mis a jour : '+newRole);loadUsers()}else notif('Erreur','err')})
+    .catch(function(){notif('Erreur reseau','err')});
+}
+
+function toggleBan(id,doBan){
+  fetch(API+'/api/admin/users/'+id,{method:'PATCH',headers:hdr(),body:JSON.stringify({banned:doBan?true:false})})
+    .then(function(r){if(r.ok){notif(doBan?'Banni':'Debanni');loadUsers()}else notif('Erreur','err')})
+    .catch(function(){notif('Erreur reseau','err')});
+}
+
+function loadHistory(){
+  fetch(API+'/api/admin/history',{headers:hdr()}).then(function(r){return r.json()}).then(function(d){
+    var tb=g('history-tbody');
+    if(!d.length){tb.innerHTML='<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--muted)">Aucun historique</td></tr>';return}
+    var html='';
+    for(var i=0;i<d.length;i++){
+      var s=d[i];
+      var q=JSON.parse(s.query_data||'{}');
+      var label=Object.entries(q).filter(function(e){return !['flexible','per_page'].includes(e[0])}).map(function(e){return e[1]}).slice(0,3).join(', ')||'—';
+      var date=new Date(s.created_at).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+      var cost=s.cost===0?'Gratuit':s.cost+' cr';
+      var color=s.cost===0?'var(--green)':'var(--accent2)';
+      html+='<tr><td>'+(s.username||s.user_id)+'</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+label+'</td><td>'+s.result_count+'</td><td style="color:'+color+'">'+cost+'</td><td>'+date+'</td></tr>';
+    }
+    tb.innerHTML=html;
+  }).catch(function(){});
+}
+
+function loadBlocklist(){
+  fetch(API+'/api/admin/blocklist',{headers:hdr()}).then(function(r){return r.json()}).then(function(d){
+    var el=g('blocklist-items');
+    if(!d.length){el.innerHTML='<div style="padding:14px 16px;color:var(--muted);text-align:center">Aucun terme bloque</div>';return}
+    var html='';
+    for(var i=0;i<d.length;i++){
+      var b=d[i];
+      html+='<div class="bl-item"><div><span class="bl-val">'+b.value+'</span>'+(b.type?'<span style="font-size:10px;color:var(--muted2);margin-left:6px">['+b.type+']</span>':'')+(b.reason?'<span class="bl-reason">'+b.reason+'</span>':'')+'</div><button class="act-btn danger" onclick="removeBlocklist('+b.id+')">Supprimer</button></div>';
+    }
+    el.innerHTML=html;
+  }).catch(function(){});
+}
+
+function addBlocklist(){
+  var val=g('bl-val').value.trim();
+  var reason=g('bl-reason').value.trim();
+  var type=g('bl-type').value;
+  if(!val)return;
+  fetch(API+'/api/admin/blocklist',{method:'POST',headers:hdr(),body:JSON.stringify({value:val,reason:reason,type:type})})
+    .then(function(r){if(r.ok){notif('Terme ajoute');g('bl-val').value='';g('bl-reason').value='';loadBlocklist()}else notif('Erreur','err')})
+    .catch(function(){notif('Erreur reseau','err')});
+}
+
+function removeBlocklist(id){
+  fetch(API+'/api/admin/blocklist/'+id,{method:'DELETE',headers:hdr()})
+    .then(function(r){if(r.ok){notif('Terme supprime');loadBlocklist()}else notif('Erreur','err')})
+    .catch(function(){notif('Erreur reseau','err')});
+}
+
+function loadMaintenance(){
+  fetch(API+'/api/admin/maintenance',{headers:hdr()}).then(function(r){return r.json()}).then(function(d){
+    g('maint-toggle').classList.toggle('on',d.maintenance);
+  }).catch(function(){});
+}
+
+function toggleMaintenance(){
+  var t=g('maint-toggle');
+  var on=t.classList.contains('on');
+  fetch(API+'/api/admin/maintenance',{method:'POST',headers:hdr(),body:JSON.stringify({enabled:!on})})
+    .then(function(r){if(r.ok){t.classList.toggle('on');notif(on?'Maintenance desactivee':'Maintenance activee')}else notif('Erreur','err')})
+    .catch(function(){notif('Erreur reseau','err')});
+}
+
+function logout(){localStorage.clear();window.location.href='login.html'}
+
+function init(){
+  fetch(API+'/api/auth/me',{headers:hdr()}).then(function(r){
+    if(!r.ok){logout();return}
+    return r.json();
+  }).then(function(d){
+    if(!d)return;
+    if(d.role!=='admin'){window.location.href='dashboard.html';return}
+    g('admin-name').textContent=d.username||d.email;
+    loadStats();
+  }).catch(function(){logout()});
+}
+init();
+</script>
+</body>
+</html>
