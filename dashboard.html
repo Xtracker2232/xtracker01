@@ -673,7 +673,14 @@ Exemple: "trouve Lilian qui habite Paris" -> {"action":"search","params":{"preno
 
     if (parsed.action === 'search' && parsed.params) {
       const params = parsed.params;
-      const desc = Object.entries(params).map(([k,v]) => v).filter(Boolean).join(', ');
+      const descParts = [];
+      if(params.prenom) descParts.push(params.prenom);
+      if(params.nom_famille) descParts.push(params.nom_famille);
+      if(params.ville) descParts.push('a ' + params.ville);
+      if(params.annee_naissance) descParts.push('ne en ' + params.annee_naissance);
+      if(params.email) descParts.push(params.email);
+      if(params.telephone) descParts.push(params.telephone);
+      const desc = descParts.join(' ') || 'criteres specifies';
       addMsg('', 'ai', '<div style="margin-bottom:6px">Recherche en cours pour <strong>' + desc + '</strong>...</div>');
       chatHistory.push({ role: 'assistant', content: rawText });
 
@@ -706,12 +713,17 @@ Exemple: "trouve Lilian qui habite Paris" -> {"action":"search","params":{"preno
       results.slice(0, 5).forEach(p => {
         const name = [p.prenom, p.nom_famille].filter(Boolean).join(' ') || 'Profil inconnu';
         const fields = [];
-        if (p.email) fields.push('<div class="chat-result-field"><strong>Email:</strong> ' + p.email + '</div>');
-        if (p.telephone) fields.push('<div class="chat-result-field"><strong>Tel:</strong> ' + p.telephone + '</div>');
-        if (p.adresse) fields.push('<div class="chat-result-field"><strong>Adresse:</strong> ' + p.adresse + (p.ville ? ', ' + p.ville : '') + '</div>');
-        else if (p.ville) fields.push('<div class="chat-result-field"><strong>Ville:</strong> ' + p.ville + '</div>');
-        if (p.date_naissance) fields.push('<div class="chat-result-field"><strong>Naissance:</strong> ' + p.date_naissance + '</div>');
-        if (p.societe) fields.push('<div class="chat-result-field"><strong>Societe:</strong> ' + p.societe + '</div>');
+        const CHAT_LABELS = {email:'Email',telephone:'Tel',mobile:'Mobile',adresse:'Adresse',code_postal:'CP',ville:'Ville',region:'Region',departement:'Dept',pays:'Pays',date_naissance:'Naissance',annee_naissance:'Annee naiss.',ville_naissance:'Ville naiss.',genre:'Genre',nom_naissance:'Nom naiss.',nom_affichage:'Nom affiche',nom_utilisateur:'Utilisateur',nir:'NIR',iban:'IBAN',siret:'SIRET',societe:'Societe',profession:'Profession',fonction:'Fonction',vin_plaque:'Plaque',marque:'Marque',modele:'Modele'};
+        const SKIP_CHAT = new Set(['nom_famille','prenom','_confidence','_sources','_es_ids','_source_files','famille','membres_famille','family']);
+        Object.entries(p).forEach(([k,v])=>{
+          if(!SKIP_CHAT.has(k) && v && typeof v==='string' && v.trim() && CHAT_LABELS[k]){
+            fields.push('<div class="chat-result-field"><strong>'+CHAT_LABELS[k]+':</strong> '+v+'</div>');
+          }
+        });
+        // Ajouter adresse complète si pas encore affichée
+        if(p.adresse && p.ville && !fields.find(f=>f.includes('Adresse'))){
+          fields.push('<div class="chat-result-field"><strong>Adresse:</strong> '+p.adresse+', '+p.ville+'</div>');
+        }
         const srcs = (p._sources || []).slice(0, 2).join(', ');
         html += '<div class="chat-result"><div class="chat-result-name">' + name + '</div>' + fields.join('') + (srcs ? '<div style="margin-top:4px;font-size:10px;color:var(--accent2)">' + srcs + '</div>' : '') + '</div>';
       });
@@ -721,8 +733,9 @@ Exemple: "trouve Lilian qui habite Paris" -> {"action":"search","params":{"preno
       chatHistory.push({ role: 'assistant', content: total + ' résultats trouvés pour ' + desc });
 
     } else {
-      addMsg(parsed.message || rawText, 'ai');
-      chatHistory.push({ role: 'assistant', content: parsed.message || rawText });
+      const msg = parsed.message || (typeof parsed.params === 'string' ? parsed.params : rawText);
+      addMsg(msg, 'ai');
+      chatHistory.push({ role: 'assistant', content: msg });
     }
 
   } catch(e) {
