@@ -455,17 +455,11 @@ select option{background:var(--bg2)}
 
 <script>
 const API='';
+const TOKEN=localStorage.getItem('token');
 let USER=JSON.parse(localStorage.getItem('user')||'{}');
+if(!TOKEN){window.location.href='login.html'}
 function g(id){return document.getElementById(id)}
-function getToken(){return localStorage.getItem('_xt')||''}
-function hdr(){
-  const h={'Content-Type':'application/json'};
-  const t=getToken();
-  if(t)h['Authorization']='Bearer '+t;
-  return h;
-}
-// Vérif rapide - si pas de token du tout, aller au login
-if(!getToken()){window.location.href='login.html'}
+function hdr(){return{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'}}
 
 function notif(msg,type){
   const el=document.createElement('div');el.className='notif '+(type||'ok');el.textContent=msg;
@@ -679,7 +673,7 @@ function closeDrawer(){
   g('mobile-drawer').classList.remove('open');
   g('drawer-overlay').classList.remove('show');
 }
-function logout(){localStorage.clear();fetch('/api/auth/logout',{method:'POST',credentials:'include'}).finally(()=>{window.location.href='login.html'})}
+function logout(){localStorage.clear();window.location.href='login.html'}
 
 // ── ASSISTANT IA ─────────────────────────────────────────────────────────────
 let chatHistory = [];
