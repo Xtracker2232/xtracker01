@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Dashboard — Xtracker</title>
 <meta property="og:image" content="https://www.xtracker.digital/preview.png">
 <link rel="icon" type="image/png" href="/preview.png">
@@ -32,6 +32,11 @@ a{color:inherit;text-decoration:none}
 .nav-btn .i{font-size:14px}
 .navbar-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
 .credits-pill{display:flex;align-items:center;gap:6px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;color:var(--accent2)}
+/* HAMBURGER */
+.hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:8px;border-radius:8px;transition:background .15s}
+.hamburger:hover{background:rgba(255,255,255,0.06)}
+.hamburger span{display:block;width:22px;height:2px;background:var(--muted2);border-radius:2px;transition:all .2s}
+.desktop-only{display:flex}
 .credit-box{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
 .credit-row{display:flex;justify-content:space-between;font-size:11px;color:var(--muted2);margin-bottom:4px}
 .credit-row:last-child{margin-bottom:0}
@@ -227,8 +232,11 @@ select option{background:var(--bg2)}
     <a href="https://discord.gg/bYSDCmgcRz" target="_blank" class="nav-btn"><span class="i">💬</span><span class="label">Discord</span></a>
   </div>
   <div class="navbar-right">
-    <div class="credits-pill"><span>⚡</span><span id="paid-credits">—</span></div>
-    <span id="user-name" style="font-size:12px;color:var(--muted2);display:none" class="desktop-only"></span>
+    <div class="credits-pill desktop-only"><span>⚡</span><span id="paid-credits">—</span></div>
+    <span id="user-name" style="font-size:12px;color:var(--muted2)" class="desktop-only"></span>
+    <button class="hamburger" onclick="openDrawer()">
+      <span></span><span></span><span></span>
+    </button>
   </div>
 </nav>
 
@@ -412,23 +420,30 @@ select option{background:var(--bg2)}
 <div class="mobile-drawer" id="mobile-drawer">
   <div class="drawer-handle"></div>
   <div class="drawer-title">Menu <span id="drawer-user" style="font-size:12px;color:var(--muted2);font-weight:400"></span></div>
-  <button class="drawer-item" onclick="closeDrawer();goTo('credits',document.getElementById('nav-credits'),null)">
+  <button class="drawer-item" onclick="closeDrawer();goTo('search',document.getElementById('nav-search'))">
+    <span class="d-ico">🔍</span><span>Recherche</span>
+  </button>
+  <button class="drawer-item" onclick="closeDrawer();goTo('history',document.getElementById('nav-history'))">
+    <span class="d-ico">📋</span><span>Historique</span>
+  </button>
+  <button class="drawer-item" onclick="closeDrawer();goTo('assistant',document.getElementById('nav-assistant'))">
+    <span class="d-ico">🤖</span><span>Assistant IA</span>
+  </button>
+  <div style="height:1px;background:var(--border);margin:4px 20px"></div>
+  <button class="drawer-item" onclick="closeDrawer();goTo('credits',document.getElementById('nav-credits'))">
     <span class="d-ico">⚡</span>
     <span>Credits</span>
     <span class="d-badge" id="drawer-credits">—</span>
   </button>
-  <button class="drawer-item" onclick="closeDrawer();goTo('profile',document.getElementById('nav-profile'),null)">
-    <span class="d-ico">👤</span>
-    <span>Profil</span>
+  <button class="drawer-item" onclick="closeDrawer();goTo('profile',document.getElementById('nav-profile'))">
+    <span class="d-ico">👤</span><span>Profil</span>
   </button>
   <a href="https://discord.gg/bYSDCmgcRz" target="_blank" class="drawer-item" onclick="closeDrawer()">
-    <span class="d-ico">💬</span>
-    <span>Discord</span>
+    <span class="d-ico">💬</span><span>Discord</span>
   </a>
-  <div style="height:1px;background:var(--border);margin:6px 20px"></div>
+  <div style="height:1px;background:var(--border);margin:4px 20px"></div>
   <button class="drawer-item" onclick="closeDrawer();logout()" style="color:#ef4444">
-    <span class="d-ico">🚪</span>
-    <span>Deconnexion</span>
+    <span class="d-ico">🚪</span><span>Deconnexion</span>
   </button>
 </div>
 
