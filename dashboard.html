@@ -832,6 +832,19 @@ setTimeout(() => {
   }
 }, 500);
 
+// Détection mobile forcée
+function checkMobile(){
+  const isMobile = window.innerWidth <= 1024 || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  const hamburger = document.querySelector('.hamburger');
+  const navNav = document.querySelector('.navbar-nav');
+  const desktopOnly = document.querySelectorAll('.desktop-only');
+  if(hamburger) hamburger.style.display = isMobile ? 'flex' : 'none';
+  if(navNav) navNav.style.display = isMobile ? 'none' : 'flex';
+  desktopOnly.forEach(el => el.style.display = isMobile ? 'none' : 'flex');
+}
+checkMobile();
+window.addEventListener('resize', checkMobile);
+
 async function init(){
   try{
     const r=await fetch(API+'/api/auth/me',{headers:hdr()});
