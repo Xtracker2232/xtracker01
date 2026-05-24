@@ -152,7 +152,7 @@ tr:hover td{background:rgba(255,255,255,0.02)}
       <div class="table-head"><div class="table-title">Utilisateurs</div><span id="user-count" style="font-size:12px;color:var(--muted2)"></span></div>
       <div style="overflow-x:auto">
         <table>
-          <thead><tr><th>Utilisateur</th><th>Email</th><th>Credits</th><th>Gratuites</th><th>Role</th><th>Statut</th><th>Actions</th></tr></thead>
+          <thead><tr><th>ID</th><th>Utilisateur</th><th>Email</th><th>Credits</th><th>Gratuites</th><th>Role</th><th>Statut</th><th>Actions</th></tr></thead>
           <tbody id="users-tbody"><tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">Chargement...</td></tr></tbody>
         </table>
       </div>
@@ -359,6 +359,7 @@ function renderUsers(users){
     var adminBtn='<button class="act-btn '+(role==='admin'?'danger':'accent')+'" onclick="setRole('+u.id+','+(role==='admin'?'0':'1')+')">'+(role==='admin'?'- Admin':'+ Admin')+'</button>';
     var banBtn='<button class="act-btn '+(banned?'success':'danger')+'" onclick="toggleBan('+u.id+','+(banned?'0':'1')+')">'+(banned?'Debannir':'Bannir')+'</button>';
     html+='<tr>';
+    html+='<td style="color:var(--muted2);font-size:11px">#'+u.id+'</td>';
     html+='<td>'+(u.username||'—')+'</td>';
     html+='<td style="font-family:monospace;font-size:11px">'+u.email+'</td>';
     html+='<td>'+(u.credits||0)+'</td>';
