@@ -289,6 +289,41 @@ def init_db():
             ip         TEXT UNIQUE NOT NULL,
             created_at TIMESTAMP DEFAULT NOW()
         )""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS tickets (
+            id         SERIAL PRIMARY KEY,
+            user_id    INTEGER REFERENCES users(id),
+            subject    TEXT NOT NULL,
+            status     TEXT DEFAULT 'open',
+            created_at TIMESTAMP DEFAULT NOW()
+        )""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS ticket_messages (
+            id           SERIAL PRIMARY KEY,
+            ticket_id    INTEGER REFERENCES tickets(id),
+            user_id      INTEGER REFERENCES users(id),
+            message      TEXT NOT NULL,
+            is_admin     BOOLEAN DEFAULT FALSE,
+            read_by_user  BOOLEAN DEFAULT FALSE,
+            read_by_admin BOOLEAN DEFAULT FALSE,
+            created_at   TIMESTAMP DEFAULT NOW()
+        )""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS broadcasts (
+            id             SERIAL PRIMARY KEY,
+            message        TEXT NOT NULL,
+            target_user_id INTEGER REFERENCES users(id),
+            created_by     INTEGER REFERENCES users(id),
+            created_at     TIMESTAMP DEFAULT NOW()
+        )""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS broadcast_reads (
+            id           SERIAL PRIMARY KEY,
+            broadcast_id INTEGER REFERENCES broadcasts(id),
+            user_id      INTEGER REFERENCES users(id),
+            UNIQUE(broadcast_id, user_id)
+        )""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS announcements (
+            id         SERIAL PRIMARY KEY,
+            message    TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT NOW()
+        )""")
         # Migration auth_type
         try:
             cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_type TEXT DEFAULT 'local'")
@@ -998,6 +1033,14 @@ async def admin_searches(admin=Depends(require_admin), page: int = 1):
     db.close()
     return rows
 
+@app.get("/api/admin/history")
+async def admin_history(admin=Depends(require_admin), page: int = 1):
+    db     = get_db()
+    offset = (page - 1) * 50
+    rows   = fetchall(db, "SELECT s.id, s.query_data, s.result_count, s.cost, s.created_at, u.email, u.username FROM searches s JOIN users u ON s.user_id=u.id ORDER BY s.created_at DESC LIMIT 50 OFFSET ?", (offset,))
+    db.close()
+    return rows
+
 @app.get("/api/admin/transactions")
 async def admin_tx(admin=Depends(require_admin)):
     db   = get_db()
@@ -1111,6 +1154,132 @@ async def logout():
     resp = JSONResponse({"ok": True})
     resp.delete_cookie("xtoken")
     return resp
+
+# ── TICKETS ───────────────────────────────────────────────────────────────────
+class TicketModel(BaseModel):
+    subject: str
+    message: str
+
+class TicketReplyModel(BaseModel):
+    message: str
+
+@app.post("/api/tickets")
+async def create_ticket(data: TicketModel, user=Depends(get_current_user)):
+    db = get_db()
+    if is_pg():
+        tid = execute(db, "INSERT INTO tickets (user_id, subject, status) VALUES (?,?,?) RETURNING id", (user["id"], data.subject, "open"))
+        execute(db, "INSERT INTO ticket_messages (ticket_id, user_id, message, is_admin) VALUES (?,?,?,?)", (tid, user["id"], data.message, False))
+    else:
+        tid = execute(db, "INSERT INTO tickets (user_id, subject, status) VALUES (?,?,?)", (user["id"], data.subject, "open"))
+        execute(db, "INSERT INTO ticket_messages (ticket_id, user_id, message, is_admin) VALUES (?,?,?,?)", (tid, user["id"], data.message, False))
+    db.commit(); db.close()
+    return {"ok": True, "ticket_id": tid}
+
+@app.get("/api/tickets")
+async def get_tickets(user=Depends(get_current_user)):
+    db = get_db()
+    rows = fetchall(db, "SELECT t.id, t.subject, t.status, t.created_at, (SELECT COUNT(*) FROM ticket_messages WHERE ticket_id=t.id AND is_admin=TRUE AND read_by_user=FALSE) as unread FROM tickets t WHERE t.user_id=? ORDER BY t.created_at DESC", (user["id"],))
+    db.close()
+    return rows
+
+@app.get("/api/tickets/{ticket_id}")
+async def get_ticket(ticket_id: int, user=Depends(get_current_user)):
+    db = get_db()
+    ticket = fetchone(db, "SELECT * FROM tickets WHERE id=? AND (user_id=? OR ?='admin')", (ticket_id, user["id"], user["role"]))
+    if not ticket: raise HTTPException(404, "Ticket introuvable")
+    messages = fetchall(db, "SELECT tm.*, u.username FROM ticket_messages tm JOIN users u ON tm.user_id=u.id WHERE tm.ticket_id=? ORDER BY tm.created_at ASC", (ticket_id,))
+    # Marquer comme lu
+    if user["role"] != "admin":
+        execute(db, "UPDATE ticket_messages SET read_by_user=TRUE WHERE ticket_id=? AND is_admin=TRUE", (ticket_id,))
+    else:
+        execute(db, "UPDATE ticket_messages SET read_by_admin=TRUE WHERE ticket_id=? AND is_admin=FALSE", (ticket_id,))
+    db.commit(); db.close()
+    return {"ticket": ticket, "messages": messages}
+
+@app.post("/api/tickets/{ticket_id}/reply")
+async def reply_ticket(ticket_id: int, data: TicketReplyModel, user=Depends(get_current_user)):
+    db = get_db()
+    ticket = fetchone(db, "SELECT * FROM tickets WHERE id=?", (ticket_id,))
+    if not ticket: raise HTTPException(404, "Ticket introuvable")
+    if ticket["status"] == "closed": raise HTTPException(400, "Ticket fermé")
+    is_admin = user["role"] == "admin"
+    execute(db, "INSERT INTO ticket_messages (ticket_id, user_id, message, is_admin) VALUES (?,?,?,?)", (ticket_id, user["id"], data.message, is_admin))
+    db.commit(); db.close()
+    return {"ok": True}
+
+@app.post("/api/tickets/{ticket_id}/close")
+async def close_ticket(ticket_id: int, user=Depends(get_current_user)):
+    db = get_db()
+    ticket = fetchone(db, "SELECT * FROM tickets WHERE id=? AND (user_id=? OR ?='admin')", (ticket_id, user["id"], user["role"]))
+    if not ticket: raise HTTPException(404, "Ticket introuvable")
+    execute(db, "UPDATE tickets SET status='closed' WHERE id=?", (ticket_id,))
+    db.commit(); db.close()
+    return {"ok": True}
+
+@app.get("/api/admin/tickets")
+async def admin_tickets(admin=Depends(require_admin)):
+    db = get_db()
+    rows = fetchall(db, "SELECT t.id, t.subject, t.status, t.created_at, u.username, (SELECT COUNT(*) FROM ticket_messages WHERE ticket_id=t.id AND is_admin=FALSE AND read_by_admin=FALSE) as unread FROM tickets t JOIN users u ON t.user_id=u.id ORDER BY t.status ASC, t.created_at DESC LIMIT 100")
+    db.close()
+    return rows
+
+# ── MESSAGES BROADCAST ─────────────────────────────────────────────────────────
+class BroadcastModel(BaseModel):
+    message: str
+    target_user_id: int = None  # None = tous les users
+
+@app.post("/api/admin/broadcast")
+async def send_broadcast(data: BroadcastModel, admin=Depends(require_admin)):
+    db = get_db()
+    if data.target_user_id:
+        execute(db, "INSERT INTO broadcasts (message, target_user_id, created_by) VALUES (?,?,?)", (data.message, data.target_user_id, admin["id"]))
+    else:
+        execute(db, "INSERT INTO broadcasts (message, target_user_id, created_by) VALUES (?,NULL,?)", (data.message, admin["id"]))
+    db.commit(); db.close()
+    return {"ok": True}
+
+@app.get("/api/broadcasts")
+async def get_broadcasts(user=Depends(get_current_user)):
+    db = get_db()
+    rows = fetchall(db, "SELECT id, message, created_at FROM broadcasts WHERE (target_user_id IS NULL OR target_user_id=?) AND id NOT IN (SELECT broadcast_id FROM broadcast_reads WHERE user_id=?) ORDER BY created_at DESC LIMIT 5", (user["id"], user["id"]))
+    db.close()
+    return rows
+
+@app.post("/api/broadcasts/{bid}/read")
+async def mark_broadcast_read(bid: int, user=Depends(get_current_user)):
+    db = get_db()
+    try:
+        execute(db, "INSERT INTO broadcast_reads (broadcast_id, user_id) VALUES (?,?)", (bid, user["id"]))
+        db.commit()
+    except: pass
+    db.close()
+    return {"ok": True}
+
+# ── ANNOUNCEMENTS (navbar) ─────────────────────────────────────────────────────
+class AnnouncementModel(BaseModel):
+    message: str
+
+@app.post("/api/admin/announcements")
+async def create_announcement(data: AnnouncementModel, admin=Depends(require_admin)):
+    db = get_db()
+    execute(db, "DELETE FROM announcements", ())  # Une seule annonce active
+    execute(db, "INSERT INTO announcements (message) VALUES (?)", (data.message,))
+    db.commit(); db.close()
+    return {"ok": True}
+
+@app.delete("/api/admin/announcements")
+async def delete_announcement(admin=Depends(require_admin)):
+    db = get_db()
+    execute(db, "DELETE FROM announcements", ())
+    db.commit(); db.close()
+    return {"ok": True}
+
+@app.get("/api/announcements")
+async def get_announcement(user=Depends(get_current_user)):
+    db = get_db()
+    row = fetchone(db, "SELECT * FROM announcements ORDER BY created_at DESC LIMIT 1", ())
+    db.close()
+    return row or {}
 
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
 
