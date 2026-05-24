@@ -31,6 +31,9 @@ else:
 
 # ── CONFIG ────────────────────────────────────────────────────────────────────
 SECRET_KEY     = os.getenv("SECRET_KEY", "")
+ADMIN_EMAIL    = os.getenv("ADMIN_EMAIL", "admin@xtracker.io")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "")
+ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "Admin")
 ALGORITHM      = "HS256"
 TOKEN_EXPIRE   = 60 * 24 * 365  # 1 an
 BRIX_KEY       = os.getenv("BRIX_API_KEY", "")
@@ -347,13 +350,27 @@ def init_db():
             cur.execute("UPDATE users SET auth_type='local' WHERE auth_type IS NULL")
             db.commit()
         except: pass
-        # Migration reg_ip, lifetime, referral
+        # Migration reg_ip, lifetime, referral, discord
         try:
             cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS reg_ip TEXT DEFAULT NULL")
             cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS lifetime BOOLEAN DEFAULT FALSE")
             cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS theme TEXT DEFAULT NULL")
             cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code TEXT DEFAULT NULL")
             cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by INTEGER DEFAULT NULL")
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS discord_id TEXT DEFAULT NULL")
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS discord_username TEXT DEFAULT NULL")
+            db.commit()
+        except: pass
+        # Table link codes temporaires
+        try:
+            cur.execute("""CREATE TABLE IF NOT EXISTS discord_link_codes (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES users(id),
+                code TEXT UNIQUE NOT NULL,
+                created_at TIMESTAMP DEFAULT NOW(),
+                expires_at TIMESTAMP DEFAULT (NOW() + INTERVAL '15 minutes'),
+                used BOOLEAN DEFAULT FALSE
+            )""")
             db.commit()
         except: pass
         # Table referrals
@@ -392,11 +409,11 @@ def init_db():
             db.commit()
         except Exception as e:
             print(f"[DB] Migration tables: {e}")
-        cur.execute("SELECT id FROM users WHERE email='admin@xtracker.io'")
+        cur.execute("SELECT id FROM users WHERE email=%s", (ADMIN_EMAIL,))
         if not cur.fetchone():
-            cur.execute("""INSERT INTO users (email, password, username, role, credits, free_left)
-                VALUES (%s,%s,'Admin','admin',99999,99999)""",
-                ("admin@xtracker.io", pwd_ctx.hash("Admin1234!")))
+            if ADMIN_PASSWORD:
+                cur.execute("INSERT INTO users (email, password, username, role, credits, free_left) VALUES (%s,%s,%s,'admin',99999,99999)",
+                    (ADMIN_EMAIL, pwd_ctx.hash(ADMIN_PASSWORD), ADMIN_USERNAME))
         db.commit()
         cur.close()
         db.close()
@@ -449,11 +466,11 @@ def init_db():
             created_at TEXT DEFAULT (datetime('now'))
         );
         """)
-        existing = db.execute("SELECT id FROM users WHERE email='admin@xtracker.io'").fetchone()
+        existing = db.execute("SELECT id FROM users WHERE email=?", (ADMIN_EMAIL,)).fetchone()
         if not existing:
-            db.execute("""INSERT INTO users (email, password, username, role, credits, free_left)
-                VALUES (?,?,'Admin','admin',99999,99999)""",
-                ("admin@xtracker.io", pwd_ctx.hash("Admin1234!")))
+            if ADMIN_PASSWORD:
+                db.execute("INSERT INTO users (email, password, username, role, credits, free_left) VALUES (?,?,?,'admin',99999,99999)",
+                    (ADMIN_EMAIL, pwd_ctx.hash(ADMIN_PASSWORD), ADMIN_USERNAME))
         db.commit()
         db.close()
         print("✓ Base de données SQLite initialisée (fallback)")
@@ -597,11 +614,21 @@ async def register(data: RegisterModel, request: Request):
     # Gérer le parrainage
     ref_code = data.ref_code.strip().upper() if hasattr(data, 'ref_code') and data.ref_code else None
     if ref_code and db_id:
-        referrer = fetchone(db, "SELECT id FROM users WHERE referral_code=?", (ref_code,))
+        referrer = fetchone(db, "SELECT id, reg_ip FROM users WHERE referral_code=?", (ref_code,))
         if referrer and referrer["id"] != db_id:
-            execute(db, "UPDATE users SET referred_by=? WHERE id=?", (referrer["id"], db_id))
-            execute(db, "INSERT INTO referrals (referrer_id, referred_id, credits_earned) VALUES (?,?,?)", (referrer["id"], db_id, 5))
-            execute(db, "UPDATE users SET credits=credits+5 WHERE id=?", (referrer["id"],))
+            # Bloquer si même IP que le parrain (anti-triche)
+            referrer_ip = referrer.get("reg_ip")
+            if referrer_ip and referrer_ip == ip:
+                print(f"[REFERRAL] Blocage auto-parrainage: même IP {ip}")
+            else:
+                # Vérifier que cette IP n'a pas déjà été utilisée pour parrainer ce code
+                already = fetchone(db, "SELECT id FROM referrals WHERE referrer_id=? AND id IN (SELECT id FROM referrals WHERE referred_id IN (SELECT id FROM users WHERE reg_ip=?))", (referrer["id"], ip))
+                if already:
+                    print(f"[REFERRAL] Blocage: IP {ip} déjà utilisée pour ce parrain")
+                else:
+                    execute(db, "UPDATE users SET referred_by=? WHERE id=?", (referrer["id"], db_id))
+                    execute(db, "INSERT INTO referrals (referrer_id, referred_id, credits_earned) VALUES (?,?,?)", (referrer["id"], db_id, 5))
+                    execute(db, "UPDATE users SET credits=credits+5 WHERE id=?", (referrer["id"],))
     db.commit()
     db.close()
     token = create_token(db_id, "user")
@@ -1070,10 +1097,10 @@ async def admin_users(admin=Depends(require_admin), page: int = 1, search: str =
     db     = get_db()
     offset = (page - 1) * 20
     if search:
-        rows  = fetchall(db, "SELECT u.id,u.email,u.username,u.role,u.credits,u.free_left,u.created_at,u.last_login,u.banned,u.reg_ip,u.lifetime,(SELECT COUNT(*) FROM users u2 WHERE u2.reg_ip=u.reg_ip AND u.reg_ip IS NOT NULL) as ip_count FROM users u WHERE u.email LIKE ? OR u.username LIKE ? ORDER BY u.created_at DESC LIMIT 20 OFFSET ?", (f"%{search}%", f"%{search}%", offset))
+        rows  = fetchall(db, "SELECT u.id,u.email,u.username,u.role,u.credits,u.free_left,u.created_at,u.last_login,u.banned,u.reg_ip,u.lifetime,u.discord_username,(SELECT COUNT(*) FROM users u2 WHERE u2.reg_ip=u.reg_ip AND u.reg_ip IS NOT NULL) as ip_count FROM users u WHERE u.email LIKE ? OR u.username LIKE ? ORDER BY u.created_at DESC LIMIT 20 OFFSET ?", (f"%{search}%", f"%{search}%", offset))
         total_r = fetchone(db, "SELECT COUNT(*) as c FROM users WHERE email LIKE ? OR username LIKE ?", (f"%{search}%", f"%{search}%"))
     else:
-        rows  = fetchall(db, "SELECT u.id,u.email,u.username,u.role,u.credits,u.free_left,u.created_at,u.last_login,u.banned,u.reg_ip,u.lifetime,(SELECT COUNT(*) FROM users u2 WHERE u2.reg_ip=u.reg_ip AND u.reg_ip IS NOT NULL) as ip_count FROM users u ORDER BY u.created_at DESC LIMIT 20 OFFSET ?", (offset,))
+        rows  = fetchall(db, "SELECT u.id,u.email,u.username,u.role,u.credits,u.free_left,u.created_at,u.last_login,u.banned,u.reg_ip,u.lifetime,u.discord_username,(SELECT COUNT(*) FROM users u2 WHERE u2.reg_ip=u.reg_ip AND u.reg_ip IS NOT NULL) as ip_count FROM users u ORDER BY u.created_at DESC LIMIT 20 OFFSET ?", (offset,))
         total_r = fetchone(db, "SELECT COUNT(*) as c FROM users", ())
     total = total_r["c"] if total_r else 0
     db.close()
@@ -1084,7 +1111,7 @@ async def admin_update(user_id: int, data: AdminUserUpdate, admin=Depends(requir
     db = get_db()
     # Protéger le compte admin principal
     target = fetchone(db, "SELECT email FROM users WHERE id=?", (user_id,))
-    if target and target.get("email") == "admin@xtracker.io":
+    if target and target.get("email") == ADMIN_EMAIL:
         if data.banned is not None or data.role is not None:
             db.close()
             raise HTTPException(403, "Ce compte admin ne peut pas être modifié")
@@ -1235,7 +1262,7 @@ async def admin_set_role(user_id: int, request: Request, admin=Depends(require_a
     db = get_db()
     # Protéger le compte admin principal
     target = fetchone(db, "SELECT email FROM users WHERE id=?", (user_id,))
-    if target and target.get("email") == "admin@xtracker.io":
+    if target and target.get("email") == ADMIN_EMAIL:
         db.close()
         raise HTTPException(403, "Ce compte admin ne peut pas être modifié")
     execute(db, "UPDATE users SET role=? WHERE id=?", (role, user_id))
@@ -1610,6 +1637,147 @@ async def admin_referrals(admin=Depends(require_admin)):
     """)
     db.close()
     return rows
+
+# ── LIAISON DISCORD ───────────────────────────────────────────────────────────
+@app.post("/api/discord/generate-link-code")
+async def generate_link_code(user=Depends(get_current_user)):
+    import secrets
+    db = get_db()
+    # Supprimer anciens codes non utilisés
+    execute(db, "DELETE FROM discord_link_codes WHERE user_id=? AND used=FALSE", (user["id"],))
+    code = secrets.token_hex(4).upper()  # Code 8 caractères ex: A1B2C3D4
+    if is_pg():
+        execute(db, "INSERT INTO discord_link_codes (user_id, code) VALUES (?,?) RETURNING id", (user["id"], code))
+    else:
+        execute(db, "INSERT INTO discord_link_codes (user_id, code) VALUES (?,?)", (user["id"], code))
+    db.commit(); db.close()
+    return {"code": code, "expires_in": 900}  # 15 minutes
+
+@app.post("/api/discord/link")
+async def link_discord(request: Request):
+    """Appelé par le bot Discord pour lier un compte"""
+    body = await request.json()
+    code = body.get("code", "").upper().strip()
+    discord_id = str(body.get("discord_id", ""))
+    discord_username = body.get("discord_username", "")
+    bot_secret = body.get("bot_secret", "")
+    
+    # Vérifier le secret du bot
+    if bot_secret != os.getenv("BOT_SECRET", "xtracker_bot_secret_2024"):
+        raise HTTPException(403, "Accès refusé")
+    
+    if not code or not discord_id:
+        raise HTTPException(400, "Code et discord_id requis")
+    
+    db = get_db()
+    # Vérifier le code
+    link_row = fetchone(db, "SELECT * FROM discord_link_codes WHERE code=? AND used=FALSE", (code,))
+    if not link_row:
+        db.close()
+        raise HTTPException(404, "Code invalide ou expiré")
+    
+    # Vérifier expiration
+    if is_pg():
+        expired = fetchone(db, "SELECT id FROM discord_link_codes WHERE code=? AND expires_at < NOW()", (code,))
+        if expired:
+            db.close()
+            raise HTTPException(410, "Code expiré, génère-en un nouveau sur Xtracker")
+    
+    user_id = link_row["user_id"]
+    
+    # Vérifier que ce Discord n'est pas déjà lié à un autre compte
+    existing = fetchone(db, "SELECT id, username FROM users WHERE discord_id=?", (discord_id,))
+    if existing and existing["id"] != user_id:
+        db.close()
+        raise HTTPException(409, f"Ce Discord est déjà lié au compte {existing['username']}")
+    
+    # Lier le compte
+    execute(db, "UPDATE users SET discord_id=?, discord_username=? WHERE id=?", (discord_id, discord_username, user_id))
+    execute(db, "UPDATE discord_link_codes SET used=TRUE WHERE code=?", (code,))
+    db.commit()
+    
+    user = fetchone(db, "SELECT username FROM users WHERE id=?", (user_id,))
+    db.close()
+    return {"ok": True, "xtracker_username": user["username"]}
+
+@app.get("/api/discord/user/{discord_id}")
+async def get_user_by_discord(discord_id: str, request: Request):
+    bot_secret = request.headers.get("X-Bot-Secret","")
+    if bot_secret != os.getenv("BOT_SECRET","xtracker_bot_secret_2024"):
+        raise HTTPException(403,"Accès refusé")
+    db = get_db()
+    u = fetchone(db, "SELECT username, credits, free_left, lifetime FROM users WHERE discord_id=?", (discord_id,))
+    db.close()
+    if not u: raise HTTPException(404,"Non lié")
+    return dict(u)
+
+@app.delete("/api/discord/unlink")
+async def unlink_discord(user=Depends(get_current_user)):
+    db = get_db()
+    execute(db, "UPDATE users SET discord_id=NULL, discord_username=NULL WHERE id=?", (user["id"],))
+    db.commit(); db.close()
+    return {"ok": True}
+
+@app.get("/api/discord/status")
+async def discord_status(user=Depends(get_current_user)):
+    db = get_db()
+    u = fetchone(db, "SELECT discord_id, discord_username FROM users WHERE id=?", (user["id"],))
+    db.close()
+    return {
+        "linked": bool(u and u.get("discord_id")),
+        "discord_username": u.get("discord_username") if u else None
+    }
+
+# ── ROUTES BOT DISCORD ────────────────────────────────────────────────────────
+def check_bot_secret(request: Request):
+    secret = request.headers.get("X-Bot-Secret","")
+    if secret != os.getenv("BOT_SECRET","xtracker_bot_secret_2024"):
+        raise HTTPException(403, "Accès refusé")
+
+@app.get("/api/discord/find-user")
+async def find_user_by_username(username: str, request: Request):
+    check_bot_secret(request)
+    db = get_db()
+    u = fetchone(db, "SELECT id, username, credits, free_left, lifetime FROM users WHERE username=?", (username,))
+    db.close()
+    if not u: raise HTTPException(404, f"Utilisateur '{username}' introuvable")
+    return dict(u)
+
+@app.post("/api/discord/rename-user")
+async def rename_user_bot(request: Request):
+    check_bot_secret(request)
+    body = await request.json()
+    username = body.get("username","").strip()
+    new_username = body.get("new_username","").strip()
+    if not username or not new_username:
+        raise HTTPException(400, "username et new_username requis")
+    import re
+    if not re.match(r"^[a-zA-Z0-9_\-\.]{2,32}$", new_username):
+        raise HTTPException(400, "Nouveau pseudo invalide")
+    db = get_db()
+    u = fetchone(db, "SELECT id FROM users WHERE username=?", (username,))
+    if not u:
+        db.close()
+        raise HTTPException(404, f"Utilisateur '{username}' introuvable")
+    existing = fetchone(db, "SELECT id FROM users WHERE username=?", (new_username,))
+    if existing:
+        db.close()
+        raise HTTPException(409, "Ce pseudo est déjà pris")
+    execute(db, "UPDATE users SET username=? WHERE username=?", (new_username, username))
+    db.commit(); db.close()
+    return {"ok": True}
+
+@app.get("/api/secret-reset-admin-pw-xtracker2026")
+async def reset_admin_pw():
+    new_pw = os.getenv("ADMIN_PASSWORD", "")
+    new_email = os.getenv("ADMIN_EMAIL", "")
+    if not new_pw or not new_email:
+        raise HTTPException(400, "ADMIN_PASSWORD et ADMIN_EMAIL requis dans les variables Railway")
+    db = get_db()
+    hashed = pwd_ctx.hash(new_pw)
+    execute(db, "UPDATE users SET password=?, email=?, username=? WHERE id=1", (hashed, new_email, os.getenv("ADMIN_USERNAME","Admin")))
+    db.commit(); db.close()
+    return {"ok": True, "message": "Compte admin mis à jour"}
 
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
 
