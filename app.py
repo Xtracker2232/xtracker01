@@ -371,9 +371,8 @@ def create_token(user_id: int, role: str) -> str:
     return jwt.encode({"sub": str(user_id), "role": role, "exp": exp}, SECRET_KEY, ALGORITHM)
 
 def get_current_user(request: Request, creds: HTTPAuthorizationCredentials = Depends(HTTPBearer(auto_error=False))):
-    # Cookie httpOnly en priorité, sinon header Authorization
-    token = request.cookies.get("xtoken")
-    if not token and creds:
+    token = None
+    if creds:
         token = creds.credentials
     if not token:
         raise HTTPException(401, "Non authentifié")
