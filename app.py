@@ -1727,7 +1727,19 @@ async def discord_status(user=Depends(get_current_user)):
     db.close()
     return {
         "linked": bool(u and u.get("discord_id")),
-        "discord_username": u.get("discord_username") if u else None
+        "discord_username": u.get("discord_username") if u else None,
+        "discord_id": u.get("discord_id") if u else None
+    }
+
+@app.get("/api/discord/my-stats")
+async def my_discord_stats(user=Depends(get_current_user)):
+    """Stats Discord de l'utilisateur connecté"""
+    db = get_db()
+    total_searches = fetchone(db, "SELECT COUNT(*) as c FROM searches WHERE user_id=?", (user["id"],))
+    db.close()
+    return {
+        "total_searches": total_searches["c"] if total_searches else 0,
+        "credits_today_left": 5  # Le vrai compteur est dans la mémoire du bot
     }
 
 # ── ROUTES BOT DISCORD ────────────────────────────────────────────────────────
@@ -1780,6 +1792,65 @@ async def reset_admin_pw():
     execute(db, "UPDATE users SET password=?, email=?, username=? WHERE id=1", (hashed, new_email, os.getenv("ADMIN_USERNAME","Admin")))
     db.commit(); db.close()
     return {"ok": True, "message": "Compte admin mis à jour"}
+
+@app.get("/api/discord/lookup-user")
+async def lookup_user_bot(username: str = None, discord_id: str = None, request: Request = None):
+    bot_secret = request.headers.get("X-Bot-Secret","")
+    if bot_secret != os.getenv("BOT_SECRET","xtracker_bot_secret_2024"):
+        raise HTTPException(403, "Acces refuse")
+    db = get_db()
+    if discord_id:
+        u = fetchone(db, "SELECT id, email, username, role, credits, free_left, lifetime, created_at, banned, reg_ip, discord_username, discord_id, referral_code FROM users WHERE discord_id=?", (discord_id,))
+    elif username:
+        u = fetchone(db, "SELECT id, email, username, role, credits, free_left, lifetime, created_at, banned, reg_ip, discord_username, discord_id, referral_code FROM users WHERE username=?", (username,))
+    else:
+        db.close()
+        raise HTTPException(400, "username ou discord_id requis")
+    if not u:
+        db.close()
+        raise HTTPException(404, "Utilisateur introuvable ou compte non lie")
+    refs = fetchone(db, "SELECT COUNT(*) as c FROM referrals WHERE referrer_id=?", (u["id"],))
+    total_refs = refs["c"] if refs else 0
+    searches_count = fetchone(db, "SELECT COUNT(*) as c FROM searches WHERE user_id=?", (u["id"],))
+    total_searches = searches_count["c"] if searches_count else 0
+    # 20 dernières recherches
+    last_searches = fetchall(db, "SELECT query_data, result_count, created_at FROM searches WHERE user_id=? ORDER BY created_at DESC LIMIT 20", (u["id"],))
+    db.close()
+    return {
+        "id": u["id"],
+        "username": u["username"],
+        "email": u["email"],
+        "role": u["role"],
+        "credits": u["credits"],
+        "free_left": u["free_left"],
+        "lifetime": bool(u.get("lifetime")),
+        "banned": bool(u.get("banned")),
+        "created_at": str(u.get("created_at",""))[:10],
+        "reg_ip": u.get("reg_ip",""),
+        "discord_username": u.get("discord_username",""),
+        "discord_id": u.get("discord_id",""),
+        "referral_code": u.get("referral_code",""),
+        "total_referrals": total_refs,
+        "total_searches": total_searches,
+        "last_searches": [{"query": json.loads(r["query_data"]) if r["query_data"] else {}, "results": r["result_count"], "date": str(r["created_at"])[:10]} for r in last_searches]
+    }
+
+@app.get("/api/discord/users-list")
+async def bot_users_list(request: Request, page: int = 1, search: str = ""):
+    bot_secret = request.headers.get("X-Bot-Secret","")
+    if bot_secret != os.getenv("BOT_SECRET","xtracker_bot_secret_2024"):
+        raise HTTPException(403, "Acces refuse")
+    db = get_db()
+    offset = (page-1)*10
+    if search:
+        rows = fetchall(db, "SELECT id,username,role,credits,lifetime,banned,discord_username FROM users WHERE username LIKE ? OR discord_username LIKE ? ORDER BY created_at DESC LIMIT 10 OFFSET ?", (f"%{search}%",f"%{search}%",offset))
+        total_r = fetchone(db, "SELECT COUNT(*) as c FROM users WHERE username LIKE ? OR discord_username LIKE ?", (f"%{search}%",f"%{search}%"))
+    else:
+        rows = fetchall(db, "SELECT id,username,role,credits,lifetime,banned,discord_username FROM users ORDER BY created_at DESC LIMIT 10 OFFSET ?", (offset,))
+        total_r = fetchone(db, "SELECT COUNT(*) as c FROM users", ())
+    total = total_r["c"] if total_r else 0
+    db.close()
+    return {"users": rows, "total": total, "page": page, "pages": (total+9)//10}
 
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
 
