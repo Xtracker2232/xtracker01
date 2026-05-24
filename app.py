@@ -1075,11 +1075,14 @@ async def admin_stats(admin=Depends(require_admin)):
     searches_today = cnt("SELECT COUNT(*) FROM searches WHERE date(created_at)=CURRENT_DATE") if is_pg() else cnt("SELECT COUNT(*) FROM searches WHERE date(created_at)=date('now')")
     revenue        = cnt("SELECT COALESCE(SUM(amount_eur),0) FROM transactions WHERE status='completed'")
     banned         = cnt("SELECT COUNT(*) FROM users WHERE banned=TRUE") if is_pg() else cnt("SELECT COUNT(*) FROM users WHERE banned=1")
+    discord_linked = cnt("SELECT COUNT(*) FROM users WHERE discord_id IS NOT NULL AND discord_id != ''")
+    lifetime_users = cnt("SELECT COUNT(*) FROM users WHERE lifetime=TRUE") if is_pg() else cnt("SELECT COUNT(*) FROM users WHERE lifetime=1")
     db.close()
     return {
         "total_users": total_users, "new_today": new_today,
         "total_searches": total_searches, "searches_today": searches_today,
         "revenue_eur": float(revenue), "banned": banned,
+        "discord_linked": discord_linked, "lifetime_users": lifetime_users,
     }
 
 @app.get("/api/admin/users")

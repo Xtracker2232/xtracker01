@@ -134,6 +134,8 @@ tr:hover td{background:rgba(255,255,255,0.02)}
       <div class="stat-card"><div class="stat-label">Recherches</div><div class="stat-val" id="s-searches">—</div><div class="stat-sub">total</div></div>
       <div class="stat-card"><div class="stat-label">Revenus</div><div class="stat-val" id="s-revenue">—</div><div class="stat-sub">total</div></div>
       <div class="stat-card"><div class="stat-label">Bannis</div><div class="stat-val" id="s-banned">—</div><div class="stat-sub">comptes</div></div>
+      <div class="stat-card"><div class="stat-label">Discord liés</div><div class="stat-val" id="s-discord">—</div><div class="stat-sub">comptes</div></div>
+      <div class="stat-card"><div class="stat-label">Lifetime</div><div class="stat-val" id="s-lifetime">—</div><div class="stat-sub">comptes</div></div>
     </div>
     <div class="stat-grid">
       <div class="stat-card"><div class="stat-label">Nouveaux aujourd'hui</div><div class="stat-val" id="s-new">—</div></div>
@@ -375,6 +377,7 @@ function renderUsers(users){
     html+='<td style="color:var(--muted2);font-size:11px">#'+u.id+'</td>';
     html+='<td>'+(u.username||'—')+'</td>';
     html+='<td style="font-family:monospace;font-size:11px">'+u.email+'</td>';
+    html+='<td style="font-size:11px;color:#a5b4fc">'+(u.discord_username&&u.discord_username!='0'&&u.discord_username!='9999'?u.discord_username:'—')+'</td>';
     html+='<td>'+(u.credits||0)+'</td>';
     html+='<td>'+(u.free_left||0)+'</td>';
     html+='<td><span class="badge b-'+role+'">'+role+'</span></td>';
@@ -387,6 +390,8 @@ function renderUsers(users){
     html+='<button class="act-btn" onclick="addCredits('+u.id+')">+Credits</button>';
     html+='<button class="act-btn danger" onclick="resetCredits('+u.id+')">Reset</button>';
     html+=adminBtn;
+    html+='<button class="act-btn '+(u.lifetime?'danger':'accent')+'" onclick="toggleLifetime('+u.id+','+u.lifetime+')">'+  (u.lifetime?'- Lifetime':'+ Lifetime')+'</button>';
+    html+='<button class="act-btn danger" onclick="deleteUser('+u.id+')">' + 'Supprimer</button>';
     html+=banBtn;
     html+='</td>';
     html+='</tr>';
@@ -424,6 +429,12 @@ function setRole(id,makeAdmin){
     .catch(function(){notif('Erreur reseau','err')});
 }
 
+function deleteUser(id){
+  if(!confirm('Supprimer definitivement ce compte ? Cette action est irreversible.'))return;
+  fetch(API+'/api/admin/users/'+id,{method:'DELETE',headers:hdr(),credentials:"include"})
+    .then(function(r){if(r.ok){notif('Compte supprime');loadUsers()}else notif('Erreur','err')})
+    .catch(function(){notif('Erreur reseau','err')});
+}
 function toggleLifetime(id,hasLifetime){
   var msg=hasLifetime?'Retirer le Lifetime ?':'Activer le Lifetime (credits illimités) ?';
   if(!confirm(msg))return;
