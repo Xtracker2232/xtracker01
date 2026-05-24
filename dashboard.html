@@ -478,11 +478,17 @@ select option{background:var(--bg2)}
 </div>
 
 <!-- BROADCAST POPUP -->
-<div id="broadcast-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px">
-  <div id="broadcast-box" style="background:#1a0a00;border:2px solid #f97316;border-radius:16px;padding:28px;max-width:500px;width:100%;text-align:center;position:relative;animation:fadeUp .3s ease">
-    <div style="font-size:28px;margin-bottom:12px">📢</div>
-    <div id="broadcast-msg" style="font-size:15px;color:#fdba74;line-height:1.6;font-weight:500"></div>
-    <button id="broadcast-close" onclick="closeBroadcast()" style="display:none;margin-top:18px;padding:10px 24px;border-radius:8px;background:#f97316;color:#fff;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Fermer</button>
+<div id="broadcast-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:300;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#1a0a00;border:2px solid #f97316;border-radius:16px;padding:28px;max-width:500px;width:100%;text-align:center;position:relative;animation:fadeUp .3s ease">
+    <div style="font-size:28px;margin-bottom:10px">📢</div>
+    <div id="broadcast-msg" style="font-size:15px;color:#fdba74;line-height:1.6;font-weight:500;margin-bottom:18px"></div>
+    <div id="broadcast-timer-wrap" style="margin-bottom:14px">
+      <div style="font-size:12px;color:rgba(253,186,116,0.6);margin-bottom:6px">Fermeture dans <span id="broadcast-countdown">5</span>s</div>
+      <div style="height:4px;background:rgba(249,115,22,0.2);border-radius:2px;overflow:hidden">
+        <div id="broadcast-progress" style="height:100%;background:#f97316;border-radius:2px;width:100%;transition:width 1s linear"></div>
+      </div>
+    </div>
+    <button id="broadcast-close" onclick="closeBroadcast()" style="display:none;padding:10px 28px;border-radius:8px;background:#f97316;color:#fff;border:none;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">✕ Fermer</button>
   </div>
 </div>
 
@@ -993,12 +999,27 @@ function showNextBroadcast(){
   if(!broadcastQueue.length)return;
   currentBroadcast=broadcastQueue.shift();
   const ov=g('broadcast-overlay');
-  const msg=g('broadcast-msg');
-  const btn=g('broadcast-close');
-  msg.textContent=currentBroadcast.message;
+  g('broadcast-msg').textContent=currentBroadcast.message;
+  g('broadcast-close').style.display='none';
+  g('broadcast-countdown').textContent='5';
+  g('broadcast-progress').style.width='100%';
+  g('broadcast-timer-wrap').style.display='block';
   ov.style.display='flex';
-  btn.style.display='none';
-  setTimeout(()=>{btn.style.display='inline-block'},5000);
+  var count=5;
+  var interval=setInterval(function(){
+    count--;
+    var cd=g('broadcast-countdown');
+    var prog=g('broadcast-progress');
+    if(cd)cd.textContent=count;
+    if(prog)prog.style.width=(count*20)+'%';
+    if(count<=0){
+      clearInterval(interval);
+      var btn=g('broadcast-close');
+      var tw=g('broadcast-timer-wrap');
+      if(btn)btn.style.display='inline-block';
+      if(tw)tw.style.display='none';
+    }
+  },1000);
 }
 
 function closeBroadcast(){

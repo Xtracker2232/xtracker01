@@ -330,6 +330,31 @@ def init_db():
             cur.execute("UPDATE users SET auth_type='local' WHERE auth_type IS NULL")
             db.commit()
         except: pass
+        # Migration nouvelles tables
+        try:
+            cur.execute("""CREATE TABLE IF NOT EXISTS tickets (
+                id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id),
+                subject TEXT NOT NULL, status TEXT DEFAULT 'open',
+                created_at TIMESTAMP DEFAULT NOW())""")
+            cur.execute("""CREATE TABLE IF NOT EXISTS ticket_messages (
+                id SERIAL PRIMARY KEY, ticket_id INTEGER REFERENCES tickets(id),
+                user_id INTEGER REFERENCES users(id), message TEXT NOT NULL,
+                is_admin BOOLEAN DEFAULT FALSE, read_by_user BOOLEAN DEFAULT FALSE,
+                read_by_admin BOOLEAN DEFAULT FALSE, created_at TIMESTAMP DEFAULT NOW())""")
+            cur.execute("""CREATE TABLE IF NOT EXISTS broadcasts (
+                id SERIAL PRIMARY KEY, message TEXT NOT NULL,
+                target_user_id INTEGER REFERENCES users(id),
+                created_by INTEGER REFERENCES users(id),
+                created_at TIMESTAMP DEFAULT NOW())""")
+            cur.execute("""CREATE TABLE IF NOT EXISTS broadcast_reads (
+                id SERIAL PRIMARY KEY, broadcast_id INTEGER REFERENCES broadcasts(id),
+                user_id INTEGER REFERENCES users(id), UNIQUE(broadcast_id, user_id))""")
+            cur.execute("""CREATE TABLE IF NOT EXISTS announcements (
+                id SERIAL PRIMARY KEY, message TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT NOW())""")
+            db.commit()
+        except Exception as e:
+            print(f"[DB] Migration tables: {e}")
         cur.execute("SELECT id FROM users WHERE email='admin@xtracker.io'")
         if not cur.fetchone():
             cur.execute("""INSERT INTO users (email, password, username, role, credits, free_left)
