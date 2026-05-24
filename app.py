@@ -289,6 +289,12 @@ def init_db():
             ip         TEXT UNIQUE NOT NULL,
             created_at TIMESTAMP DEFAULT NOW()
         )""")
+        # Migration auth_type
+        try:
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_type TEXT DEFAULT 'local'")
+            cur.execute("UPDATE users SET auth_type='local' WHERE auth_type IS NULL")
+            db.commit()
+        except: pass
         cur.execute("SELECT id FROM users WHERE email='admin@xtracker.io'")
         if not cur.fetchone():
             cur.execute("""INSERT INTO users (email, password, username, role, credits, free_left)
@@ -480,9 +486,9 @@ async def register(data: RegisterModel, request: Request):
     free_left = 0 if ip_used else 5
     hashed = pwd_ctx.hash(data.password)
     if is_pg():
-        db_id = execute(db, "INSERT INTO users (email, password, username, free_left, auth_type) VALUES (?,?,?,?,?) RETURNING id", (fake_email, hashed, data.username, free_left, "local"))
+        db_id = execute(db, "INSERT INTO users (email, password, username, free_left) VALUES (?,?,?,?) RETURNING id", (fake_email, hashed, data.username, free_left))
     else:
-        db_id = execute(db, "INSERT INTO users (email, password, username, free_left, auth_type) VALUES (?,?,?,?,?)", (fake_email, hashed, data.username, free_left, "local"))
+        db_id = execute(db, "INSERT INTO users (email, password, username, free_left) VALUES (?,?,?,?)", (fake_email, hashed, data.username, free_left))
     if not ip_used:
         try:
             execute(db, "INSERT INTO ip_used (ip) VALUES (?)", (ip,))
@@ -512,9 +518,9 @@ async def login(data: LoginModel):
     # Si c'est un username, chercher UNIQUEMENT par username (jamais les comptes discord)
     login_val = data.username.strip()
     if "@" in login_val:
-        user = fetchone(db, "SELECT * FROM users WHERE email=? AND email NOT LIKE ?", (login_val.lower(), "%@xtracker.local"))
+        user = fetchone(db, "SELECT * FROM users WHERE email=? AND RIGHT(email, 15) != '@xtracker.local'", (login_val.lower(),))
     else:
-        user = fetchone(db, "SELECT * FROM users WHERE username=? AND email NOT LIKE ?", (login_val, "%@xtracker.local"))
+        user = fetchone(db, "SELECT * FROM users WHERE username=? AND RIGHT(email, 15) != '@xtracker.local'", (login_val,))
     if not user or not pwd_ctx.verify(data.password, user["password"]):
         db.close()
         raise HTTPException(401, "Email ou mot de passe incorrect")
