@@ -467,6 +467,30 @@ select option{background:var(--bg2)}
         </button>
       </div>
     </div>
+
+    <!-- PARRAINAGE -->
+    <div class="profile-box" style="margin-top:12px">
+      <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:4px;color:var(--text)">Lien de parrainage</div>
+      <div style="font-size:12px;color:var(--muted2);margin-bottom:14px">Gagnez 5 crédits pour chaque compte créé grâce à votre lien</div>
+      <div id="referral-loading" style="color:var(--muted2);font-size:13px">Chargement...</div>
+      <div id="referral-content" style="display:none">
+        <div style="display:flex;gap:8px;margin-bottom:14px">
+          <input id="referral-link" readonly style="flex:1;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--accent2);font-family:monospace;outline:none">
+          <button class="btn btn-a" onclick="copyReferral()" style="white-space:nowrap">Copier</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center">
+            <div id="ref-count" style="font-size:24px;font-weight:800;font-family:'Syne',sans-serif;color:var(--accent2)">0</div>
+            <div style="font-size:11px;color:var(--muted2);margin-top:2px">Comptes créés</div>
+          </div>
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center">
+            <div id="ref-credits" style="font-size:24px;font-weight:800;font-family:'Syne',sans-serif;color:var(--accent2)">0</div>
+            <div style="font-size:11px;color:var(--muted2);margin-top:2px">Crédits gagnés</div>
+          </div>
+        </div>
+        <div id="ref-list" style="font-size:12px;color:var(--muted2)"></div>
+      </div>
+    </div>
   </div>
 
   <!-- PAGE TICKETS -->
@@ -810,6 +834,7 @@ async function loadProfile(){
     g('p-email').textContent=d.email||'—';g('p-username').textContent=d.username||'—';
     g('p-role').textContent=d.role||'—';g('p-date').textContent=d.created_at?new Date(d.created_at).toLocaleDateString('fr-FR'):'—';
     if(d.lifetime&&g('p-lifetime-row'))g('p-lifetime-row').style.display='flex';
+    loadReferral();
   }catch(e){}
 }
 
@@ -866,6 +891,34 @@ function applyTheme(name, btn){
   // Sauvegarder
   localStorage.setItem('xtheme',name);
   fetch(API+'/api/user/theme',{method:'POST',headers:hdr(),body:JSON.stringify({theme:name})}).catch(function(){});
+}
+
+async function loadReferral(){
+  try{
+    const r=await fetch(API+'/api/referral/code',{headers:hdr()});
+    const d=await r.json();
+    g('referral-loading').style.display='none';
+    g('referral-content').style.display='block';
+    const link=window.location.origin+'/login.html?ref='+d.code;
+    g('referral-link').value=link;
+    g('ref-count').textContent=d.total_referred||0;
+    g('ref-credits').textContent=d.total_credits||0;
+    if(d.referrals&&d.referrals.length){
+      g('ref-list').innerHTML='<div style="margin-bottom:6px;font-weight:600;color:var(--muted2)">Derniers filleuls :</div>'+
+        d.referrals.slice(0,5).map(function(r){
+          return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)"><span>'+r.username+'</span><span style="color:var(--accent2)">+'+r.credits_earned+' cr</span></div>';
+        }).join('');
+    }
+  }catch(e){}
+}
+
+function copyReferral(){
+  const input=g('referral-link');
+  if(!input)return;
+  input.select();
+  navigator.clipboard.writeText(input.value).then(function(){notif('Lien copié !')}).catch(function(){
+    document.execCommand('copy');notif('Lien copié !');
+  });
 }
 
 async function loadTheme(){

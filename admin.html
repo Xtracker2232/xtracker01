@@ -105,6 +105,7 @@ tr:hover td{background:rgba(255,255,255,0.02)}
     <button class="sb-item active" onclick="goTo('stats',this)">Statistiques</button>
     <button class="sb-item" onclick="goTo('users',this)">Utilisateurs</button>
     <button class="sb-item" onclick="goTo('history',this)">Historique</button>
+    <button class="sb-item" onclick="goTo('referrals',this)">Parrainages</button>
     <span class="sb-sec">Securite</span>
     <button class="sb-item" onclick="goTo('blocklist',this)">Blocklist</button>
     <button class="sb-item" onclick="goTo('maintenance',this)">Maintenance</button>
@@ -258,6 +259,17 @@ tr:hover td{background:rgba(255,255,255,0.02)}
     </div>
   </div>
 
+  <!-- REFERRALS -->
+  <div class="page" id="page-referrals">
+    <div class="table-wrap">
+      <div class="table-head"><div class="table-title">Parrainages</div><button class="btn btn-g" onclick="loadReferrals()">Actualiser</button></div>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>Utilisateur</th><th>Code</th><th>Filleuls</th><th>Crédits gagnés</th></tr></thead>
+        <tbody id="referrals-tbody"><tr><td colspan="4" style="text-align:center;padding:24px;color:var(--muted)">Chargement...</td></tr></tbody>
+      </table></div>
+    </div>
+  </div>
+
   <!-- MAINTENANCE -->
   <div class="page" id="page-maintenance">
     <div class="toggle-row">
@@ -302,13 +314,14 @@ function goTo(page,btn){
   if(btn)btn.classList.add('active');
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
   var pg=g('page-'+page);if(pg)pg.classList.add('active');
-  var titles={stats:'Statistiques',users:'Utilisateurs',history:'Historique',blocklist:'Blocklist',maintenance:'Maintenance',tickets:'Tickets',broadcast:'Message utilisateur',announcement:'Annonce navbar'};
+  var titles={stats:'Statistiques',users:'Utilisateurs',history:'Historique',blocklist:'Blocklist',maintenance:'Maintenance',tickets:'Tickets',broadcast:'Message utilisateur',announcement:'Annonce navbar',referrals:'Parrainages'};
   g('page-title').textContent=titles[page]||page;
   if(page==='users')loadUsers();
   if(page==='history')loadHistory();
   if(page==='blocklist')loadBlocklist();
   if(page==='maintenance')loadMaintenance();
   if(page==='tickets')loadAdminTickets();
+  if(page==='referrals')loadReferrals();
   if(page==='announcement')loadCurrentAnnouncement();
 }
 
@@ -590,6 +603,15 @@ function loadCurrentAnnouncement(){
   }).catch(function(){});
 }
 
+function loadReferrals(){
+  fetch(API+'/api/admin/referrals',{headers:hdr(),credentials:"include"}).then(function(r){return r.json()}).then(function(d){
+    var tb=g('referrals-tbody');
+    if(!d.length){tb.innerHTML='<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--muted)">Aucun parrainage</td></tr>';return}
+    tb.innerHTML=d.map(function(r){
+      return '<tr><td><strong>'+r.username+'</strong></td><td><code style="background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:11px">'+r.referral_code+'</code></td><td>'+r.total_referred+'</td><td style="color:var(--accent2)">+'+r.total_credits+' cr</td></tr>';
+    }).join('');
+  }).catch(function(){notif('Erreur','err')});
+}
 function logout(){localStorage.clear();window.location.href='login.html'}
 
 function init(){

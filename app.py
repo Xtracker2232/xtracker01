@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from passlib.context import CryptContext
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
-import os, json, httpx, sqlite3
+import os, json, httpx, sqlite3, secrets as _secrets
 try:
     import psycopg2
     import psycopg2.extras
@@ -347,10 +347,24 @@ def init_db():
             cur.execute("UPDATE users SET auth_type='local' WHERE auth_type IS NULL")
             db.commit()
         except: pass
-        # Migration reg_ip et lifetime
+        # Migration reg_ip, lifetime, referral
         try:
             cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS reg_ip TEXT DEFAULT NULL")
             cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS lifetime BOOLEAN DEFAULT FALSE")
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS theme TEXT DEFAULT NULL")
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code TEXT DEFAULT NULL")
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by INTEGER DEFAULT NULL")
+            db.commit()
+        except: pass
+        # Table referrals
+        try:
+            cur.execute("""CREATE TABLE IF NOT EXISTS referrals (
+                id SERIAL PRIMARY KEY,
+                referrer_id INTEGER REFERENCES users(id),
+                referred_id INTEGER REFERENCES users(id),
+                credits_earned INTEGER DEFAULT 5,
+                created_at TIMESTAMP DEFAULT NOW()
+            )""")
             db.commit()
         except: pass
         # Migration nouvelles tables
@@ -480,6 +494,7 @@ def require_admin(user=Depends(get_current_user)):
 class RegisterModel(BaseModel):
     username: str
     password: str
+    ref_code: str = ""
 
 class LoginModel(BaseModel):
     username: str
@@ -579,6 +594,14 @@ async def register(data: RegisterModel, request: Request):
             execute(db, "INSERT INTO ip_used (ip) VALUES (?)", (ip,))
         except:
             pass
+    # Gérer le parrainage
+    ref_code = data.ref_code.strip().upper() if hasattr(data, 'ref_code') and data.ref_code else None
+    if ref_code and db_id:
+        referrer = fetchone(db, "SELECT id FROM users WHERE referral_code=?", (ref_code,))
+        if referrer and referrer["id"] != db_id:
+            execute(db, "UPDATE users SET referred_by=? WHERE id=?", (referrer["id"], db_id))
+            execute(db, "INSERT INTO referrals (referrer_id, referred_id, credits_earned) VALUES (?,?,?)", (referrer["id"], db_id, 5))
+            execute(db, "UPDATE users SET credits=credits+5 WHERE id=?", (referrer["id"],))
     db.commit()
     db.close()
     token = create_token(db_id, "user")
@@ -1538,6 +1561,55 @@ async def get_theme(user=Depends(get_current_user)):
     u = fetchone(db, "SELECT theme FROM users WHERE id=?", (user["id"],))
     db.close()
     return {"theme": u.get("theme") if u else None}
+
+# ── PARRAINAGE ────────────────────────────────────────────────────────────────
+@app.get("/api/referral/code")
+async def get_referral_code(user=Depends(get_current_user)):
+    db = get_db()
+    u = fetchone(db, "SELECT referral_code FROM users WHERE id=?", (user["id"],))
+    code = u.get("referral_code") if u else None
+    if not code:
+        import secrets
+        code = secrets.token_urlsafe(8).upper()[:10]
+        execute(db, "UPDATE users SET referral_code=? WHERE id=?", (code, user["id"]))
+        db.commit()
+    # Stats parrainage
+    refs = fetchall(db, "SELECT r.id, r.credits_earned, r.created_at, u.username FROM referrals r JOIN users u ON r.referred_id=u.id WHERE r.referrer_id=? ORDER BY r.created_at DESC", (user["id"],))
+    total_credits = sum(r["credits_earned"] for r in refs)
+    db.close()
+    return {
+        "code": code,
+        "total_referred": len(refs),
+        "total_credits": total_credits,
+        "referrals": refs
+    }
+
+@app.get("/api/referral/info/{code}")
+async def referral_info(code: str):
+    db = get_db()
+    u = fetchone(db, "SELECT id, username FROM users WHERE referral_code=?", (code.upper(),))
+    db.close()
+    if not u:
+        raise HTTPException(404, "Code invalide")
+    return {"username": u["username"], "valid": True}
+
+# Route admin parrainage
+@app.get("/api/admin/referrals")
+async def admin_referrals(admin=Depends(require_admin)):
+    db = get_db()
+    rows = fetchall(db, """
+        SELECT u.id, u.username, u.referral_code,
+               COUNT(r.id) as total_referred,
+               COALESCE(SUM(r.credits_earned),0) as total_credits
+        FROM users u
+        LEFT JOIN referrals r ON r.referrer_id=u.id
+        WHERE u.referral_code IS NOT NULL
+        GROUP BY u.id, u.username, u.referral_code
+        ORDER BY total_referred DESC
+        LIMIT 100
+    """)
+    db.close()
+    return rows
 
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
 

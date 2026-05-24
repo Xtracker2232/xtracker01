@@ -55,7 +55,7 @@ input::placeholder{color:var(--muted)}
   <div class="logo-wrap">
     <img class="logo-img" src="https://cdn.discordapp.com/attachments/1477415267452719208/1507796087233056948/image.png?ex=6a133408&is=6a11e288&hm=b4af399bdf49133320a238a67867ab111b04cacbd81ab1cd0875641645c10600&" alt="Xtracker">
     <div class="logo-title">X<span>tracker</span></div>
-    <div class="logo-sub">Connectez-vous pour accéder à la plateforme</div>
+    <div class="logo-sub" id="ref-msg">Connectez-vous pour accéder à la plateforme</div>
   </div>
 
   <div class="tabs">
@@ -126,8 +126,9 @@ async function doRegister(){
   if(!user||!pass){showErr('Remplissez tous les champs.');return}
   if(pass.length<8){showErr('Mot de passe trop court (8 caractères min).');return}
   setLoad('btn-register',true,'');
+  const refCode=new URLSearchParams(window.location.search).get('ref')||'';
   try{
-    const r=await fetch(API+'/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,password:pass})});
+    const r=await fetch(API+'/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,password:pass,ref_code:refCode})});
     const d=await r.json();
     if(!r.ok){showErr(d.detail||'Erreur inscription.');return}
     localStorage.clear();
