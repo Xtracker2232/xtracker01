@@ -31,9 +31,7 @@ else:
 
 # ── CONFIG ────────────────────────────────────────────────────────────────────
 SECRET_KEY     = os.getenv("SECRET_KEY", "")
-ADMIN_EMAIL    = os.getenv("ADMIN_EMAIL", "admin@xtracker.io")
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "")
-ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "Admin")
+ADMIN_EMAIL    = os.getenv("ADMIN_EMAIL", "")  # Plus de credentials en dur
 ALGORITHM      = "HS256"
 TOKEN_EXPIRE   = 60 * 24 * 365  # 1 an
 BRIX_KEY       = os.getenv("BRIX_API_KEY", "")
@@ -409,11 +407,7 @@ def init_db():
             db.commit()
         except Exception as e:
             print(f"[DB] Migration tables: {e}")
-        cur.execute("SELECT id FROM users WHERE email=%s", (ADMIN_EMAIL,))
-        if not cur.fetchone():
-            if ADMIN_PASSWORD:
-                cur.execute("INSERT INTO users (email, password, username, role, credits, free_left) VALUES (%s,%s,%s,'admin',99999,99999)",
-                    (ADMIN_EMAIL, pwd_ctx.hash(ADMIN_PASSWORD), ADMIN_USERNAME))
+        # Admin cree manuellement via Railway variables si besoin
         db.commit()
         cur.close()
         db.close()
@@ -466,11 +460,7 @@ def init_db():
             created_at TEXT DEFAULT (datetime('now'))
         );
         """)
-        existing = db.execute("SELECT id FROM users WHERE email=?", (ADMIN_EMAIL,)).fetchone()
-        if not existing:
-            if ADMIN_PASSWORD:
-                db.execute("INSERT INTO users (email, password, username, role, credits, free_left) VALUES (?,?,?,'admin',99999,99999)",
-                    (ADMIN_EMAIL, pwd_ctx.hash(ADMIN_PASSWORD), ADMIN_USERNAME))
+        # Admin cree manuellement via Railway variables si besoin
         db.commit()
         db.close()
         print("✓ Base de données SQLite initialisée (fallback)")
@@ -1111,7 +1101,7 @@ async def admin_update(user_id: int, data: AdminUserUpdate, admin=Depends(requir
     db = get_db()
     # Protéger le compte admin principal
     target = fetchone(db, "SELECT email FROM users WHERE id=?", (user_id,))
-    if target and target.get("email") == ADMIN_EMAIL:
+    if ADMIN_EMAIL and target and target.get("email") == ADMIN_EMAIL:
         if data.banned is not None or data.role is not None:
             db.close()
             raise HTTPException(403, "Ce compte admin ne peut pas être modifié")
@@ -1262,7 +1252,7 @@ async def admin_set_role(user_id: int, request: Request, admin=Depends(require_a
     db = get_db()
     # Protéger le compte admin principal
     target = fetchone(db, "SELECT email FROM users WHERE id=?", (user_id,))
-    if target and target.get("email") == ADMIN_EMAIL:
+    if ADMIN_EMAIL and target and target.get("email") == ADMIN_EMAIL:
         db.close()
         raise HTTPException(403, "Ce compte admin ne peut pas être modifié")
     execute(db, "UPDATE users SET role=? WHERE id=?", (role, user_id))
@@ -1663,9 +1653,7 @@ async def link_discord(request: Request):
     bot_secret = body.get("bot_secret", "")
     
     # Vérifier le secret du bot
-    expected = os.getenv("BOT_SECRET", "xtracker_bot_secret_2024")
-    print(f"[DISCORD LINK] bot_secret recu: '{bot_secret}' expected: '{expected}'")
-    if bot_secret != expected:
+    if bot_secret != os.getenv("BOT_SECRET", "xtracker_bot_secret_2024"):
         raise HTTPException(403, "Acces refuse")
     
     if not code or not discord_id:
@@ -1781,17 +1769,7 @@ async def rename_user_bot(request: Request):
     db.commit(); db.close()
     return {"ok": True}
 
-@app.get("/api/secret-reset-admin-pw-xtracker2026")
-async def reset_admin_pw():
-    new_pw = os.getenv("ADMIN_PASSWORD", "")
-    new_email = os.getenv("ADMIN_EMAIL", "")
-    if not new_pw or not new_email:
-        raise HTTPException(400, "ADMIN_PASSWORD et ADMIN_EMAIL requis dans les variables Railway")
-    db = get_db()
-    hashed = pwd_ctx.hash(new_pw)
-    execute(db, "UPDATE users SET password=?, email=?, username=? WHERE id=1", (hashed, new_email, os.getenv("ADMIN_USERNAME","Admin")))
-    db.commit(); db.close()
-    return {"ok": True, "message": "Compte admin mis à jour"}
+
 
 @app.get("/api/discord/lookup-user")
 async def lookup_user_bot(username: str = None, discord_id: str = None, request: Request = None):
