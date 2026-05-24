@@ -1304,29 +1304,40 @@ class BroadcastModel(BaseModel):
 async def send_broadcast(request: Request, admin=Depends(require_admin)):
     body = await request.json()
     message = body.get("message", "").strip()
-    target_user_id = body.get("target_user_id")
+    target_raw = body.get("target_user_id")  # peut être int, string ID, ou string username
     if not message:
         raise HTTPException(400, "Message requis")
-    # Convertir en int si c'est un ID, sinon chercher par username
-    if target_user_id:
+
+    resolved_id = None
+
+    if target_raw is not None and str(target_raw).strip() != "":
+        target_str = str(target_raw).strip()
+        db2 = get_db()
+        # Essayer par ID d'abord
         try:
-            target_user_id = int(target_user_id)
-        except:
-            # C'est un username - chercher l'ID
-            db2 = get_db()
-            u = fetchone(db2, "SELECT id FROM users WHERE username=?", (str(target_user_id),))
-            db2.close()
+            maybe_id = int(target_str)
+            u = fetchone(db2, "SELECT id FROM users WHERE id=?", (maybe_id,))
             if u:
-                target_user_id = u["id"]
+                resolved_id = u["id"]
+        except ValueError:
+            pass
+        # Si pas trouvé par ID, chercher par username
+        if resolved_id is None:
+            u = fetchone(db2, "SELECT id FROM users WHERE username=?", (target_str,))
+            if u:
+                resolved_id = u["id"]
             else:
-                raise HTTPException(404, f"Utilisateur '{target_user_id}' introuvable")
+                db2.close()
+                raise HTTPException(404, f"Utilisateur '{target_str}' introuvable")
+        db2.close()
+
     db = get_db()
-    if target_user_id:
-        execute(db, "INSERT INTO broadcasts (message, target_user_id, created_by) VALUES (?,?,?)", (message, target_user_id, admin["id"]))
+    if resolved_id is not None:
+        execute(db, "INSERT INTO broadcasts (message, target_user_id, created_by) VALUES (?,?,?)", (message, resolved_id, admin["id"]))
     else:
         execute(db, "INSERT INTO broadcasts (message, target_user_id, created_by) VALUES (?,NULL,?)", (message, admin["id"]))
     db.commit(); db.close()
-    return {"ok": True}
+    return {"ok": True, "target_id": resolved_id}
 
 @app.get("/api/broadcasts")
 async def get_broadcasts(user=Depends(get_current_user)):
@@ -1482,6 +1493,51 @@ async def admin_set_lifetime(user_id: int, request: Request, admin=Depends(requi
         execute(db, "UPDATE users SET lifetime=FALSE WHERE id=?", (user_id,))
     db.commit(); db.close()
     return {"ok": True}
+
+# ── CHANGEMENT MOT DE PASSE ───────────────────────────────────────────────────
+class ChangePasswordModel(BaseModel):
+    current_password: str
+    new_password: str
+
+@app.post("/api/auth/change-password")
+async def change_password(data: ChangePasswordModel, user=Depends(get_current_user)):
+    if len(data.new_password) < 8:
+        raise HTTPException(400, "Nouveau mot de passe trop court (8 caractères min)")
+    db = get_db()
+    u = fetchone(db, "SELECT password FROM users WHERE id=?", (user["id"],))
+    if not pwd_ctx.verify(data.current_password, u["password"]):
+        db.close()
+        raise HTTPException(401, "Mot de passe actuel incorrect")
+    hashed = pwd_ctx.hash(data.new_password)
+    execute(db, "UPDATE users SET password=? WHERE id=?", (hashed, user["id"]))
+    db.commit(); db.close()
+    return {"ok": True, "message": "Mot de passe modifié"}
+
+# ── THEME ──────────────────────────────────────────────────────────────────────
+class ThemeModel(BaseModel):
+    theme: str
+
+@app.post("/api/user/theme")
+async def save_theme(data: ThemeModel, user=Depends(get_current_user)):
+    db = get_db()
+    try:
+        execute(db, "ALTER TABLE users ADD COLUMN IF NOT EXISTS theme TEXT DEFAULT NULL", ())
+        db.commit()
+    except: pass
+    execute(db, "UPDATE users SET theme=? WHERE id=?", (data.theme, user["id"]))
+    db.commit(); db.close()
+    return {"ok": True}
+
+@app.get("/api/user/theme")
+async def get_theme(user=Depends(get_current_user)):
+    db = get_db()
+    try:
+        execute(db, "ALTER TABLE users ADD COLUMN IF NOT EXISTS theme TEXT DEFAULT NULL", ())
+        db.commit()
+    except: pass
+    u = fetchone(db, "SELECT theme FROM users WHERE id=?", (user["id"],))
+    db.close()
+    return {"theme": u.get("theme") if u else None}
 
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
 

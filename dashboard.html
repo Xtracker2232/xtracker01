@@ -242,6 +242,9 @@ select option{background:var(--bg2)}
 .drawer-item:active{background:rgba(255,255,255,0.06)}
 .drawer-item .d-ico{font-size:18px;width:26px;text-align:center;flex-shrink:0}
 .drawer-item .d-badge{margin-left:auto;font-size:11px;font-weight:600;color:var(--accent2);background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);padding:3px 10px;border-radius:10px}
+.theme-btn{background:none;border:2px solid transparent;border-radius:8px;padding:6px;cursor:pointer;transition:all .2s;text-align:center}
+.theme-btn:hover{border-color:var(--border2)}
+.theme-btn.active{border-color:var(--accent)}
 </style>
 </head>
 <body>
@@ -414,6 +417,54 @@ select option{background:var(--bg2)}
       <div class="profile-row"><div class="profile-label">Inscrit le</div><div class="profile-val" id="p-date">—</div></div>
       <div style="margin-top:6px;padding-top:14px;border-top:1px solid var(--border)">
         <button onclick="logout()" style="width:100%;padding:10px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid rgba(239,68,68,0.2);background:rgba(239,68,68,0.06);color:#ef4444;font-family:inherit;transition:all .2s">Deconnexion</button>
+      </div>
+    </div>
+
+    <!-- CHANGER MOT DE PASSE -->
+    <div class="profile-box" style="margin-top:12px">
+      <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:14px;color:var(--text)">Changer le mot de passe</div>
+      <div class="fgroup" style="margin-bottom:10px"><label>Mot de passe actuel</label><input id="pw-current" type="password" placeholder="••••••••"></div>
+      <div class="fgroup" style="margin-bottom:10px"><label>Nouveau mot de passe</label><input id="pw-new" type="password" placeholder="8 caractères minimum"></div>
+      <div class="fgroup" style="margin-bottom:12px"><label>Confirmer le nouveau</label><input id="pw-confirm" type="password" placeholder="••••••••"></div>
+      <button class="btn btn-a" style="width:100%" onclick="changePassword()">Modifier le mot de passe</button>
+    </div>
+
+    <!-- THÈME -->
+    <div class="profile-box" style="margin-top:12px">
+      <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:14px;color:var(--text)">Personnaliser le thème</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px" id="theme-grid">
+        <button class="theme-btn" data-theme="default" onclick="applyTheme('default',this)" title="Défaut">
+          <div style="width:100%;height:28px;border-radius:6px;background:linear-gradient(135deg,#6366f1,#a78bfa)"></div>
+          <div style="font-size:10px;margin-top:4px;color:var(--muted2)">Défaut</div>
+        </button>
+        <button class="theme-btn" data-theme="red" onclick="applyTheme('red',this)" title="Rouge">
+          <div style="width:100%;height:28px;border-radius:6px;background:linear-gradient(135deg,#ef4444,#f97316)"></div>
+          <div style="font-size:10px;margin-top:4px;color:var(--muted2)">Rouge</div>
+        </button>
+        <button class="theme-btn" data-theme="green" onclick="applyTheme('green',this)" title="Vert">
+          <div style="width:100%;height:28px;border-radius:6px;background:linear-gradient(135deg,#22c55e,#10b981)"></div>
+          <div style="font-size:10px;margin-top:4px;color:var(--muted2)">Vert</div>
+        </button>
+        <button class="theme-btn" data-theme="blue" onclick="applyTheme('blue',this)" title="Bleu">
+          <div style="width:100%;height:28px;border-radius:6px;background:linear-gradient(135deg,#3b82f6,#06b6d4)"></div>
+          <div style="font-size:10px;margin-top:4px;color:var(--muted2)">Bleu</div>
+        </button>
+        <button class="theme-btn" data-theme="pink" onclick="applyTheme('pink',this)" title="Rose">
+          <div style="width:100%;height:28px;border-radius:6px;background:linear-gradient(135deg,#ec4899,#f43f5e)"></div>
+          <div style="font-size:10px;margin-top:4px;color:var(--muted2)">Rose</div>
+        </button>
+        <button class="theme-btn" data-theme="orange" onclick="applyTheme('orange',this)" title="Orange">
+          <div style="width:100%;height:28px;border-radius:6px;background:linear-gradient(135deg,#f97316,#eab308)"></div>
+          <div style="font-size:10px;margin-top:4px;color:var(--muted2)">Orange</div>
+        </button>
+        <button class="theme-btn" data-theme="cyan" onclick="applyTheme('cyan',this)" title="Cyan">
+          <div style="width:100%;height:28px;border-radius:6px;background:linear-gradient(135deg,#06b6d4,#6366f1)"></div>
+          <div style="font-size:10px;margin-top:4px;color:var(--muted2)">Cyan</div>
+        </button>
+        <button class="theme-btn" data-theme="dark" onclick="applyTheme('dark',this)" title="Sombre">
+          <div style="width:100%;height:28px;border-radius:6px;background:linear-gradient(135deg,#334155,#1e293b)"></div>
+          <div style="font-size:10px;margin-top:4px;color:var(--muted2)">Sombre</div>
+        </button>
       </div>
     </div>
   </div>
@@ -772,6 +823,68 @@ function closeDrawer(){
   g('mobile-drawer').classList.remove('open');
   g('drawer-overlay').classList.remove('show');
 }
+// ── MOT DE PASSE ──────────────────────────────────────────────────────────────
+async function changePassword(){
+  const cur=g('pw-current').value;
+  const nw=g('pw-new').value;
+  const conf=g('pw-confirm').value;
+  if(!cur||!nw||!conf){notif('Remplissez tous les champs','err');return}
+  if(nw.length<8){notif('Nouveau mot de passe trop court','err');return}
+  if(nw!==conf){notif('Les mots de passe ne correspondent pas','err');return}
+  try{
+    const r=await fetch(API+'/api/auth/change-password',{method:'POST',headers:hdr(),body:JSON.stringify({current_password:cur,new_password:nw})});
+    const d=await r.json();
+    if(r.ok){notif('Mot de passe modifié !');g('pw-current').value='';g('pw-new').value='';g('pw-confirm').value=''}
+    else notif(d.detail||'Erreur','err');
+  }catch(e){notif('Erreur réseau','err')}
+}
+
+// ── THÈME ──────────────────────────────────────────────────────────────────────
+const THEMES = {
+  default: {accent:'#6366f1',accent2:'#818cf8',violet:'#a78bfa',bg:'#04050d',bg2:'#080b18',bg3:'#0c0f20'},
+  red:     {accent:'#ef4444',accent2:'#f87171',violet:'#f97316',bg:'#0d0404',bg2:'#180808',bg3:'#200c0c'},
+  green:   {accent:'#22c55e',accent2:'#4ade80',violet:'#10b981',bg:'#04100a',bg2:'#081a0e',bg3:'#0c2014'},
+  blue:    {accent:'#3b82f6',accent2:'#60a5fa',violet:'#06b6d4',bg:'#04080d',bg2:'#080f18',bg3:'#0c1520'},
+  pink:    {accent:'#ec4899',accent2:'#f472b6',violet:'#f43f5e',bg:'#0d0408',bg2:'#180810',bg3:'#200c16'},
+  orange:  {accent:'#f97316',accent2:'#fb923c',violet:'#eab308',bg:'#0d0804',bg2:'#180f08',bg3:'#20140c'},
+  cyan:    {accent:'#06b6d4',accent2:'#22d3ee',violet:'#6366f1',bg:'#04090d',bg2:'#081318',bg3:'#0c1820'},
+  dark:    {accent:'#64748b',accent2:'#94a3b8',violet:'#475569',bg:'#020204',bg2:'#050508',bg3:'#08080c'},
+};
+
+function applyTheme(name, btn){
+  const t=THEMES[name]||THEMES.default;
+  const root=document.documentElement;
+  root.style.setProperty('--accent',t.accent);
+  root.style.setProperty('--accent2',t.accent2);
+  root.style.setProperty('--violet',t.violet);
+  root.style.setProperty('--bg',t.bg);
+  root.style.setProperty('--bg2',t.bg2);
+  root.style.setProperty('--bg3',t.bg3);
+  // Marquer le bouton actif
+  document.querySelectorAll('.theme-btn').forEach(function(b){b.classList.remove('active')});
+  if(btn)btn.classList.add('active');
+  // Sauvegarder
+  localStorage.setItem('xtheme',name);
+  fetch(API+'/api/user/theme',{method:'POST',headers:hdr(),body:JSON.stringify({theme:name})}).catch(function(){});
+}
+
+async function loadTheme(){
+  // Appliquer depuis localStorage d'abord (instantané)
+  var saved=localStorage.getItem('xtheme');
+  if(saved&&THEMES[saved]){
+    applyTheme(saved,document.querySelector('[data-theme="'+saved+'"]'));
+  }
+  // Puis sync avec le serveur
+  try{
+    const r=await fetch(API+'/api/user/theme',{headers:hdr()});
+    const d=await r.json();
+    if(d.theme&&THEMES[d.theme]){
+      localStorage.setItem('xtheme',d.theme);
+      applyTheme(d.theme,document.querySelector('[data-theme="'+d.theme+'"]'));
+    }
+  }catch(e){}
+}
+
 function logout(){localStorage.clear();window.location.href='login.html'}
 
 // ── ASSISTANT IA ─────────────────────────────────────────────────────────────
@@ -1119,6 +1232,7 @@ async function init(){
     if(params.get('payment')==='cancel')notif('Paiement annule.','err');
     checkBroadcasts();
     checkAnnouncement();
+    loadTheme();
   }catch(e){logout()}
 }
 init();
