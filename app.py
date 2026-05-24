@@ -368,7 +368,7 @@ def init_db():
                 user_id INTEGER REFERENCES users(id),
                 code TEXT UNIQUE NOT NULL,
                 created_at TIMESTAMP DEFAULT NOW(),
-                expires_at TIMESTAMP DEFAULT (NOW() + INTERVAL '15 minutes'),
+                expires_at TIMESTAMP DEFAULT (NOW() + INTERVAL '1 hour'),
                 used BOOLEAN DEFAULT FALSE
             )""")
             db.commit()
@@ -1651,7 +1651,7 @@ async def generate_link_code(user=Depends(get_current_user)):
     else:
         execute(db, "INSERT INTO discord_link_codes (user_id, code) VALUES (?,?)", (user["id"], code))
     db.commit(); db.close()
-    return {"code": code, "expires_in": 900}  # 15 minutes
+    return {"code": code, "expires_in": 3600}  # 1 heure
 
 @app.post("/api/discord/link")
 async def link_discord(request: Request):
@@ -1663,8 +1663,10 @@ async def link_discord(request: Request):
     bot_secret = body.get("bot_secret", "")
     
     # Vérifier le secret du bot
-    if bot_secret != os.getenv("BOT_SECRET", "xtracker_bot_secret_2024"):
-        raise HTTPException(403, "Accès refusé")
+    expected = os.getenv("BOT_SECRET", "xtracker_bot_secret_2024")
+    print(f"[DISCORD LINK] bot_secret recu: '{bot_secret}' expected: '{expected}'")
+    if bot_secret != expected:
+        raise HTTPException(403, "Acces refuse")
     
     if not code or not discord_id:
         raise HTTPException(400, "Code et discord_id requis")
