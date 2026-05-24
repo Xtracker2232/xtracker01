@@ -605,13 +605,15 @@ async def login(data: LoginModel, request: Request):
     # Si c'est un email, chercher UNIQUEMENT par email
     # Si c'est un username, chercher UNIQUEMENT par username (jamais les comptes discord)
     login_val = data.username.strip()
-    if "@" in login_val:
+    if "@" in login_val and "xtracker.local" not in login_val.lower():
+        # Login par email réel (pas @xtracker.local)
         user = fetchone(db, "SELECT * FROM users WHERE email=?", (login_val.lower(),))
-        if user and "xtracker.local" in (user.get("email") or ""):
+        if user and (user.get("email") or "").startswith("discord_"):
             user = None
     else:
+        # Login par username - exclure seulement les comptes Discord (discord_XXXXX)
         user = fetchone(db, "SELECT * FROM users WHERE username=?", (login_val,))
-        if user and "xtracker.local" in (user.get("email") or ""):
+        if user and (user.get("email") or "").startswith("discord_"):
             user = None
     if not user or not pwd_ctx.verify(data.password, user["password"]):
         db.close()
@@ -1305,12 +1307,19 @@ async def send_broadcast(request: Request, admin=Depends(require_admin)):
     target_user_id = body.get("target_user_id")
     if not message:
         raise HTTPException(400, "Message requis")
-    # Convertir en int si fourni
+    # Convertir en int si c'est un ID, sinon chercher par username
     if target_user_id:
         try:
             target_user_id = int(target_user_id)
         except:
-            target_user_id = None
+            # C'est un username - chercher l'ID
+            db2 = get_db()
+            u = fetchone(db2, "SELECT id FROM users WHERE username=?", (str(target_user_id),))
+            db2.close()
+            if u:
+                target_user_id = u["id"]
+            else:
+                raise HTTPException(404, f"Utilisateur '{target_user_id}' introuvable")
     db = get_db()
     if target_user_id:
         execute(db, "INSERT INTO broadcasts (message, target_user_id, created_by) VALUES (?,?,?)", (message, target_user_id, admin["id"]))
