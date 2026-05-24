@@ -152,7 +152,7 @@ tr:hover td{background:rgba(255,255,255,0.02)}
       <div class="table-head"><div class="table-title">Utilisateurs</div><span id="user-count" style="font-size:12px;color:var(--muted2)"></span></div>
       <div style="overflow-x:auto">
         <table>
-          <thead><tr><th>ID</th><th>Utilisateur</th><th>Email</th><th>Credits</th><th>Gratuites</th><th>Role</th><th>Statut</th><th>Comptes/IP</th><th>Actions</th></tr></thead>
+          <thead><tr><th>ID</th><th>Utilisateur</th><th>Email</th><th>Credits</th><th>Gratuites</th><th>Role</th><th>Statut</th><th>Lifetime</th><th>Comptes/IP</th><th>Actions</th></tr></thead>
           <tbody id="users-tbody"><tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">Chargement...</td></tr></tbody>
         </table>
       </div>
@@ -366,6 +366,7 @@ function renderUsers(users){
     html+='<td>'+(u.free_left||0)+'</td>';
     html+='<td><span class="badge b-'+role+'">'+role+'</span></td>';
     html+='<td><span class="badge '+(banned?'b-ban':'b-ok')+'">'+(banned?'Banni':'Actif')+'</span></td>';
+    html+='<td>'+(u.lifetime?'<span style="color:#f59e0b;font-weight:700;font-size:12px">♾ Oui</span>':'<span style="color:var(--muted);font-size:11px">Non</span>')+'</td>';
     var ipCount=u.ip_count||1;
     var ipColor=ipCount>1?'var(--red)':'var(--muted2)';
     html+='<td><span style="color:'+ipColor+';font-weight:'+(ipCount>1?'700':'400')+';font-size:12px" title="'+(u.reg_ip||'IP inconnue')+'">'+ipCount+' compte'+(ipCount>1?'s':'')+'</span></td>';
@@ -410,6 +411,13 @@ function setRole(id,makeAdmin){
     .catch(function(){notif('Erreur reseau','err')});
 }
 
+function toggleLifetime(id,hasLifetime){
+  var msg=hasLifetime?'Retirer le Lifetime ?':'Activer le Lifetime (credits illimités) ?';
+  if(!confirm(msg))return;
+  fetch(API+'/api/admin/users/'+id+'/set-lifetime',{method:'POST',headers:hdr(),credentials:"include",body:JSON.stringify({lifetime:!hasLifetime})})
+    .then(function(r){if(r.ok){notif(hasLifetime?'Lifetime retiré':'Lifetime activé !');loadUsers()}else notif('Erreur','err')})
+    .catch(function(){notif('Erreur reseau','err')});
+}
 function toggleBan(id,doBan){
   fetch(API+'/api/admin/users/'+id,{method:'PATCH',headers:hdr(),body:JSON.stringify({banned:doBan?true:false})})
     .then(function(r){if(r.ok){notif(doBan?'Banni':'Debanni');loadUsers()}else notif('Erreur','err')})

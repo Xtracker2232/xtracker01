@@ -155,9 +155,10 @@ def filter_results(results: list) -> list:
     return clean
 
 CREDIT_PACKS = {
-    "starter":    {"credits": 20,   "price_eur": 5.00,  "label": "Starter"},
-    "pro":        {"credits": 200,  "price_eur": 14.99, "label": "Pro"},
-    "enterprise": {"credits": 1000, "price_eur": 49.99, "label": "Enterprise"},
+    "starter":    {"credits": 20,   "price_eur": 5.00,   "label": "Starter"},
+    "pro":        {"credits": 200,  "price_eur": 14.99,  "label": "Pro"},
+    "enterprise": {"credits": 1000, "price_eur": 49.99,  "label": "Enterprise"},
+    "lifetime":   {"credits": -1,   "price_eur": 150.00, "label": "Lifetime"},
 }
 
 app = FastAPI(title="Xtracker API")
@@ -271,7 +272,9 @@ def init_db():
             last_login TIMESTAMP,
             banned     BOOLEAN DEFAULT FALSE,
             stripe_id  TEXT,
-            auth_type  TEXT DEFAULT 'local'
+            auth_type  TEXT DEFAULT 'local',
+            lifetime   BOOLEAN DEFAULT FALSE,
+            reg_ip     TEXT DEFAULT NULL
         )""")
         cur.execute("""CREATE TABLE IF NOT EXISTS searches (
             id           SERIAL PRIMARY KEY,
@@ -344,9 +347,10 @@ def init_db():
             cur.execute("UPDATE users SET auth_type='local' WHERE auth_type IS NULL")
             db.commit()
         except: pass
-        # Migration reg_ip
+        # Migration reg_ip et lifetime
         try:
             cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS reg_ip TEXT DEFAULT NULL")
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS lifetime BOOLEAN DEFAULT FALSE")
             db.commit()
         except: pass
         # Migration nouvelles tables
@@ -640,7 +644,8 @@ async def me(user=Depends(get_current_user)):
         "id": user["id"], "email": user["email"],
         "username": user["username"], "role": user["role"],
         "credits": user["credits"], "free_left": user["free_left"],
-        "created_at": user["created_at"]
+        "created_at": user["created_at"],
+        "lifetime": bool(user.get("lifetime", False))
     }
 
 # ── SEARCH ────────────────────────────────────────────────────────────────────
@@ -662,8 +667,11 @@ async def call_brix(method: str, path: str, body: dict = None):
 
 def deduct_and_log(user_id: int, query_data: dict, result_count: int):
     db = get_db()
-    user = fetchone(db, "SELECT free_left, credits FROM users WHERE id=?", (user_id,))
-    if user["free_left"] > 0:
+    user = fetchone(db, "SELECT free_left, credits, lifetime FROM users WHERE id=?", (user_id,))
+    # Lifetime = recherches illimitées, pas de déduction
+    if user.get("lifetime"):
+        cost = 0
+    elif user["free_left"] > 0:
         execute(db, "UPDATE users SET free_left=free_left-1 WHERE id=?", (user_id,))
         cost = 0
     elif user["credits"] > 0:
@@ -681,7 +689,7 @@ def deduct_and_log(user_id: int, query_data: dict, result_count: int):
 
 @app.post("/api/search")
 async def search(data: SearchModel, user=Depends(get_current_user)):
-    if user["free_left"] <= 0 and user["credits"] <= 0:
+    if not user.get("lifetime") and user["free_left"] <= 0 and user["credits"] <= 0:
         raise HTTPException(402, "Plus de crédits")
     payload = {"flexible": data.flexible, "per_page": 100}
     fields = [
@@ -802,7 +810,7 @@ async def search(data: SearchModel, user=Depends(get_current_user)):
 
 @app.post("/api/lookup")
 async def lookup(data: LookupModel, user=Depends(get_current_user)):
-    if user["free_left"] <= 0 and user["credits"] <= 0:
+    if not user.get("lifetime") and user["free_left"] <= 0 and user["credits"] <= 0:
         raise HTTPException(402, "Plus de crédits")
     val = data.value.strip()
     if "@" in val:
@@ -986,11 +994,13 @@ async def sumup_success(request: Request):
         db = get_db()
         existing = fetchone(db, "SELECT id FROM transactions WHERE stripe_id=?", (order_id,))
         if not existing:
-            execute(db, "UPDATE users SET credits=credits+? WHERE id=?", (credits, uid))
+            if pack_id == "lifetime":
+                execute(db, "UPDATE users SET lifetime=TRUE, credits=999999 WHERE id=?", (uid,))
+            else:
+                execute(db, "UPDATE users SET credits=credits+? WHERE id=?", (credits, uid))
             execute(db, "INSERT INTO transactions (user_id, type, credits, amount_eur, stripe_id, status) VALUES (?,?,?,?,?,'completed')",
                     (uid, "purchase", credits, amount, order_id))
             db.commit()
-            print(f"[SUMUP] Credits ajoutes: uid={uid} credits={credits}")
         else:
             print(f"[SUMUP] Transaction deja traitee: {order_id}")
         db.close()
@@ -1035,10 +1045,10 @@ async def admin_users(admin=Depends(require_admin), page: int = 1, search: str =
     db     = get_db()
     offset = (page - 1) * 20
     if search:
-        rows  = fetchall(db, "SELECT u.id,u.email,u.username,u.role,u.credits,u.free_left,u.created_at,u.last_login,u.banned,u.reg_ip,(SELECT COUNT(*) FROM users u2 WHERE u2.reg_ip=u.reg_ip AND u.reg_ip IS NOT NULL) as ip_count FROM users u WHERE u.email LIKE ? OR u.username LIKE ? ORDER BY u.created_at DESC LIMIT 20 OFFSET ?", (f"%{search}%", f"%{search}%", offset))
+        rows  = fetchall(db, "SELECT u.id,u.email,u.username,u.role,u.credits,u.free_left,u.created_at,u.last_login,u.banned,u.reg_ip,u.lifetime,(SELECT COUNT(*) FROM users u2 WHERE u2.reg_ip=u.reg_ip AND u.reg_ip IS NOT NULL) as ip_count FROM users u WHERE u.email LIKE ? OR u.username LIKE ? ORDER BY u.created_at DESC LIMIT 20 OFFSET ?", (f"%{search}%", f"%{search}%", offset))
         total_r = fetchone(db, "SELECT COUNT(*) as c FROM users WHERE email LIKE ? OR username LIKE ?", (f"%{search}%", f"%{search}%"))
     else:
-        rows  = fetchall(db, "SELECT u.id,u.email,u.username,u.role,u.credits,u.free_left,u.created_at,u.last_login,u.banned,u.reg_ip,(SELECT COUNT(*) FROM users u2 WHERE u2.reg_ip=u.reg_ip AND u.reg_ip IS NOT NULL) as ip_count FROM users u ORDER BY u.created_at DESC LIMIT 20 OFFSET ?", (offset,))
+        rows  = fetchall(db, "SELECT u.id,u.email,u.username,u.role,u.credits,u.free_left,u.created_at,u.last_login,u.banned,u.reg_ip,u.lifetime,(SELECT COUNT(*) FROM users u2 WHERE u2.reg_ip=u.reg_ip AND u.reg_ip IS NOT NULL) as ip_count FROM users u ORDER BY u.created_at DESC LIMIT 20 OFFSET ?", (offset,))
         total_r = fetchone(db, "SELECT COUNT(*) as c FROM users", ())
     total = total_r["c"] if total_r else 0
     db.close()
@@ -1351,6 +1361,118 @@ async def get_announcement(user=Depends(get_current_user)):
     row = fetchone(db, "SELECT * FROM announcements ORDER BY created_at DESC LIMIT 1", ())
     db.close()
     return row or {}
+
+# ── LOOKUP PLAQUE ─────────────────────────────────────────────────────────────
+@app.get("/api/lookup/plaque/{plaque}")
+async def lookup_plaque(plaque: str, user=Depends(get_current_user)):
+    if not user.get("lifetime") and user["free_left"] <= 0 and user["credits"] <= 0:
+        raise HTTPException(402, "Plus de crédits")
+    plaque_clean = plaque.upper().replace("-","").replace(" ","")
+    # Recherche via BrixHub avec le champ vin_plaque
+    try:
+        result = await call_brix("POST", "/search", {
+            "vin_plaque": plaque_clean,
+            "flexible": False,
+            "per_page": 5
+        })
+        results = result.get("data", {}).get("results", [])
+        results = filter_results(results)
+        # Extraire les infos véhicule
+        vehicles = []
+        for r in results:
+            if r.get("vin_plaque") or r.get("immatriculation") or r.get("marque"):
+                vehicles.append({
+                    "plaque": r.get("vin_plaque") or r.get("immatriculation", plaque_clean),
+                    "marque": r.get("marque", ""),
+                    "modele": r.get("modele", ""),
+                    "proprietaire": f"{r.get('prenom','')} {r.get('nom_famille','')}".strip(),
+                    "adresse": r.get("adresse", ""),
+                    "ville": r.get("ville", ""),
+                    "code_postal": r.get("code_postal", ""),
+                    "date_naissance": r.get("date_naissance", ""),
+                    "sources": r.get("_sources", [])
+                })
+        if results:
+            updated = deduct_and_log(user["id"], {"vin_plaque": plaque_clean}, len(results))
+        return {
+            "plaque": plaque_clean,
+            "results": vehicles,
+            "raw": results,
+            "total": len(results),
+            "free_left": user["free_left"],
+            "credits": user["credits"]
+        }
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+# ── EXPORT PDF ─────────────────────────────────────────────────────────────────
+@app.post("/api/export/pdf")
+async def export_pdf(request: Request, user=Depends(get_current_user)):
+    """Génère un PDF d'une fiche personne"""
+    body = await request.json()
+    profile = body.get("profile", {})
+    if not profile:
+        raise HTTPException(400, "Profil requis")
+    
+    name = f"{profile.get('prenom','')} {profile.get('nom_famille','')}".strip() or "Profil inconnu"
+    
+    # Générer HTML pour le PDF
+    fields = []
+    labels = {
+        "prenom": "Prénom", "nom_famille": "Nom", "date_naissance": "Date de naissance",
+        "email": "Email", "telephone": "Téléphone", "mobile": "Mobile",
+        "adresse": "Adresse", "code_postal": "Code postal", "ville": "Ville",
+        "region": "Région", "pays": "Pays", "nir": "NIR (Sécurité sociale)",
+        "iban": "IBAN", "siret": "SIRET", "societe": "Société",
+        "profession": "Profession", "vin_plaque": "Plaque/VIN", "marque": "Marque", "modele": "Modèle"
+    }
+    skip = {"_confidence", "_sources", "_es_ids", "_source_files", "famille", "membres_famille"}
+    
+    for k, v in profile.items():
+        if k not in skip and v and isinstance(v, str) and v.strip():
+            label = labels.get(k, k)
+            fields.append(f"<tr><td style='font-weight:600;color:#666;padding:6px 12px;border-bottom:1px solid #eee;width:40%'>{label}</td><td style='padding:6px 12px;border-bottom:1px solid #eee'>{v}</td></tr>")
+    
+    famille = profile.get("famille", [])
+    famille_html = ""
+    if famille:
+        membres = "".join([f"<li style='padding:4px 0'>{m.get('prenom','')} {m.get('nom_famille','')} {('- ' + m.get('lien','')) if m.get('lien') else ''} {('né le ' + m.get('date_naissance','')) if m.get('date_naissance') else ''}</li>" for m in famille])
+        famille_html = f"<h3 style='margin:16px 0 8px;color:#333'>Famille associée</h3><ul style='list-style:none;padding:0'>{membres}</ul>"
+    
+    sources = profile.get("_sources", [])
+    sources_html = ""
+    if sources:
+        sources_html = f"<p style='font-size:11px;color:#999;margin-top:16px'>Sources : {', '.join(sources)}</p>"
+    
+    html = f"""<!DOCTYPE html><html><head><meta charset='UTF-8'>
+    <style>body{{font-family:Arial,sans-serif;margin:40px;color:#333}}h1{{color:#6366f1;font-size:22px;margin-bottom:4px}}
+    .badge{{background:#6366f1;color:#fff;padding:2px 8px;border-radius:4px;font-size:11px}}
+    table{{width:100%;border-collapse:collapse;margin:16px 0}}</style></head>
+    <body>
+    <h1>Fiche — {name}</h1>
+    <span class='badge'>Xtracker</span>
+    <p style='color:#999;font-size:11px;margin:8px 0'>Généré le {__import__('datetime').datetime.now().strftime('%d/%m/%Y à %H:%M')}</p>
+    <table>{"".join(fields)}</table>
+    {famille_html}{sources_html}
+    </body></html>"""
+    
+    from fastapi.responses import HTMLResponse
+    return HTMLResponse(content=html, headers={
+        "Content-Disposition": f"attachment; filename=xtracker_{name.replace(' ','_')}.html"
+    })
+
+# ── ADMIN LIFETIME ─────────────────────────────────────────────────────────────
+@app.post("/api/admin/users/{user_id}/set-lifetime")
+async def admin_set_lifetime(user_id: int, request: Request, admin=Depends(require_admin)):
+    body = await request.json()
+    lifetime = body.get("lifetime", False)
+    db = get_db()
+    if lifetime:
+        execute(db, "UPDATE users SET lifetime=TRUE, credits=999999 WHERE id=?", (user_id,))
+    else:
+        execute(db, "UPDATE users SET lifetime=FALSE WHERE id=?", (user_id,))
+    db.commit(); db.close()
+    return {"ok": True}
 
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
 

@@ -282,6 +282,7 @@ select option{background:var(--bg2)}
             <button class="ptab active" id="ptab-fr" onclick="switchPTab('fr',this)">Recherche FR</button>
             <button class="ptab" id="ptab-email" onclick="switchPTab('email',this)">Email</button>
             <button class="ptab" id="ptab-pro" onclick="switchPTab('pro',this)">Lookup Pro</button>
+            <button class="ptab" id="ptab-plaque" onclick="switchPTab('plaque',this)">Plaque</button>
           </div>
           <div class="panel-body">
             <div id="pane-fr">
@@ -354,6 +355,10 @@ select option{background:var(--bg2)}
               <div class="fgroup" style="margin-bottom:10px"><label>Email, telephone ou IBAN</label><input id="l-val" placeholder="jordan@gmail.com / 0612345678 / FR76..."></div>
               <button class="btn btn-a" style="width:100%" id="btn-lookup" onclick="doLookup()">Lookup</button>
             </div>
+            <div id="pane-plaque" style="display:none">
+              <div class="fgroup" style="margin-bottom:10px"><label>Plaque d'immatriculation</label><input id="plaque-val" placeholder="AB-123-CD" style="text-transform:uppercase"></div>
+              <button class="btn btn-a" style="width:100%" id="btn-plaque" onclick="doPlaqueLookup()">Rechercher le vehicule</button>
+            </div>
           </div>
         </div>
       </div>
@@ -390,6 +395,13 @@ select option{background:var(--bg2)}
       <div class="pack feat"><div class="pack-tag">Pro ⭐</div><div class="pack-credits">200 credits</div><div class="pack-price"><sup>€</sup>14.99</div><div class="pack-per">0.07€ / recherche</div><button class="pack-btn feat" onclick="buyPack('pro')">Acheter</button></div>
       <div class="pack"><div class="pack-tag">Enterprise</div><div class="pack-credits">1000 credits</div><div class="pack-price"><sup>€</sup>49.99</div><div class="pack-per">0.05€ / recherche</div><button class="pack-btn" onclick="buyPack('enterprise')">Acheter</button></div>
     </div>
+    <div class="pack" style="margin-top:12px;background:linear-gradient(135deg,rgba(245,158,11,0.08),rgba(251,191,36,0.04));border-color:rgba(245,158,11,0.3)">
+      <div class="pack-tag" style="color:#f59e0b">Lifetime ♾️</div>
+      <div class="pack-credits">Credits illimités à vie</div>
+      <div class="pack-price" style="color:#f59e0b"><sup>€</sup>150</div>
+      <div class="pack-per">Paiement unique · Accès illimité pour toujours</div>
+      <button class="pack-btn" style="background:linear-gradient(135deg,#f59e0b,#d97706)" onclick="buyPack('lifetime')">Obtenir le Lifetime</button>
+    </div>
   </div>
 
   <!-- PAGE PROFIL -->
@@ -398,6 +410,7 @@ select option{background:var(--bg2)}
       <div class="profile-row"><div class="profile-label">Email</div><div class="profile-val" id="p-email">—</div></div>
       <div class="profile-row"><div class="profile-label">Nom d utilisateur</div><div class="profile-val" id="p-username">—</div></div>
       <div class="profile-row"><div class="profile-label">Role</div><div class="profile-val" id="p-role">—</div></div>
+      <div class="profile-row" id="p-lifetime-row" style="display:none"><div class="profile-label">Accès</div><div class="profile-val"><span style="background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(251,191,36,0.1));border:1px solid rgba(245,158,11,0.3);color:#f59e0b;padding:3px 10px;border-radius:6px;font-size:12px;font-weight:600">♾️ Lifetime — Credits illimités</span></div></div>
       <div class="profile-row"><div class="profile-label">Inscrit le</div><div class="profile-val" id="p-date">—</div></div>
       <div style="margin-top:6px;padding-top:14px;border-top:1px solid var(--border)">
         <button onclick="logout()" style="width:100%;padding:10px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid rgba(239,68,68,0.2);background:rgba(239,68,68,0.06);color:#ef4444;font-family:inherit;transition:all .2s">Deconnexion</button>
@@ -535,7 +548,7 @@ function goTo(page,btn){
 
 function switchPTab(t,btn){
   document.querySelectorAll('.ptab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
-  ['fr','email','pro'].forEach(id=>{const el=g('pane-'+id);if(el)el.style.display=id===t?'block':'none'});
+  ['fr','email','pro','plaque'].forEach(id=>{const el=g('pane-'+id);if(el)el.style.display=id===t?'block':'none'});
   g('results').innerHTML='';g('state-empty').style.display='block';
 }
 
@@ -652,6 +665,45 @@ async function doLookup(){
   finally{setLoad('btn-lookup',false,'Lookup')}
 }
 
+async function doPlaqueLookup(){
+  const plaque=g('plaque-val')&&g('plaque-val').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(!plaque||plaque.length<4){showErr('Entrez une plaque valide.');return}
+  setLoad('btn-plaque',true,'Rechercher le véhicule');
+  try{
+    const r=await fetch(API+'/api/lookup/plaque/'+plaque,{headers:hdr()});
+    const d=await r.json();
+    if(r.status===402){showNoCredits();return}
+    if(!r.ok){showErr(d.detail||'Erreur');return}
+    if(d.free_left!==undefined){
+      g('paid-credits').textContent=(parseInt(d.free_left)||0)+(parseInt(d.credits)||0);
+    }
+    g('state-empty').style.display='none';
+    if(!d.results||!d.results.length){
+      g('results').innerHTML='<div class="state"><div class="state-ico">🚗</div><div class="state-title">Aucun véhicule trouvé</div><div class="state-sub">Vérifiez la plaque et réessayez.</div></div>';
+      return;
+    }
+    renderResults(d.raw,d.total,0,d.free_left,d.credits);
+  }catch(e){showErr('Erreur réseau')}
+  finally{setLoad('btn-plaque',false,'Rechercher le véhicule')}
+}
+
+async function exportPDF(idx){
+  const p=window['_r'+idx];if(!p)return;
+  try{
+    const r=await fetch(API+'/api/export/pdf',{method:'POST',headers:hdr(),body:JSON.stringify({profile:p})});
+    if(!r.ok){notif('Erreur export','err');return}
+    const blob=await r.blob();
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    const name=((p.prenom||'')+'_'+(p.nom_famille||'')).trim()||'fiche';
+    a.download='xtracker_'+name+'.html';
+    a.click();
+    URL.revokeObjectURL(url);
+    notif('PDF téléchargé !');
+  }catch(e){notif('Erreur export','err')}
+}
+
 async function buyPack(packId){
   try{
     const r=await fetch(API+'/api/credits/checkout/'+packId,{method:'POST',headers:hdr(),credentials:'include'});
@@ -706,6 +758,7 @@ async function loadProfile(){
     const d=await r.json();
     g('p-email').textContent=d.email||'—';g('p-username').textContent=d.username||'—';
     g('p-role').textContent=d.role||'—';g('p-date').textContent=d.created_at?new Date(d.created_at).toLocaleDateString('fr-FR'):'—';
+    if(d.lifetime&&g('p-lifetime-row'))g('p-lifetime-row').style.display='flex';
   }catch(e){}
 }
 
