@@ -333,6 +333,8 @@ function loadStats(){
     g('s-searches').textContent=(d.total_searches||0).toLocaleString();
     g('s-revenue').textContent=(d.revenue_eur||0).toFixed(2)+'EUR';
     g('s-banned').textContent=(d.banned||0);
+    if(g('s-discord'))g('s-discord').textContent=(d.discord_linked||0);
+    if(g('s-lifetime'))g('s-lifetime').textContent=(d.lifetime_users||0);
     g('s-new').textContent=(d.new_today||0);
     g('s-today').textContent=(d.searches_today||0);
     g('s-credits').textContent=(d.credits_sold||0);
