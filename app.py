@@ -32,7 +32,7 @@ else:
 # ── CONFIG ────────────────────────────────────────────────────────────────────
 SECRET_KEY     = os.getenv("SECRET_KEY", "")
 ALGORITHM      = "HS256"
-TOKEN_EXPIRE   = 60 * 24 * 7
+TOKEN_EXPIRE   = 60 * 24 * 365  # 1 an
 BRIX_KEY       = os.getenv("BRIX_API_KEY", "")
 BRIX_BASE      = "https://brixhub.net/api/v1"
 SUMUP_SK = os.getenv("SUMUP_SK", "")
