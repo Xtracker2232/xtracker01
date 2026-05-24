@@ -344,6 +344,11 @@ def init_db():
             cur.execute("UPDATE users SET auth_type='local' WHERE auth_type IS NULL")
             db.commit()
         except: pass
+        # Migration reg_ip
+        try:
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS reg_ip TEXT DEFAULT NULL")
+            db.commit()
+        except: pass
         # Migration nouvelles tables
         try:
             cur.execute("""CREATE TABLE IF NOT EXISTS tickets (
@@ -562,9 +567,9 @@ async def register(data: RegisterModel, request: Request):
     free_left = 0 if ip_used else 5
     hashed = pwd_ctx.hash(data.password)
     if is_pg():
-        db_id = execute(db, "INSERT INTO users (email, password, username, free_left) VALUES (?,?,?,?) RETURNING id", (fake_email, hashed, data.username, free_left))
+        db_id = execute(db, "INSERT INTO users (email, password, username, free_left, reg_ip) VALUES (?,?,?,?,?) RETURNING id", (fake_email, hashed, data.username, free_left, ip))
     else:
-        db_id = execute(db, "INSERT INTO users (email, password, username, free_left) VALUES (?,?,?,?)", (fake_email, hashed, data.username, free_left))
+        db_id = execute(db, "INSERT INTO users (email, password, username, free_left, reg_ip) VALUES (?,?,?,?,?)", (fake_email, hashed, data.username, free_left, ip))
     if not ip_used:
         try:
             execute(db, "INSERT INTO ip_used (ip) VALUES (?)", (ip,))
@@ -1030,10 +1035,10 @@ async def admin_users(admin=Depends(require_admin), page: int = 1, search: str =
     db     = get_db()
     offset = (page - 1) * 20
     if search:
-        rows  = fetchall(db, "SELECT id,email,username,role,credits,free_left,created_at,last_login,banned FROM users WHERE email LIKE ? OR username LIKE ? ORDER BY created_at DESC LIMIT 20 OFFSET ?", (f"%{search}%", f"%{search}%", offset))
+        rows  = fetchall(db, "SELECT u.id,u.email,u.username,u.role,u.credits,u.free_left,u.created_at,u.last_login,u.banned,u.reg_ip,(SELECT COUNT(*) FROM users u2 WHERE u2.reg_ip=u.reg_ip AND u.reg_ip IS NOT NULL) as ip_count FROM users u WHERE u.email LIKE ? OR u.username LIKE ? ORDER BY u.created_at DESC LIMIT 20 OFFSET ?", (f"%{search}%", f"%{search}%", offset))
         total_r = fetchone(db, "SELECT COUNT(*) as c FROM users WHERE email LIKE ? OR username LIKE ?", (f"%{search}%", f"%{search}%"))
     else:
-        rows  = fetchall(db, "SELECT id,email,username,role,credits,free_left,created_at,last_login,banned FROM users ORDER BY created_at DESC LIMIT 20 OFFSET ?", (offset,))
+        rows  = fetchall(db, "SELECT u.id,u.email,u.username,u.role,u.credits,u.free_left,u.created_at,u.last_login,u.banned,u.reg_ip,(SELECT COUNT(*) FROM users u2 WHERE u2.reg_ip=u.reg_ip AND u.reg_ip IS NOT NULL) as ip_count FROM users u ORDER BY u.created_at DESC LIMIT 20 OFFSET ?", (offset,))
         total_r = fetchone(db, "SELECT COUNT(*) as c FROM users", ())
     total = total_r["c"] if total_r else 0
     db.close()
@@ -1042,6 +1047,12 @@ async def admin_users(admin=Depends(require_admin), page: int = 1, search: str =
 @app.patch("/api/admin/users/{user_id}")
 async def admin_update(user_id: int, data: AdminUserUpdate, admin=Depends(require_admin)):
     db = get_db()
+    # Protéger le compte admin principal
+    target = fetchone(db, "SELECT email FROM users WHERE id=?", (user_id,))
+    if target and target.get("email") == "admin@xtracker.io":
+        if data.banned is not None or data.role is not None:
+            db.close()
+            raise HTTPException(403, "Ce compte admin ne peut pas être modifié")
     if data.credits is not None:
         safe_credits = min(int(data.credits), 1000)  # Max 1000 credits
         execute(db, "UPDATE users SET credits=credits+? WHERE id=?", (safe_credits, user_id))
@@ -1187,6 +1198,11 @@ async def admin_set_role(user_id: int, request: Request, admin=Depends(require_a
     if role not in ["user", "admin"]:
         raise HTTPException(400, "Role invalide")
     db = get_db()
+    # Protéger le compte admin principal
+    target = fetchone(db, "SELECT email FROM users WHERE id=?", (user_id,))
+    if target and target.get("email") == "admin@xtracker.io":
+        db.close()
+        raise HTTPException(403, "Ce compte admin ne peut pas être modifié")
     execute(db, "UPDATE users SET role=? WHERE id=?", (role, user_id))
     db.commit()
     db.close()
