@@ -255,9 +255,13 @@ select option{background:var(--bg2)}
     <button class="nav-btn" id="nav-credits" onclick="goTo('credits',this)">Credits</button>
     <button class="nav-btn" id="nav-assistant" onclick="goTo('assistant',this)">Assistant IA</button>
     <button class="nav-btn" id="nav-profile" onclick="goTo('profile',this)">Profil</button>
+    <button class="nav-btn" id="nav-tickets" onclick="goTo('tickets',this)">Support</button>
     <a href="https://discord.gg/bYSDCmgcRz" target="_blank" class="nav-btn">Discord</a>
   </div>
   <div class="navbar-right">
+    <button id="notif-bell" onclick="toggleNotifs()" style="position:relative;background:none;border:none;cursor:pointer;padding:6px;color:var(--muted2);font-size:18px">
+      🔔<span id="notif-dot" style="display:none;position:absolute;top:2px;right:2px;width:8px;height:8px;background:#ef4444;border-radius:50%"></span>
+    </button>
     <a href="admin.html" id="admin-btn" style="display:none;padding:6px 12px;border-radius:7px;font-size:12px;font-weight:600;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#ef4444;text-decoration:none">Panel Admin</a>
     <div class="credits-pill desktop-only"><span>⚡</span><span id="paid-credits">—</span></div>
     <span id="user-name" style="font-size:12px;color:var(--muted2)" class="desktop-only"></span>
@@ -401,6 +405,24 @@ select option{background:var(--bg2)}
     </div>
   </div>
 
+  <!-- PAGE TICKETS -->
+  <div class="page" id="page-tickets">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800">Support</div>
+      <button class="btn btn-a" onclick="showNewTicket()">Nouveau ticket</button>
+    </div>
+    <div id="new-ticket-form" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:14px">
+      <div class="fgroup" style="margin-bottom:10px"><label>Sujet</label><input id="ticket-subject" placeholder="Décrivez votre problème en quelques mots"></div>
+      <div class="fgroup" style="margin-bottom:10px"><label>Message</label><textarea id="ticket-msg" rows="4" style="width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:inherit;font-size:13px;resize:vertical" placeholder="Décrivez votre problème en détail..."></textarea></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-a" onclick="submitTicket()">Envoyer</button>
+        <button class="btn btn-g" onclick="hideNewTicket()">Annuler</button>
+      </div>
+    </div>
+    <div id="ticket-list"></div>
+    <div id="ticket-detail" style="display:none"></div>
+  </div>
+
   <!-- PAGE ASSISTANT -->
   <div class="page" id="page-assistant">
     <div style="display:flex;flex-direction:column;height:calc(100vh - 90px);max-width:800px;margin:0 auto;width:100%">
@@ -445,6 +467,7 @@ select option{background:var(--bg2)}
   <button class="drawer-item" onclick="closeDrawer();goTo('profile',document.getElementById('nav-profile'))">
     <span>Profil</span>
   </button>
+  <button class="drawer-item" onclick="closeDrawer();goTo('tickets',document.getElementById('nav-tickets'))"><span class="d-ico">🎫</span><span>Support</span></button>
   <a href="https://discord.gg/bYSDCmgcRz" target="_blank" class="drawer-item" onclick="closeDrawer()">
     <span>Discord</span>
   </a>
@@ -452,6 +475,21 @@ select option{background:var(--bg2)}
   <button class="drawer-item" onclick="closeDrawer();logout()" style="color:#ef4444">
     <span>Deconnexion</span>
   </button>
+</div>
+
+<!-- BROADCAST POPUP -->
+<div id="broadcast-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px">
+  <div id="broadcast-box" style="background:#1a0a00;border:2px solid #f97316;border-radius:16px;padding:28px;max-width:500px;width:100%;text-align:center;position:relative;animation:fadeUp .3s ease">
+    <div style="font-size:28px;margin-bottom:12px">📢</div>
+    <div id="broadcast-msg" style="font-size:15px;color:#fdba74;line-height:1.6;font-weight:500"></div>
+    <button id="broadcast-close" onclick="closeBroadcast()" style="display:none;margin-top:18px;padding:10px 24px;border-radius:8px;background:#f97316;color:#fff;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Fermer</button>
+  </div>
+</div>
+
+<!-- NOTIF PANEL -->
+<div id="notif-panel" style="display:none;position:fixed;top:58px;right:16px;z-index:150;background:var(--bg2);border:1px solid var(--border);border-radius:12px;width:300px;box-shadow:0 8px 32px rgba(0,0,0,.5)">
+  <div style="padding:12px 16px;border-bottom:1px solid var(--border);font-family:'Syne',sans-serif;font-size:14px;font-weight:700">Annonces</div>
+  <div id="notif-content" style="padding:12px 16px;font-size:13px;color:var(--muted2)">Aucune annonce</div>
 </div>
 
 <script>
@@ -474,11 +512,12 @@ function goTo(page,btn){
 
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   const pg=g('page-'+page);if(pg)pg.classList.add('active');
-  const titles={search:'Recherche',history:'Historique',credits:'Credits',profile:'Profil',assistant:'Assistant IA'};
+  const titles={search:'Recherche',history:'Historique',credits:'Credits',profile:'Profil',assistant:'Assistant IA',tickets:'Support'};
 
   if(page==='history')loadHistory();
   if(page==='credits')loadCredits();
   if(page==='profile')loadProfile();
+  if(page==='tickets')loadTickets();
   if(page==='assistant' && !chatWelcomeDone){
     chatWelcomeDone=true;
     const welcome=document.createElement('div');
@@ -886,6 +925,115 @@ function checkMobile(){
 checkMobile();
 window.addEventListener('resize', checkMobile);
 
+// ── TICKETS ──────────────────────────────────────────────────────────────────
+function showNewTicket(){g('new-ticket-form').style.display='block'}
+function hideNewTicket(){g('new-ticket-form').style.display='none'}
+
+async function submitTicket(){
+  const subject=g('ticket-subject').value.trim();
+  const msg=g('ticket-msg').value.trim();
+  if(!subject||!msg){notif('Remplissez tous les champs','err');return}
+  const r=await fetch(API+'/api/tickets',{method:'POST',headers:hdr(),body:JSON.stringify({subject,message:msg})});
+  if(r.ok){notif('Ticket envoyé !');hideNewTicket();loadTickets();g('ticket-subject').value='';g('ticket-msg').value=''}
+  else notif('Erreur','err');
+}
+
+async function loadTickets(){
+  const r=await fetch(API+'/api/tickets',{headers:hdr()});
+  const tickets=await r.json();
+  const el=g('ticket-list');
+  g('ticket-detail').style.display='none';
+  if(!tickets.length){el.innerHTML='<div class="state"><div class="state-ico">🎫</div><div class="state-title">Aucun ticket</div><div class="state-sub">Ouvrez un ticket pour contacter le support.</div></div>';return}
+  el.innerHTML=tickets.map(t=>'<div class="history-item" style="cursor:pointer" onclick="openTicket('+t.id+')"><div><div class="history-q">'+t.subject+'</div><div style="font-size:11px;color:var(--muted2);margin-top:2px">'+new Date(t.created_at).toLocaleDateString('fr-FR')+'</div></div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;background:'+(t.status==='open'?'rgba(34,197,94,0.1)':'rgba(100,116,139,0.1)')+';color:'+(t.status==='open'?'var(--green)':'var(--muted2)')+'">'+t.status+'</span>'+(t.unread>0?'<span style="background:#ef4444;color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px">'+t.unread+'</span>':'')+'</div></div>').join('');
+}
+
+async function openTicket(id){
+  const r=await fetch(API+'/api/tickets/'+id,{headers:hdr()});
+  const d=await r.json();
+  const el=g('ticket-detail');
+  g('ticket-list').style.display='none';
+  el.style.display='block';
+  const msgs=d.messages.map(m=>'<div style="display:flex;flex-direction:column;align-items:'+(m.is_admin?'flex-start':'flex-end')+';margin-bottom:10px"><div style="background:'+(m.is_admin?'var(--bg2)':'rgba(99,102,241,0.15)')+';border:1px solid var(--border);border-radius:10px;padding:10px 14px;max-width:80%"><div style="font-size:11px;color:var(--muted2);margin-bottom:4px">'+(m.is_admin?'Support':'Vous')+' · '+new Date(m.created_at).toLocaleDateString('fr-FR',{hour:'2-digit',minute:'2-digit'})+'</div><div style="font-size:13px">'+m.message+'</div></div></div>').join('');
+  var backBtn='<button onclick="closeTicketDetail()" style="background:none;border:none;color:var(--muted2);cursor:pointer;font-family:inherit;margin-bottom:12px">← Retour</button>';
+  var replySection=d.ticket.status==='open'?'<div style="display:flex;gap:8px;margin-top:12px"><textarea id="reply-msg" rows="2" style="flex:1;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:inherit;font-size:13px;resize:none" placeholder="Votre réponse..."></textarea><div style="display:flex;flex-direction:column;gap:6px"><button class="btn btn-a" onclick="replyTicket('+id+')">Envoyer</button><button class="btn btn-g" style="font-size:11px" onclick="closeTicket('+id+')">Fermer</button></div></div>':'<div style="font-size:12px;color:var(--muted2);text-align:center;padding:10px">Ticket fermé</div>';
+  el.innerHTML=backBtn+'<div style="font-family:Syne,sans-serif;font-size:16px;font-weight:700;margin-bottom:4px">'+d.ticket.subject+'</div><div style="font-size:11px;color:var(--muted2);margin-bottom:16px">Statut : '+d.ticket.status+'</div><div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;max-height:350px;overflow-y:auto" id="msgs-wrap">'+msgs+'</div>'+replySection;
+}
+
+function closeTicketDetail(){
+  g('ticket-detail').style.display='none';
+  g('ticket-list').style.display='block';
+  loadTickets();
+}
+async function replyTicket(id){
+  const msg=g('reply-msg').value.trim();
+  if(!msg)return;
+  const r=await fetch(API+'/api/tickets/'+id+'/reply',{method:'POST',headers:hdr(),body:JSON.stringify({message:msg})});
+  if(r.ok){openTicket(id)}else notif('Erreur','err');
+}
+
+async function closeTicket(id){
+  if(!confirm('Fermer ce ticket ?'))return;
+  await fetch(API+'/api/tickets/'+id+'/close',{method:'POST',headers:hdr()});
+  loadTickets();
+}
+
+// ── BROADCASTS ───────────────────────────────────────────────────────────────
+let broadcastQueue=[];
+let currentBroadcast=null;
+
+async function checkBroadcasts(){
+  try{
+    const r=await fetch(API+'/api/broadcasts',{headers:hdr()});
+    const d=await r.json();
+    if(d.length>0){broadcastQueue=d;showNextBroadcast()}
+  }catch(e){}
+}
+
+function showNextBroadcast(){
+  if(!broadcastQueue.length)return;
+  currentBroadcast=broadcastQueue.shift();
+  const ov=g('broadcast-overlay');
+  const msg=g('broadcast-msg');
+  const btn=g('broadcast-close');
+  msg.textContent=currentBroadcast.message;
+  ov.style.display='flex';
+  btn.style.display='none';
+  setTimeout(()=>{btn.style.display='inline-block'},5000);
+}
+
+function closeBroadcast(){
+  if(currentBroadcast){
+    fetch(API+'/api/broadcasts/'+currentBroadcast.id+'/read',{method:'POST',headers:hdr()});
+    currentBroadcast=null;
+  }
+  g('broadcast-overlay').style.display='none';
+  if(broadcastQueue.length>0)setTimeout(showNextBroadcast,500);
+}
+
+// ── ANNOUNCEMENTS ─────────────────────────────────────────────────────────────
+let notifPanelOpen=false;
+
+function toggleNotifs(){
+  notifPanelOpen=!notifPanelOpen;
+  g('notif-panel').style.display=notifPanelOpen?'block':'none';
+}
+
+async function checkAnnouncement(){
+  try{
+    const r=await fetch(API+'/api/announcements',{headers:hdr()});
+    const d=await r.json();
+    const dot=g('notif-dot');
+    const content=g('notif-content');
+    if(d.message){
+      dot.style.display='block';
+      content.innerHTML='<div style="color:var(--text)">'+d.message+'</div><div style="font-size:10px;color:var(--muted);margin-top:6px">'+new Date(d.created_at).toLocaleDateString('fr-FR')+'</div>';
+    } else {
+      dot.style.display='none';
+      content.innerHTML='<div>Aucune annonce</div>';
+    }
+  }catch(e){}
+}
+
 async function init(){
   try{
     const r=await fetch(API+'/api/auth/me',{headers:hdr()});
@@ -899,6 +1047,8 @@ async function init(){
     const params=new URLSearchParams(window.location.search);
     if(params.get('payment')==='success'){notif('Paiement reussi! Credits ajoutes','ok');init()}
     if(params.get('payment')==='cancel')notif('Paiement annule.','err');
+    checkBroadcasts();
+    checkAnnouncement();
   }catch(e){logout()}
 }
 init();
