@@ -250,17 +250,17 @@ select option{background:var(--bg2)}
 <nav class="navbar">
   <div class="navbar-logo" onclick="goTo('search',document.getElementById('nav-search'))">X<span>tracker</span></div>
   <div class="navbar-nav">
-    <button class="nav-btn active" id="nav-search" onclick="goTo('search',this)">Recherche</button>
-    <button class="nav-btn" id="nav-history" onclick="goTo('history',this)">Historique</button>
-    <button class="nav-btn" id="nav-credits" onclick="goTo('credits',this)">Credits</button>
-    <button class="nav-btn" id="nav-assistant" onclick="goTo('assistant',this)">Assistant IA</button>
-    <button class="nav-btn" id="nav-profile" onclick="goTo('profile',this)">Profil</button>
-    <button class="nav-btn" id="nav-tickets" onclick="goTo('tickets',this)">Support</button>
-    <a href="https://discord.gg/bYSDCmgcRz" target="_blank" class="nav-btn">Discord</a>
+    <button class="nav-btn active" id="nav-search" onclick="goTo('search',this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Recherche</button>
+    <button class="nav-btn" id="nav-history" onclick="goTo('history',this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg> Historique</button>
+    <button class="nav-btn" id="nav-credits" onclick="goTo('credits',this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></svg> Credits</button>
+    <button class="nav-btn" id="nav-assistant" onclick="goTo('assistant',this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg> IA</button>
+    <button class="nav-btn" id="nav-profile" onclick="goTo('profile',this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg> Profil</button>
+    <button class="nav-btn" id="nav-tickets" onclick="goTo('tickets',this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Support</button>
+    <a href="https://discord.gg/bYSDCmgcRz" target="_blank" class="nav-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.01.088.06.16.128.208a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg> Discord</a>
   </div>
   <div class="navbar-right">
     <button id="notif-bell" onclick="toggleNotifs()" style="position:relative;background:none;border:none;cursor:pointer;padding:6px;color:var(--muted2);font-size:18px">
-      🔔<span id="notif-dot" style="display:none;position:absolute;top:2px;right:2px;width:8px;height:8px;background:#ef4444;border-radius:50%"></span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span id="notif-dot" style="display:none;position:absolute;top:2px;right:2px;width:8px;height:8px;background:#ef4444;border-radius:50%"></span>
     </button>
     <a href="admin.html" id="admin-btn" style="display:none;padding:6px 12px;border-radius:7px;font-size:12px;font-weight:600;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#ef4444;text-decoration:none">Panel Admin</a>
     <div class="credits-pill desktop-only"><span>⚡</span><span id="paid-credits">—</span></div>
@@ -467,7 +467,7 @@ select option{background:var(--bg2)}
   <button class="drawer-item" onclick="closeDrawer();goTo('profile',document.getElementById('nav-profile'))">
     <span>Profil</span>
   </button>
-  <button class="drawer-item" onclick="closeDrawer();goTo('tickets',document.getElementById('nav-tickets'))"><span class="d-ico">🎫</span><span>Support</span></button>
+  <button class="drawer-item" onclick="closeDrawer();goTo('tickets',document.getElementById('nav-tickets'))"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Support</span></button>
   <a href="https://discord.gg/bYSDCmgcRz" target="_blank" class="drawer-item" onclick="closeDrawer()">
     <span>Discord</span>
   </a>
