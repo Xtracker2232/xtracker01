@@ -46,6 +46,20 @@ DATABASE_URL   = _DB_URL
 pwd_ctx  = CryptContext(schemes=["bcrypt"])
 security = HTTPBearer(auto_error=False)
 
+# Rate limiting simple en mémoire
+import time
+from collections import defaultdict
+_rate_limit = defaultdict(list)
+
+def check_rate_limit(key: str, max_requests: int = 5, window: int = 60) -> bool:
+    """Retourne True si la limite est dépassée"""
+    now = time.time()
+    _rate_limit[key] = [t for t in _rate_limit[key] if now - t < window]
+    if len(_rate_limit[key]) >= max_requests:
+        return True
+    _rate_limit[key].append(now)
+    return False
+
 # Termes protégés - retourne un message spécial
 # Noms de famille et numéros protégés statiques
 PROTECTED_LASTNAMES = ["kocahal", "lauzet", "pacchioni"]
@@ -522,6 +536,9 @@ class AdminUserUpdate(BaseModel):
 @app.post("/api/auth/register")
 async def register(data: RegisterModel, request: Request):
     import re, secrets, string
+    ip = request.headers.get("CF-Connecting-IP") or request.headers.get("X-Forwarded-For","").split(",")[0].strip() or request.client.host
+    if check_rate_limit(f"register:{ip}", max_requests=3, window=300):
+        raise HTTPException(429, "Trop d'inscriptions depuis cette IP, réessayez dans 5 minutes")
     if len(data.username) < 2:
         raise HTTPException(400, "Nom d utilisateur trop court (2 caractères min)")
     if len(data.password) < 8:
@@ -571,7 +588,10 @@ async def register(data: RegisterModel, request: Request):
     }
 
 @app.post("/api/auth/login")
-async def login(data: LoginModel):
+async def login(data: LoginModel, request: Request):
+    ip = request.headers.get("CF-Connecting-IP") or request.headers.get("X-Forwarded-For","").split(",")[0].strip() or request.client.host
+    if check_rate_limit(f"login:{ip}", max_requests=10, window=60):
+        raise HTTPException(429, "Trop de tentatives, réessayez dans 1 minute")
     db = get_db()
     # Si c'est un email, chercher UNIQUEMENT par email
     # Si c'est un username, chercher UNIQUEMENT par username (jamais les comptes discord)
@@ -813,7 +833,9 @@ async def history_replay(search_id: int, user=Depends(get_current_user)):
         raise HTTPException(404, "Recherche introuvable")
     payload = json.loads(row["query_data"])
     payload["per_page"] = 100
-    # Appeler BrixHub sans deduire de credits
+    # Vérifier les termes protégés même pour le replay
+    if check_protected(payload):
+        return {"results": [], "total": 0, "took_ms": 0, "free_left": user["free_left"], "credits": user["credits"]}
     result = await call_brix("POST", "/search", payload)
     results = result.get("data", {}).get("results", [])
     results = filter_results(results)
@@ -1137,16 +1159,13 @@ async def ai_chat(data: ChatModel, user=Depends(get_current_user)):
             msgs.append({"role": "system", "content": data.system})
         for m in data.messages:
             msgs.append({"role": m["role"], "content": m["content"]})
-        print(f"[AI] Calling Groq, key={groq_key[:10]}..., msgs={len(msgs)}")
         async with httpx.AsyncClient(timeout=30) as client:
             r = await client.post(
                 "https://api.groq.com/openai/v1/chat/completions",
                 headers={"Authorization": f"Bearer {groq_key}", "Content-Type": "application/json"},
                 json={"model": "llama-3.1-8b-instant", "max_tokens": 1000, "messages": msgs}
             )
-            print(f"[AI] Groq status: {r.status_code}")
             groq_data = r.json()
-            print(f"[AI] Groq response: {str(groq_data)[:200]}")
             text = groq_data.get("choices", [{}])[0].get("message", {}).get("content", "")
             return {"content": [{"type": "text", "text": text}]}
     except Exception as e:
@@ -1251,15 +1270,26 @@ async def admin_tickets(admin=Depends(require_admin)):
 # ── MESSAGES BROADCAST ─────────────────────────────────────────────────────────
 class BroadcastModel(BaseModel):
     message: str
-    target_user_id: int = None  # None = tous les users
+    target_user_id: int = None
 
 @app.post("/api/admin/broadcast")
-async def send_broadcast(data: BroadcastModel, admin=Depends(require_admin)):
+async def send_broadcast(request: Request, admin=Depends(require_admin)):
+    body = await request.json()
+    message = body.get("message", "").strip()
+    target_user_id = body.get("target_user_id")
+    if not message:
+        raise HTTPException(400, "Message requis")
+    # Convertir en int si fourni
+    if target_user_id:
+        try:
+            target_user_id = int(target_user_id)
+        except:
+            target_user_id = None
     db = get_db()
-    if data.target_user_id:
-        execute(db, "INSERT INTO broadcasts (message, target_user_id, created_by) VALUES (?,?,?)", (data.message, data.target_user_id, admin["id"]))
+    if target_user_id:
+        execute(db, "INSERT INTO broadcasts (message, target_user_id, created_by) VALUES (?,?,?)", (message, target_user_id, admin["id"]))
     else:
-        execute(db, "INSERT INTO broadcasts (message, target_user_id, created_by) VALUES (?,NULL,?)", (data.message, admin["id"]))
+        execute(db, "INSERT INTO broadcasts (message, target_user_id, created_by) VALUES (?,NULL,?)", (message, admin["id"]))
     db.commit(); db.close()
     return {"ok": True}
 
