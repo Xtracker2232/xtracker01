@@ -537,10 +537,34 @@ function sendBroadcast(){
   var msg=g('bc-msg').value.trim();
   var uid=g('bc-user').value.trim();
   if(!msg){notif('Entrez un message','err');return}
+  
   var body={message:msg};
-  if(uid)body.target_user_id=parseInt(uid);
+  var confirmMsg='';
+  
+  if(uid && uid.trim()!=''){
+    var numId=parseInt(uid);
+    var targetId=isNaN(numId)?uid:numId;
+    body.target_user_id=targetId;
+    confirmMsg='Envoyer ce message à "'+uid+'" uniquement ?';
+  } else {
+    confirmMsg='Envoyer ce message à TOUS les utilisateurs ?';
+  }
+  
+  if(!confirm(confirmMsg))return;
+  
   fetch(API+'/api/admin/broadcast',{method:'POST',headers:hdr(),credentials:"include",body:JSON.stringify(body)})
-    .then(function(r){if(r.ok){notif('Message envoyé !');g('bc-msg').value='';g('bc-user').value=''}else notif('Erreur','err')});
+    .then(function(r){
+      return r.json().then(function(d){
+        if(r.ok){
+          notif('Message envoyé ! (cible: '+(d.target_id?'user #'+d.target_id:'tous')+')');
+          g('bc-msg').value='';
+          g('bc-user').value='';
+        } else {
+          notif((d.detail||'Erreur'),'err');
+        }
+      });
+    })
+    .catch(function(){notif('Erreur reseau','err')});
 }
 
 function saveAnnouncement(){
