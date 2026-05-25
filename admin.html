@@ -328,18 +328,19 @@ function goTo(page,btn){
 }
 
 function loadStats(){
-  fetch(API+'/api/admin/stats',{headers:hdr(),credentials:"include"}).then(function(r){return r.json()}).then(function(d){
-    g('s-users').textContent=(d.total_users||0).toLocaleString();
-    g('s-searches').textContent=(d.total_searches||0).toLocaleString();
-    g('s-revenue').textContent=(d.revenue_eur||0).toFixed(2)+'EUR';
-    g('s-banned').textContent=(d.banned||0);
-    if(g('s-discord'))g('s-discord').textContent=(d.discord_linked||0);
-    if(g('s-lifetime'))g('s-lifetime').textContent=(d.lifetime_users||0);
-    g('s-new').textContent=(d.new_today||0);
-    g('s-today').textContent=(d.searches_today||0);
-    g('s-credits').textContent=(d.credits_sold||0);
-    g('s-active').textContent=(d.active_users||0);
-  }).catch(function(){});
+  fetch(API+'/api/admin/stats',{headers:hdr()})
+    .then(function(r){return r.ok?r.json():{}})
+    .then(function(d){
+      if(!d)return;
+      if(g('s-users'))g('s-users').textContent=(d.total_users||0).toLocaleString();
+      if(g('s-searches'))g('s-searches').textContent=(d.total_searches||0).toLocaleString();
+      if(g('s-revenue'))g('s-revenue').textContent=(d.revenue_eur||0).toFixed(2)+'EUR';
+      if(g('s-banned'))g('s-banned').textContent=(d.banned||0);
+      if(g('s-discord'))g('s-discord').textContent=(d.discord_linked||0);
+      if(g('s-lifetime'))g('s-lifetime').textContent=(d.lifetime_users||0);
+      if(g('s-new'))g('s-new').textContent=(d.new_today||0);
+      if(g('s-today'))g('s-today').textContent=(d.searches_today||0);
+    }).catch(function(e){console.error('Stats error:',e)});
 }
 
 function loadUsers(){
@@ -628,15 +629,17 @@ function loadReferrals(){
 function logout(){localStorage.clear();window.location.href='login.html'}
 
 function init(){
-  fetch(API+'/api/auth/me',{headers:hdr()}).then(function(r){
-    if(!r.ok){logout();return}
-    return r.json();
-  }).then(function(d){
-    if(!d)return;
-    if(d.role!=='admin'){window.location.href='dashboard.html';return}
-    g('admin-name').textContent=d.username||d.email;
-    loadStats();
-  }).catch(function(){logout()});
+  var token=localStorage.getItem('token');
+  if(!token){logout();return;}
+  fetch(API+'/api/auth/me',{headers:hdr()})
+    .then(function(r){return r.ok?r.json():null})
+    .then(function(d){
+      if(!d){logout();return;}
+      if(d.role!=='admin'){window.location.href='dashboard.html';return;}
+      if(g('admin-name'))g('admin-name').textContent=d.username||d.email;
+      goTo('stats',document.querySelector('.sb-item'));
+      loadStats();
+    }).catch(function(){logout();});
 }
 init();
 </script>
