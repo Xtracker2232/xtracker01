@@ -156,6 +156,7 @@ def filter_results(results: list) -> list:
     return clean
 
 CREDIT_PACKS = {
+    "decouverte":  {"credits": 10,   "price_eur": 0.99,   "label": "Decouverte"},
     "starter":    {"credits": 20,   "price_eur": 5.00,   "label": "Starter"},
     "pro":        {"credits": 200,  "price_eur": 14.99,  "label": "Pro"},
     "enterprise": {"credits": 1000, "price_eur": 49.99,  "label": "Enterprise"},
@@ -709,6 +710,8 @@ async def call_brix(method: str, path: str, body: dict = None):
                 return r.json()
             except Exception:
                 raise HTTPException(500, "Reponse invalide de l API")
+        elif r.status_code == 500:
+            raise HTTPException(500, "Aucun resultat pour cette recherche")
         elif r.status_code == 429:
             raise HTTPException(429, "Trop de requetes, reessayez dans quelques secondes")
         elif r.status_code == 401:
@@ -765,6 +768,19 @@ async def search(data: SearchModel, user=Depends(get_current_user)):
             del payload[k]
     if len(payload) <= 2:
         raise HTTPException(400, "Remplissez au moins un champ (2 caractères minimum)")
+
+    # Nettoyer les caractères problématiques pour BrixHub
+    import unicodedata
+    def clean_field(val):
+        if not isinstance(val, str): return val
+        # Normaliser les accents
+        val = unicodedata.normalize('NFC', val)
+        # Supprimer les caractères de contrôle
+        val = ''.join(c for c in val if unicodedata.category(c) != 'Cc')
+        return val.strip()
+    for k in list(payload.keys()):
+        if isinstance(payload[k], str):
+            payload[k] = clean_field(payload[k])
 
     # Vérifier les termes protégés AVANT d'appeler BrixHub
     if check_protected(payload):
