@@ -698,14 +698,27 @@ async def call_brix(method: str, path: str, body: dict = None):
         "Accept":       "application/json",
         "User-Agent":   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36",
     }
-    async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
-        if method == "POST":
-            r = await client.post(f"{BRIX_BASE}{path}", json=body, headers=headers)
+    try:
+        async with httpx.AsyncClient(timeout=25, follow_redirects=True) as client:
+            if method == "POST":
+                r = await client.post(f"{BRIX_BASE}{path}", json=body, headers=headers)
+            else:
+                r = await client.get(f"{BRIX_BASE}{path}", headers=headers)
+        if r.status_code == 200:
+            try:
+                return r.json()
+            except Exception:
+                raise HTTPException(500, "Reponse invalide de l API")
+        elif r.status_code == 429:
+            raise HTTPException(429, "Trop de requetes, reessayez dans quelques secondes")
+        elif r.status_code == 401:
+            raise HTTPException(401, "Cle API invalide")
         else:
-            r = await client.get(f"{BRIX_BASE}{path}", headers=headers)
-    if r.status_code == 200:
-        return r.json()
-    raise HTTPException(r.status_code, f"Erreur API {r.status_code}")
+            raise HTTPException(r.status_code, f"Erreur API {r.status_code}")
+    except httpx.TimeoutException:
+        raise HTTPException(504, "Timeout - reessayez dans quelques secondes")
+    except httpx.NetworkError:
+        raise HTTPException(503, "Erreur reseau - service temporairement indisponible")
 
 def deduct_and_log(user_id: int, query_data: dict, result_count: int):
     db = get_db()
