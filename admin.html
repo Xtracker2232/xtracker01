@@ -106,6 +106,8 @@ tr:hover td{background:rgba(255,255,255,0.02)}
   <span style="display:block;width:20px;height:2px;background:#eef0ff;border-radius:2px;pointer-events:none"></span>
 </button>
 <div id="sb-overlay" onclick="toggleSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:140"></div>
+
+
 <div class="layout">
 <div class="sb">
   <div class="sb-logo"><div>X<span>tracker</span></div><span class="sb-badge">ADMIN</span></div>
@@ -306,6 +308,28 @@ tr:hover td{background:rgba(255,255,255,0.02)}
     </div>
   </div>
 
+
+<div id="page-crypto-orders" class="page">
+  <div style="margin-bottom:20px">
+    <div style="font-size:20px;font-weight:800;font-family:'Syne',sans-serif">₿ Commandes crypto</div>
+    <div style="font-size:13px;color:var(--muted2);margin-top:4px">Verifiez et validez les paiements crypto</div>
+  </div>
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px">
+    <div style="font-size:11px;color:var(--muted2);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Verifier par ID de facture</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <input id="crypto-order-lookup" placeholder="xtracker-123-pro-1748000000" style="flex:1;min-width:200px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--text);font-family:monospace;outline:none">
+      <button class="act-btn" onclick="lookupCryptoOrder()">Verifier</button>
+    </div>
+  </div>
+  <div id="crypto-order-result" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px"></div>
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-size:11px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px">Commandes en attente</div>
+      <button class="act-btn" onclick="loadPendingCrypto()">Actualiser</button>
+    </div>
+    <div id="pending-crypto-list" style="font-size:13px;color:var(--muted2)">Chargement...</div>
+  </div>
+</div>
 </div>
 </div>
 
@@ -750,30 +774,4 @@ function init(){
 init();
 </script>
 </body>
-</html><div id="page-crypto-orders" class="page">
-  <div style="margin-bottom:24px">
-    <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:4px">₿ Commandes crypto</div>
-    <div style="font-size:13px;color:var(--muted2)">Verifiez et validez les paiements crypto</div>
-  </div>
-
-  <!-- Recherche par ID -->
-  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px">
-    <div style="font-size:11px;color:var(--muted2);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Verifier par ID de facture</div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <input id="crypto-order-lookup" placeholder="xtracker-123-pro-1748000000" style="flex:1;min-width:200px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--text);font-family:monospace;outline:none">
-      <button class="act-btn" onclick="lookupCryptoOrder()">Verifier</button>
-    </div>
-  </div>
-
-  <!-- Résultat -->
-  <div id="crypto-order-result" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px"></div>
-
-  <!-- Commandes en attente -->
-  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-      <div style="font-size:11px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px">Commandes en attente</div>
-      <button class="act-btn" onclick="loadPendingCrypto()">Actualiser</button>
-    </div>
-    <div id="pending-crypto-list" style="font-size:13px;color:var(--muted2)">Chargement...</div>
-  </div>
-</div>
+</html>
