@@ -91,16 +91,21 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 @keyframes slideIn{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
 @media(max-width:900px){.sb{display:none}.main{margin-left:0}.stat-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:768px){
-  .sb{transform:translateX(-100%);transition:transform .3s ease;z-index:100}
+  .sb{transform:translateX(-100%);transition:transform .3s ease;z-index:150}
   .sb.open{transform:translateX(0)}
   .main{margin-left:0 !important}
-  .hamburger-admin{display:flex !important}
-  .topbar{position:relative;padding-left:54px}
+  #mob-menu-btn{display:flex !important}
+  .topbar{padding-left:54px}
   .stat-grid{grid-template-columns:1fr 1fr !important}
 }
 </style>
 </head>
 <body>
+<button id="mob-menu-btn" onclick="toggleSidebar()" style="display:none;position:fixed;top:12px;left:12px;z-index:200;background:rgba(10,13,26,0.95);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 10px;cursor:pointer;flex-direction:column;gap:5px;align-items:center;justify-content:center">
+  <span style="display:block;width:20px;height:2px;background:#eef0ff;border-radius:2px"></span>
+  <span style="display:block;width:20px;height:2px;background:#eef0ff;border-radius:2px"></span>
+  <span style="display:block;width:20px;height:2px;background:#eef0ff;border-radius:2px"></span>
+</button>
 <div class="layout">
 <div class="sb">
   <div class="sb-logo"><div>X<span>tracker</span></div><span class="sb-badge">ADMIN</span></div>
@@ -128,11 +133,6 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 </div>
 <div class="main">
   <div class="topbar">
-    <button class="hamburger-admin" onclick="toggleSidebar()" style="display:none;background:none;border:none;cursor:pointer;padding:8px;color:var(--text);flex-direction:column;gap:5px;position:absolute;left:12px;top:50%;transform:translateY(-50%)">
-      <span style="display:block;width:22px;height:2px;background:currentColor;border-radius:2px"></span>
-      <span style="display:block;width:22px;height:2px;background:currentColor;border-radius:2px"></span>
-      <span style="display:block;width:22px;height:2px;background:currentColor;border-radius:2px"></span>
-    </button>
     <div class="topbar-title" id="page-title">Statistiques</div>
     <div style="display:flex;align-items:center;gap:8px">
       <span class="badge-admin">ADMIN</span>
@@ -643,13 +643,12 @@ function toggleSidebar(){
   var sb=document.querySelector('.sb');
   if(sb)sb.classList.toggle('open');
 }
-// Fermer sidebar en cliquant ailleurs sur mobile
 document.addEventListener('click',function(e){
   var sb=document.querySelector('.sb');
-  if(!sb)return;
-  if(!sb.contains(e.target)&&!e.target.classList.contains('hamburger-admin')&&window.innerWidth<=768){
-    sb.classList.remove('open');
-  }
+  var btn=document.getElementById('mob-menu-btn');
+  if(!sb||window.innerWidth>768)return;
+  if(btn&&btn.contains(e.target))return;
+  if(!sb.contains(e.target))sb.classList.remove('open');
 });
 function logout(){localStorage.clear();window.location.href='login.html'}
 
