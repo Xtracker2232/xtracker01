@@ -91,19 +91,19 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 @keyframes slideIn{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
 @media(max-width:900px){.sb{display:none}.main{margin-left:0}.stat-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:768px){
-  .sb{left:-220px}
+  .sb{left:-220px !important}
   .main{margin-left:0 !important}
   #mob-menu-btn{display:flex !important}
-  .topbar{padding-left:54px}
+  .topbar{padding-left:54px !important}
   .stat-grid{grid-template-columns:1fr 1fr !important}
 }
 </style>
 </head>
 <body>
-<button id="mob-menu-btn" onclick="toggleSidebar()" style="display:none;position:fixed;top:12px;left:12px;z-index:200;background:rgba(10,13,26,0.95);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 10px;cursor:pointer;flex-direction:column;gap:5px;align-items:center;justify-content:center">
-  <span style="display:block;width:20px;height:2px;background:#eef0ff;border-radius:2px"></span>
-  <span style="display:block;width:20px;height:2px;background:#eef0ff;border-radius:2px"></span>
-  <span style="display:block;width:20px;height:2px;background:#eef0ff;border-radius:2px"></span>
+<button id="mob-menu-btn" onclick="openSidebar()" style="display:none;position:fixed;top:10px;left:10px;z-index:9999;background:#0c0f20;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:10px 12px;cursor:pointer;flex-direction:column;gap:5px;align-items:center;justify-content:center;width:44px;height:44px">
+  <span style="display:block;width:20px;height:2px;background:#eef0ff;border-radius:2px;pointer-events:none"></span>
+  <span style="display:block;width:20px;height:2px;background:#eef0ff;border-radius:2px;pointer-events:none"></span>
+  <span style="display:block;width:20px;height:2px;background:#eef0ff;border-radius:2px;pointer-events:none"></span>
 </button>
 <div id="sb-overlay" onclick="toggleSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:140"></div>
 <div class="layout">
@@ -325,6 +325,7 @@ function notif(msg,type){
 }
 
 function goTo(page,btn){
+  if(window.innerWidth<=768)closeSidebar();
   document.querySelectorAll('.sb-item').forEach(function(b){b.classList.remove('active')});
   if(btn)btn.classList.add('active');
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
@@ -639,19 +640,21 @@ function loadReferrals(){
     }).join('');
   }).catch(function(){notif('Erreur','err')});
 }
-function toggleSidebar(){
+function openSidebar(){
   var sb=document.querySelector('.sb');
   var ov=document.getElementById('sb-overlay');
   if(!sb)return;
-  var isOpen=sb.style.left==='0px';
-  if(isOpen){
-    sb.style.left='-220px';
-    if(ov)ov.style.display='none';
-  } else {
-    sb.style.left='0px';
-    if(ov)ov.style.display='block';
-  }
+  sb.style.cssText='width:220px;background:rgba(10,13,26,0.98);border-right:1px solid rgba(255,255,255,0.07);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:9998;transition:left .3s ease';
+  if(ov){ov.style.display='block';ov.style.zIndex='9997';}
 }
+function closeSidebar(){
+  var sb=document.querySelector('.sb');
+  var ov=document.getElementById('sb-overlay');
+  if(sb)sb.style.left='-220px';
+  if(ov)ov.style.display='none';
+}
+function toggleSidebar(){openSidebar();}
+document.getElementById('sb-overlay').addEventListener('click',closeSidebar);
 function logout(){localStorage.clear();window.location.href='login.html'}
 
 function init(){
