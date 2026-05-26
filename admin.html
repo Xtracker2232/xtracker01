@@ -651,15 +651,33 @@ function toggleSidebar(){
   var sb=document.querySelector('.sb');
   var ov=document.getElementById('sb-overlay');
   if(!sb)return;
-  var isOpen=sb.classList.contains('open');
+  var isOpen=sb.style.transform==='translateX(0px)'||sb.style.transform==='translateX(0)';
   if(isOpen){
-    sb.classList.remove('open');
+    sb.style.transform='translateX(-100%)';
     if(ov)ov.style.display='none';
   } else {
-    sb.classList.add('open');
+    sb.style.transform='translateX(0)';
+    sb.style.transition='transform .3s ease';
+    sb.style.zIndex='160';
     if(ov)ov.style.display='block';
   }
 }
+// Init mobile
+if(window.innerWidth<=768){
+  var _sb=document.querySelector('.sb');
+  if(_sb)_sb.style.transform='translateX(-100%)';
+}
+window.addEventListener('resize',function(){
+  var sb=document.querySelector('.sb');
+  var ov=document.getElementById('sb-overlay');
+  if(!sb)return;
+  if(window.innerWidth>768){
+    sb.style.transform='';
+    if(ov)ov.style.display='none';
+  } else {
+    sb.style.transform='translateX(-100%)';
+  }
+});
 function logout(){localStorage.clear();window.location.href='login.html'}
 
 function init(){
