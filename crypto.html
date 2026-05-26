@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Paiement Crypto — Xtracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#070a14;color:#eef0ff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+:root{--accent:#6366f1;--accent2:#818cf8;--bg2:#0c0f20;--border:rgba(255,255,255,0.07);--muted2:rgba(238,240,255,0.45)}
+.card{background:#0c0f20;border:1px solid var(--border);border-radius:20px;padding:32px;max-width:520px;width:100%}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;text-align:center;margin-bottom:24px;color:var(--accent2)}
+.invoice-id{background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.2);border-radius:10px;padding:12px 16px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between}
+.invoice-label{font-size:10px;color:var(--muted2);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.invoice-value{font-family:monospace;font-size:12px;color:var(--accent2);word-break:break-all}
+.copy-btn{background:none;border:1px solid var(--border);border-radius:6px;padding:6px 10px;cursor:pointer;color:var(--muted2);font-size:11px;font-family:'Inter',sans-serif;transition:all .2s;white-space:nowrap;margin-left:10px}
+.copy-btn:hover{background:rgba(99,102,241,0.1);color:var(--accent2)}
+.crypto-header{text-align:center;margin-bottom:24px}
+.crypto-icon{font-size:48px;margin-bottom:8px}
+.crypto-amount{font-family:'Syne',sans-serif;font-size:32px;font-weight:800;margin-bottom:4px}
+.crypto-eur{font-size:14px;color:var(--muted2)}
+.section{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px}
+.section-label{font-size:10px;color:var(--muted2);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.address-box{font-family:monospace;font-size:12px;word-break:break-all;margin-bottom:12px;line-height:1.6;color:#eef0ff}
+.btn-full{width:100%;padding:12px;border-radius:10px;border:none;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;transition:all .2s}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#4f46e5);color:#fff}
+.btn-secondary{background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--muted2);margin-top:8px}
+.status-bar{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:10px;margin-bottom:16px;font-size:13px;font-weight:500}
+.status-pending{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);color:#f59e0b}
+.status-confirmed{background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);color:#22c55e}
+.status-expired{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:#ef4444}
+.dot{width:8px;height:8px;border-radius:50%;background:currentColor;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.progress{height:3px;background:rgba(99,102,241,0.15);border-radius:2px;margin-top:8px;overflow:hidden}
+.progress-bar{height:100%;background:var(--accent);border-radius:2px;transition:width 1s}
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.info-row:last-child{border-bottom:none}
+.info-key{color:var(--muted2)}
+.info-val{font-weight:500;font-family:monospace;font-size:12px}
+.steps{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.step{display:flex;align-items:flex-start;gap:10px;font-size:12px;color:var(--muted2)}
+.step-num{width:20px;height:20px;border-radius:50%;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--accent2);flex-shrink:0;margin-top:1px}
+.timer{font-family:monospace;font-size:13px;color:var(--muted2);text-align:center;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">⬡ Xtracker</div>
+
+  <!-- ID Facture -->
+  <div class="invoice-id">
+    <div>
+      <div class="invoice-label">ID de facture</div>
+      <div class="invoice-value" id="order-id-display">—</div>
+    </div>
+    <button class="copy-btn" onclick="copyField('order-id-display')">Copier</button>
+  </div>
+
+  <!-- Statut -->
+  <div id="status-bar" class="status-bar status-pending">
+    <span class="dot"></span>
+    <span id="status-text">En attente du paiement...</span>
+  </div>
+  <div class="progress"><div class="progress-bar" id="progress-bar" style="width:5%"></div></div>
+  <div class="timer" id="timer-display"></div>
+
+  <!-- Crypto info -->
+  <div class="crypto-header" style="margin-top:20px">
+    <div class="crypto-icon" id="crypto-icon">₿</div>
+    <div class="crypto-amount" id="crypto-amount">—</div>
+    <div class="crypto-eur" id="crypto-eur">≈ —€</div>
+  </div>
+
+  <!-- Adresse -->
+  <div class="section">
+    <div class="section-label">Adresse de destination</div>
+    <div class="address-box" id="crypto-address">—</div>
+    <button class="btn-full btn-primary" onclick="copyField('crypto-address',this)">Copier l'adresse</button>
+  </div>
+
+  <!-- Comment payer -->
+  <div class="section">
+    <div class="section-label">Comment payer</div>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><span>Envoie exactement <strong id="step-amount" style="color:#eef0ff">—</strong> à l'adresse ci-dessus</span></div>
+      <div class="step"><div class="step-num">2</div><span>Le paiement sera détecté automatiquement après confirmation</span></div>
+      <div class="step"><div class="step-num">3</div><span>Tes crédits seront ajoutés immédiatement à ton compte</span></div>
+    </div>
+  </div>
+
+  <!-- Infos commande -->
+  <div class="section">
+    <div class="section-label">Informations de la commande</div>
+    <div class="info-row"><span class="info-key">Pack</span><span class="info-val" id="info-pack">—</span></div>
+    <div class="info-row"><span class="info-key">Cryptomonnaie</span><span class="info-val" id="info-sym">—</span></div>
+    <div class="info-row"><span class="info-key">Montant crypto</span><span class="info-val" id="info-crypto">—</span></div>
+    <div class="info-row"><span class="info-key">Montant EUR</span><span class="info-val" id="info-eur">—</span></div>
+    <div class="info-row"><span class="info-key">Expire dans</span><span class="info-val" id="info-expire">24h</span></div>
+  </div>
+
+  <button class="btn-full btn-secondary" onclick="window.location.href='/dashboard.html'">Retour au dashboard</button>
+</div>
+
+<script>
+var params=new URLSearchParams(window.location.search);
+var orderId=params.get('order_id')||'';
+var pack=params.get('pack')||'';
+var amountEur=params.get('amount_eur')||'';
+var sym=params.get('sym')||'';
+var address=params.get('address')||'';
+var cryptoAmount=params.get('crypto_amount')||'';
+var API='';
+var token=localStorage.getItem('token');
+
+var icons={'BTC':'₿','LTC':'Ł','ETH':'Ξ'};
+var colors={'BTC':'#f7931a','LTC':'#345d9d','ETH':'#627eea'};
+
+function init(){
+  if(!token){window.location.href='/login.html';return;}
+  if(!orderId){window.location.href='/dashboard.html';return;}
+
+  document.getElementById('order-id-display').textContent=orderId;
+  document.getElementById('crypto-icon').textContent=icons[sym]||sym;
+  document.getElementById('crypto-icon').style.color=colors[sym]||'#6366f1';
+  document.getElementById('crypto-amount').textContent=cryptoAmount+' '+sym;
+  document.getElementById('crypto-eur').textContent='≈ '+amountEur+'€';
+  document.getElementById('crypto-address').textContent=address;
+  document.getElementById('step-amount').textContent=cryptoAmount+' '+sym;
+  document.getElementById('info-pack').textContent=pack;
+  document.getElementById('info-sym').textContent=sym;
+  document.getElementById('info-crypto').textContent=cryptoAmount+' '+sym;
+  document.getElementById('info-eur').textContent=amountEur+'€';
+
+  startTimer();
+  startCheck();
+}
+
+var progress=5;
+var checkInterval=null;
+
+function startTimer(){
+  // 24h timer
+  var end=Date.now()+(24*60*60*1000);
+  setInterval(function(){
+    var left=end-Date.now();
+    if(left<=0){document.getElementById('info-expire').textContent='Expire';return;}
+    var h=Math.floor(left/3600000);
+    var m=Math.floor((left%3600000)/60000);
+    var s=Math.floor((left%60000)/1000);
+    document.getElementById('info-expire').textContent=h+'h '+m+'m '+s+'s';
+    document.getElementById('timer-display').textContent='Page mise à jour automatiquement';
+  },1000);
+}
+
+function startCheck(){
+  checkStatus();
+  checkInterval=setInterval(function(){
+    progress=Math.min(progress+3,88);
+    document.getElementById('progress-bar').style.width=progress+'%';
+    checkStatus();
+  },30000);
+}
+
+async function checkStatus(){
+  try{
+    var r=await fetch('/api/paygate/check?order_id='+encodeURIComponent(orderId),{headers:{'Authorization':'Bearer '+token}});
+    var d=await r.json();
+    if(d.paid){
+      clearInterval(checkInterval);
+      document.getElementById('status-bar').className='status-bar status-confirmed';
+      document.getElementById('status-text').textContent='Paiement confirmé ! Crédits ajoutés.';
+      document.getElementById('progress-bar').style.width='100%';
+      document.getElementById('progress-bar').style.background='#22c55e';
+      document.querySelector('.dot').style.animation='none';
+      setTimeout(function(){window.location.href='/dashboard.html?payment=success';},3000);
+    } else if(d.expired){
+      clearInterval(checkInterval);
+      document.getElementById('status-bar').className='status-bar status-expired';
+      document.getElementById('status-text').textContent='Session expirée.';
+    }
+  }catch(e){}
+}
+
+function copyField(id,btn){
+  var el=document.getElementById(id);
+  if(!el)return;
+  var txt=el.textContent;
+  navigator.clipboard.writeText(txt).catch(function(){
+    var i=document.createElement('input');i.value=txt;document.body.appendChild(i);i.select();document.execCommand('copy');document.body.removeChild(i);
+  });
+  if(btn){var old=btn.textContent;btn.textContent='Copié !';setTimeout(function(){btn.textContent=old;},2000);}
+}
+
+init();
+</script>
+</body>
+</html>

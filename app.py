@@ -39,6 +39,9 @@ BRIX_BASE      = "https://brixhub.net/api/v1"
 SUMUP_SK = os.getenv("SUMUP_SK", "")
 SUMUP_PK = os.getenv("SUMUP_PK", "")
 SUMUP_MERCHANT = "Shop2ToutMHN3Z5RX"
+PAYGATE_WALLET_BTC = os.getenv("PAYGATE_WALLET_BTC", "")
+PAYGATE_WALLET_LTC = os.getenv("PAYGATE_WALLET_LTC", "")
+PAYGATE_WALLET_ETH = os.getenv("PAYGATE_WALLET_ETH", "")
 
 DB_PATH        = "xtracker.db"
 MAINTENANCE    = os.getenv("MAINTENANCE", "false").lower() == "true"
@@ -1865,6 +1868,228 @@ async def bot_users_list(request: Request, page: int = 1, search: str = ""):
     total = total_r["c"] if total_r else 0
     db.close()
     return {"users": rows, "total": total, "page": page, "pages": (total+9)//10}
+
+# ── PAYGATE CRYPTO ────────────────────────────────────────────────────────────
+@app.post("/api/credits/checkout-crypto/{pack_id}")
+async def checkout_crypto(pack_id: str, user=Depends(get_current_user), request: Request = None):
+    if pack_id not in CREDIT_PACKS:
+        raise HTTPException(400, "Pack invalide")
+    pack = CREDIT_PACKS[pack_id]
+    amount = pack["price_eur"]
+    credits = pack["credits"]
+    wallet = PAYGATE_WALLET
+    if not wallet:
+        raise HTTPException(500, "Wallet non configure")
+    import time
+    order_id = f"xtracker-{user['id']}-{pack_id}-{int(time.time())}"
+    origin = str(request.base_url).rstrip("/")
+    # URL PayGate API
+    paygate_url = (
+        f"https://paygate.to/charge.php"
+        f"?amount={amount}"
+        f"&to={wallet}"
+        f"&currency=EUR"
+        f"&orderId={order_id}"
+        f"&redirectUrl={origin}/api/paygate/success?order_id={order_id}&uid={user['id']}&pack={pack_id}"
+        f"&webhook={origin}/api/paygate/webhook"
+    )
+    return {"checkout_url": paygate_url, "order_id": order_id}
+
+@app.get("/api/paygate/check")
+async def paygate_check(order_id: str, user=Depends(get_current_user)):
+    """Vérifie si une commande crypto a été payée"""
+    db = get_db()
+    tx = fetchone(db, "SELECT id, status FROM transactions WHERE stripe_id=?", (order_id,))
+    db.close()
+    if tx and tx.get("status") == "completed":
+        return {"paid": True}
+    # Vérifier si expiré (>30 min)
+    import time
+    parts = order_id.split("-")
+    if len(parts) >= 4:
+        try:
+            ts = int(parts[-1])
+            if time.time() - ts > 1800:
+                return {"paid": False, "expired": True}
+        except: pass
+    return {"paid": False, "expired": False}
+
+@app.get("/api/paygate/success")
+async def paygate_success(request: Request):
+    from fastapi.responses import RedirectResponse
+    params = dict(request.query_params)
+    order_id = params.get("order_id", "")
+    uid = int(params.get("uid", 0))
+    pack_id = params.get("pack", "")
+    if not order_id or not uid or not pack_id:
+        return RedirectResponse(url="/dashboard.html?payment=cancel")
+    pack = CREDIT_PACKS.get(pack_id, {})
+    if not pack:
+        return RedirectResponse(url="/dashboard.html?payment=cancel")
+    credits = pack["credits"]
+    amount = pack["price_eur"]
+    db = get_db()
+    existing = fetchone(db, "SELECT id FROM transactions WHERE stripe_id=?", (order_id,))
+    if not existing:
+        if pack_id == "lifetime":
+            execute(db, "UPDATE users SET lifetime=TRUE, credits=999999 WHERE id=?", (uid,))
+        else:
+            execute(db, "UPDATE users SET credits=credits+? WHERE id=?", (credits, uid))
+        execute(db, "INSERT INTO transactions (user_id, type, credits, amount_eur, stripe_id, status) VALUES (?,?,?,?,?,'completed')",
+                (uid, "purchase_crypto", credits, amount, order_id))
+        db.commit()
+    db.close()
+    return RedirectResponse(url="/dashboard.html?payment=success")
+
+@app.post("/api/paygate/webhook")
+async def paygate_webhook(request: Request):
+    """Webhook PayGate pour confirmer le paiement"""
+    body = await request.json()
+    order_id = body.get("orderId", "")
+    status = body.get("status", "")
+    if status != "paid" or not order_id:
+        return {"ok": False}
+    # Extraire uid et pack depuis order_id: xtracker-{uid}-{pack}-{timestamp}
+    parts = order_id.split("-")
+    if len(parts) < 3:
+        return {"ok": False}
+    try:
+        uid = int(parts[1])
+        pack_id = parts[2]
+    except:
+        return {"ok": False}
+    pack = CREDIT_PACKS.get(pack_id, {})
+    if not pack:
+        return {"ok": False}
+    credits = pack["credits"]
+    amount = pack["price_eur"]
+    db = get_db()
+    existing = fetchone(db, "SELECT id FROM transactions WHERE stripe_id=?", (order_id,))
+    if not existing:
+        if pack_id == "lifetime":
+            execute(db, "UPDATE users SET lifetime=TRUE, credits=999999 WHERE id=?", (uid,))
+        else:
+            execute(db, "UPDATE users SET credits=credits+? WHERE id=?", (credits, uid))
+        execute(db, "INSERT INTO transactions (user_id, type, credits, amount_eur, stripe_id, status) VALUES (?,?,?,?,?,'completed')",
+                (uid, "purchase_crypto", credits, amount, order_id))
+        db.commit()
+    db.close()
+    return {"ok": True}
+
+@app.get("/api/crypto/wallets/{pack_id}")
+async def get_crypto_wallets(pack_id: str, user=Depends(get_current_user)):
+    """Retourne les adresses crypto et le montant converti"""
+    if pack_id not in CREDIT_PACKS:
+        raise HTTPException(400, "Pack invalide")
+    pack = CREDIT_PACKS[pack_id]
+    amount_eur = pack["price_eur"]
+    # Taux approximatifs (à mettre à jour)
+    import time
+    order_id = f"xtracker-{user['id']}-{pack_id}-{int(time.time())}"
+    # Récupérer taux BTC/EUR et LTC/EUR et ETH/EUR depuis CoinGecko
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            r = await client.get("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,litecoin,ethereum&vs_currencies=eur")
+            rates = r.json()
+            btc_rate = rates.get("bitcoin", {}).get("eur", 90000)
+            ltc_rate = rates.get("litecoin", {}).get("eur", 80)
+            eth_rate = rates.get("ethereum", {}).get("eur", 3000)
+    except:
+        btc_rate = 90000
+        ltc_rate = 80
+        eth_rate = 3000
+    btc_amount = round(amount_eur / btc_rate, 8)
+    ltc_amount = round(amount_eur / ltc_rate, 6)
+    eth_amount = round(amount_eur / eth_rate, 6)
+    # Sauvegarder l'order en BDD pour tracking
+    db = get_db()
+    execute(db, "INSERT INTO transactions (user_id, type, credits, amount_eur, stripe_id, status) VALUES (?,?,?,?,?,'pending')",
+            (user["id"], "purchase_crypto", pack["credits"], amount_eur, order_id))
+    db.commit(); db.close()
+    return {
+        "order_id": order_id,
+        "pack": pack["label"],
+        "amount_eur": amount_eur,
+        "wallets": {
+            "BTC": {"address": PAYGATE_WALLET_BTC, "amount": btc_amount, "symbol": "BTC"},
+            "LTC": {"address": PAYGATE_WALLET_LTC, "amount": ltc_amount, "symbol": "LTC"},
+            "ETH": {"address": PAYGATE_WALLET_ETH, "amount": eth_amount, "symbol": "ETH"},
+        }
+    }
+
+@app.post("/api/crypto/confirm/{order_id}")
+async def confirm_crypto_manual(order_id: str, request: Request, user=Depends(get_current_user)):
+    """L'utilisateur confirme avoir envoyé le paiement"""
+    body = await request.json()
+    tx_hash = body.get("tx_hash", "").strip()
+    db = get_db()
+    tx = fetchone(db, "SELECT * FROM transactions WHERE stripe_id=? AND user_id=?", (order_id, user["id"]))
+    if not tx:
+        db.close()
+        raise HTTPException(404, "Commande introuvable")
+    if tx["status"] == "completed":
+        db.close()
+        return {"ok": True, "message": "Deja traite"}
+    execute(db, "UPDATE transactions SET status='confirming', stripe_id=? WHERE stripe_id=?",
+            (f"{order_id}|{tx_hash}", order_id))
+    db.commit(); db.close()
+    return {"ok": True, "message": "Paiement en attente de confirmation admin"}
+
+@app.get("/api/admin/crypto-order")
+async def admin_crypto_order(order_id: str, admin=Depends(require_admin)):
+    db = get_db()
+    tx = fetchone(db, """SELECT t.*, u.username FROM transactions t 
+                         LEFT JOIN users u ON t.user_id=u.id 
+                         WHERE t.stripe_id=?""", (order_id,))
+    db.close()
+    if not tx:
+        raise HTTPException(404, "Commande introuvable")
+    return dict(tx)
+
+@app.post("/api/admin/crypto-validate")
+async def admin_crypto_validate(request: Request, admin=Depends(require_admin)):
+    body = await request.json()
+    order_id = body.get("order_id","").strip()
+    if not order_id:
+        raise HTTPException(400, "order_id requis")
+    db = get_db()
+    tx = fetchone(db, "SELECT * FROM transactions WHERE stripe_id=?", (order_id,))
+    if not tx:
+        db.close()
+        raise HTTPException(404, "Commande introuvable")
+    if tx["status"] == "completed":
+        db.close()
+        return {"ok": True, "message": "Deja valide"}
+    uid = tx["user_id"]
+    credits = tx["credits"]
+    parts = order_id.split("-")
+    pack_id = parts[2] if len(parts) >= 3 else ""
+    if pack_id == "lifetime":
+        execute(db, "UPDATE users SET lifetime=TRUE, credits=999999 WHERE id=?", (uid,))
+    else:
+        execute(db, "UPDATE users SET credits=credits+? WHERE id=?", (credits, uid))
+    execute(db, "UPDATE transactions SET status='completed' WHERE stripe_id=?", (order_id,))
+    db.commit(); db.close()
+    return {"ok": True, "message": f"{credits} credits ajoutes"}
+
+@app.post("/api/admin/crypto-cancel")
+async def admin_crypto_cancel(request: Request, admin=Depends(require_admin)):
+    body = await request.json()
+    order_id = body.get("order_id","").strip()
+    db = get_db()
+    execute(db, "UPDATE transactions SET status='cancelled' WHERE stripe_id=?", (order_id,))
+    db.commit(); db.close()
+    return {"ok": True}
+
+@app.get("/api/admin/crypto-pending")
+async def admin_crypto_pending(admin=Depends(require_admin)):
+    db = get_db()
+    rows = fetchall(db, """SELECT t.*, u.username FROM transactions t
+                           LEFT JOIN users u ON t.user_id=u.id
+                           WHERE t.type='purchase_crypto' AND t.status='pending'
+                           ORDER BY t.created_at DESC LIMIT 50""", ())
+    db.close()
+    return {"orders": rows}
 
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
 

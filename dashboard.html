@@ -405,22 +405,17 @@ select option{background:var(--bg2)}
       <button class="btn btn-a" onclick="goTo('credits',document.getElementById('nav-credits'))" style="font-size:13px;padding:10px 18px">Recharger</button>
     </div>
     <div class="packs-grid">
-      <div class="pack"><div class="pack-tag" style="color:#22c55e">Decouverte</div><div class="pack-credits">10 credits</div><div class="pack-price" style="color:#22c55e"><sup>€</sup>0.99</div><div class="pack-per">Parfait pour tester</div><button class="pack-btn" style="background:linear-gradient(135deg,#22c55e,#16a34a)" onclick="openPaymentChoice('decouverte')">💳 Carte bancaire</button>
-      <button class="pack-btn" style="margin-top:6px;border-color:rgba(245,158,11,0.3);color:#f59e0b" onclick="openCryptoChoice('decouverte')">₿ Cryptomonnaie</button></div>
-      <div class="pack"><div class="pack-tag">Starter</div><div class="pack-credits">20 credits</div><div class="pack-price"><sup>€</sup>5</div><div class="pack-per">0.25€ / recherche</div><button class="pack-btn" onclick="openPaymentChoice('starter')">💳 Carte bancaire</button>
-      <button class="pack-btn" style="margin-top:6px;border-color:rgba(245,158,11,0.3);color:#f59e0b" onclick="openCryptoChoice('starter')">₿ Cryptomonnaie</button></div>
-      <div class="pack feat"><div class="pack-tag">Pro ⭐</div><div class="pack-credits">200 credits</div><div class="pack-price"><sup>€</sup>14.99</div><div class="pack-per">0.07€ / recherche</div><button class="pack-btn feat" onclick="openPaymentChoice('pro')">💳 Carte bancaire</button>
-      <button class="pack-btn" style="margin-top:6px;border-color:rgba(245,158,11,0.3);color:#f59e0b" onclick="openCryptoChoice('pro')">₿ Cryptomonnaie</button></div>
-      <div class="pack"><div class="pack-tag">Enterprise</div><div class="pack-credits">1000 credits</div><div class="pack-price"><sup>€</sup>49.99</div><div class="pack-per">0.05€ / recherche</div><button class="pack-btn" onclick="openPaymentChoice('enterprise')">💳 Carte bancaire</button>
-      <button class="pack-btn" style="margin-top:6px;border-color:rgba(245,158,11,0.3);color:#f59e0b" onclick="openCryptoChoice('enterprise')">₿ Cryptomonnaie</button></div>
+      <div class="pack"><div class="pack-tag" style="color:#22c55e">Decouverte</div><div class="pack-credits">10 credits</div><div class="pack-price" style="color:#22c55e"><sup>€</sup>0.99</div><div class="pack-per">Parfait pour tester</div><button class="pack-btn" style="background:linear-gradient(135deg,#22c55e,#16a34a)" onclick="openPaymentChoice('decouverte')">Acheter</button></div>
+      <div class="pack"><div class="pack-tag">Starter</div><div class="pack-credits">20 credits</div><div class="pack-price"><sup>€</sup>5</div><div class="pack-per">0.25€ / recherche</div><button class="pack-btn" onclick="openPaymentChoice('starter')">Acheter</button></div>
+      <div class="pack feat"><div class="pack-tag">Pro ⭐</div><div class="pack-credits">200 credits</div><div class="pack-price"><sup>€</sup>14.99</div><div class="pack-per">0.07€ / recherche</div><button class="pack-btn feat" onclick="openPaymentChoice('pro')">Acheter</button></div>
+      <div class="pack"><div class="pack-tag">Enterprise</div><div class="pack-credits">1000 credits</div><div class="pack-price"><sup>€</sup>49.99</div><div class="pack-per">0.05€ / recherche</div><button class="pack-btn" onclick="openPaymentChoice('enterprise')">Acheter</button></div>
     </div>
     <div class="pack" style="margin-top:12px;background:linear-gradient(135deg,rgba(245,158,11,0.08),rgba(251,191,36,0.04));border-color:rgba(245,158,11,0.3)">
       <div class="pack-tag" style="color:#f59e0b">Lifetime ♾️</div>
       <div class="pack-credits">Credits illimités à vie</div>
       <div class="pack-price" style="color:#f59e0b"><sup>€</sup>150</div>
       <div class="pack-per">Paiement unique · Accès illimité pour toujours</div>
-      <button class="pack-btn" style="background:linear-gradient(135deg,#f59e0b,#d97706)" onclick="openPaymentChoice('lifetime')">💳 Obtenir le Lifetime</button>
-      <button class="pack-btn" style="margin-top:6px;border-color:rgba(245,158,11,0.3);color:#f59e0b" onclick="openCryptoChoice('lifetime')">₿ Payer en crypto</button>
+      <button class="pack-btn" style="background:linear-gradient(135deg,#f59e0b,#d97706)" onclick="openPaymentChoice('lifetime')">Obtenir le Lifetime</button>
     </div>
   </div>
 
@@ -652,23 +647,16 @@ select option{background:var(--bg2)}
     <div style="font-size:13px;color:var(--muted2);margin-bottom:24px">Comment souhaitez-vous payer ?</div>
     
     <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px">
-      <button onclick="var p=g('payment-choice-modal').getAttribute('data-pack');proceedCard(p)" style="padding:16px;border-radius:12px;border:1px solid rgba(99,102,241,0.3);background:rgba(99,102,241,0.08);cursor:pointer;font-family:inherit;color:var(--text);transition:all .2s;text-align:left">
+      <button onclick="var p=g('payment-choice-modal').getAttribute('data-pack');g('payment-choice-modal').style.display='none';proceedCard(p)" style="padding:16px;border-radius:12px;border:1px solid rgba(99,102,241,0.3);background:rgba(99,102,241,0.08);cursor:pointer;font-family:inherit;color:var(--text);transition:all .2s;text-align:left">
         <div style="display:flex;align-items:center;gap:12px">
           <div style="font-size:24px">💳</div>
-          <div>
-            <div style="font-weight:700;font-size:14px">Carte bancaire</div>
-            <div style="font-size:12px;color:var(--muted2)">Visa, Mastercard, Apple Pay, Google Pay</div>
-          </div>
+          <div><div style="font-weight:700;font-size:14px">Carte bancaire</div><div style="font-size:12px;color:var(--muted2)">Visa, Mastercard, Apple Pay</div></div>
         </div>
       </button>
-      
-      <button onclick="var p=g('payment-choice-modal').getAttribute('data-pack');proceedWithCrypto(p)" style="padding:16px;border-radius:12px;border:1px solid rgba(245,158,11,0.3);background:rgba(245,158,11,0.06);cursor:pointer;font-family:inherit;color:var(--text);transition:all .2s;text-align:left">
+      <button onclick="var p=g('payment-choice-modal').getAttribute('data-pack');g('payment-choice-modal').style.display='none';openCryptoChoice(p)" style="padding:16px;border-radius:12px;border:1px solid rgba(245,158,11,0.3);background:rgba(245,158,11,0.06);cursor:pointer;font-family:inherit;color:var(--text);transition:all .2s;text-align:left">
         <div style="display:flex;align-items:center;gap:12px">
           <div style="font-size:24px">₿</div>
-          <div>
-            <div style="font-weight:700;font-size:14px">Crypto</div>
-            <div style="font-size:12px;color:var(--muted2)">Bitcoin, Ethereum, Litecoin</div>
-          </div>
+          <div><div style="font-weight:700;font-size:14px">Cryptomonnaie</div><div style="font-size:12px;color:var(--muted2)">Bitcoin, Litecoin, Ethereum</div></div>
         </div>
       </button>
     </div>
@@ -1031,12 +1019,8 @@ async function confirmCrypto(orderId){
 }
 // Carte bancaire direct
 function openPaymentChoice(packId){
-  // Ouvrir le modal de choix de paiement
   var modal=g('payment-choice-modal');
-  if(modal){
-    modal.setAttribute('data-pack',packId);
-    modal.style.display='flex';
-  }
+  if(modal){modal.setAttribute('data-pack',packId);modal.style.display='flex';}
 }
 
 async function proceedCard(packId){
@@ -1055,8 +1039,46 @@ async function openCryptoChoice(packId){
     const r=await fetch(API+'/api/crypto/wallets/'+packId,{headers:hdr()});
     const d=await r.json();
     if(!r.ok){notif(d.detail||'Erreur','err');return}
-    showCryptoStep1(d);
+    // Afficher choix de crypto puis rediriger vers crypto.html
+    showCryptoPickModal(d);
   }catch(e){notif('Erreur reseau','err')}
+}
+
+function showCryptoPickModal(data){
+  var mc=g('crypto-modal-content');
+  var html='<div style="font-size:13px;color:var(--muted2);margin-bottom:20px">Pack <strong style="color:var(--text)">'+data.pack+'</strong> — <strong style="color:var(--accent2)">'+data.amount_eur+' EUR</strong></div>';
+  html+='<div style="font-size:12px;font-weight:600;color:var(--muted2);margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px">Choisir la crypto</div>';
+  html+='<div style="display:flex;flex-direction:column;gap:10px">';
+  var icons={'BTC':'₿','LTC':'Ł','ETH':'Ξ'};
+  var colors={'BTC':'#f7931a','LTC':'#345d9d','ETH':'#627eea'};
+  var names={'BTC':'Bitcoin','LTC':'Litecoin','ETH':'Ethereum'};
+  Object.keys(data.wallets).forEach(function(sym){
+    var w=data.wallets[sym];
+    if(!w.address)return;
+    var c=colors[sym]||'#6366f1';
+    html+='<button onclick="redirectToCrypto('+JSON.stringify(data)+','+JSON.stringify(sym)+')" style="padding:16px;border-radius:12px;border:1px solid '+c+'33;background:'+c+'0a;cursor:pointer;font-family:inherit;color:var(--text);text-align:left">';
+    html+='<div style="display:flex;align-items:center;gap:14px">';
+    html+='<div style="width:42px;height:42px;border-radius:50%;background:'+c+'22;border:1px solid '+c+'44;display:flex;align-items:center;justify-content:center;font-size:20px;color:'+c+'">'+icons[sym]+'</div>';
+    html+='<div><div style="font-weight:700;font-size:15px">'+(names[sym]||sym)+'</div><div style="font-size:12px;color:var(--muted2);margin-top:2px">'+w.amount+' '+sym+'</div></div>';
+    html+='<div style="margin-left:auto;color:var(--muted2);font-size:20px">›</div>';
+    html+='</div></button>';
+  });
+  html+='</div>';
+  mc.innerHTML=html;
+  g('crypto-modal').style.display='flex';
+}
+
+function redirectToCrypto(data,sym){
+  var w=data.wallets[sym];
+  var params=new URLSearchParams({
+    order_id:data.order_id,
+    pack:data.pack,
+    amount_eur:data.amount_eur,
+    sym:sym,
+    address:w.address,
+    crypto_amount:w.amount
+  });
+  window.location.href='/crypto.html?'+params.toString();
 }
 
 // Anciens alias pour compatibilité
