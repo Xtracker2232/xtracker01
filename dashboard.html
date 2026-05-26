@@ -647,13 +647,13 @@ select option{background:var(--bg2)}
     <div style="font-size:13px;color:var(--muted2);margin-bottom:24px">Comment souhaitez-vous payer ?</div>
     
     <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px">
-      <button onclick="var p=g('payment-choice-modal').getAttribute('data-pack');g('payment-choice-modal').style.display='none';proceedCard(p)" style="padding:16px;border-radius:12px;border:1px solid rgba(99,102,241,0.3);background:rgba(99,102,241,0.08);cursor:pointer;font-family:inherit;color:var(--text);transition:all .2s;text-align:left">
+      <button id="pay-card-btn" style="padding:16px;border-radius:12px;border:1px solid rgba(99,102,241,0.3);background:rgba(99,102,241,0.08);cursor:pointer;font-family:inherit;color:var(--text);transition:all .2s;text-align:left;width:100%">
         <div style="display:flex;align-items:center;gap:12px">
           <div style="font-size:24px">💳</div>
           <div><div style="font-weight:700;font-size:14px">Carte bancaire</div><div style="font-size:12px;color:var(--muted2)">Visa, Mastercard, Apple Pay</div></div>
         </div>
       </button>
-      <button onclick="var p=g('payment-choice-modal').getAttribute('data-pack');g('payment-choice-modal').style.display='none';openCryptoChoice(p)" style="padding:16px;border-radius:12px;border:1px solid rgba(245,158,11,0.3);background:rgba(245,158,11,0.06);cursor:pointer;font-family:inherit;color:var(--text);transition:all .2s;text-align:left">
+      <button id="pay-crypto-btn" style="padding:16px;border-radius:12px;border:1px solid rgba(245,158,11,0.3);background:rgba(245,158,11,0.06);cursor:pointer;font-family:inherit;color:var(--text);transition:all .2s;text-align:left;width:100%">
         <div style="display:flex;align-items:center;gap:12px">
           <div style="font-size:24px">₿</div>
           <div><div style="font-weight:700;font-size:14px">Cryptomonnaie</div><div style="font-size:12px;color:var(--muted2)">Bitcoin, Litecoin, Ethereum</div></div>
@@ -1020,7 +1020,18 @@ async function confirmCrypto(orderId){
 // Carte bancaire direct
 function openPaymentChoice(packId){
   var modal=g('payment-choice-modal');
-  if(modal){modal.setAttribute('data-pack',packId);modal.style.display='flex';}
+  if(!modal)return;
+  modal.setAttribute('data-pack',packId);
+  modal.style.display='flex';
+  // Attacher les events
+  var cardBtn=document.getElementById('pay-card-btn');
+  var cryptoBtn=document.getElementById('pay-crypto-btn');
+  if(cardBtn){
+    cardBtn.onclick=function(){modal.style.display='none';proceedCard(packId);};
+  }
+  if(cryptoBtn){
+    cryptoBtn.onclick=function(){modal.style.display='none';openCryptoChoice(packId);};
+  }
 }
 
 async function proceedCard(packId){
