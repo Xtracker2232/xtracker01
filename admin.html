@@ -106,6 +106,7 @@ tr:hover td{background:rgba(255,255,255,0.02)}
   <span style="display:block;width:20px;height:2px;background:#eef0ff;border-radius:2px"></span>
   <span style="display:block;width:20px;height:2px;background:#eef0ff;border-radius:2px"></span>
 </button>
+<div id="sb-overlay" onclick="toggleSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:140"></div>
 <div class="layout">
 <div class="sb">
   <div class="sb-logo"><div>X<span>tracker</span></div><span class="sb-badge">ADMIN</span></div>
@@ -641,15 +642,17 @@ function loadReferrals(){
 }
 function toggleSidebar(){
   var sb=document.querySelector('.sb');
-  if(sb)sb.classList.toggle('open');
+  var ov=document.getElementById('sb-overlay');
+  if(!sb)return;
+  var isOpen=sb.classList.contains('open');
+  if(isOpen){
+    sb.classList.remove('open');
+    if(ov)ov.style.display='none';
+  } else {
+    sb.classList.add('open');
+    if(ov)ov.style.display='block';
+  }
 }
-document.addEventListener('click',function(e){
-  var sb=document.querySelector('.sb');
-  var btn=document.getElementById('mob-menu-btn');
-  if(!sb||window.innerWidth>768)return;
-  if(btn&&btn.contains(e.target))return;
-  if(!sb.contains(e.target))sb.classList.remove('open');
-});
 function logout(){localStorage.clear();window.location.href='login.html'}
 
 function init(){
