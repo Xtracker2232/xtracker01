@@ -1,6 +1,5 @@
-const CACHE_NAME = 'xtracker-v1';
+const CACHE_NAME = 'xtracker-v2';
 const STATIC_FILES = [
-  '/',
   '/index.html',
   '/login.html',
   '/dashboard.html',
@@ -29,27 +28,29 @@ self.addEventListener('activate', function(e) {
 });
 
 self.addEventListener('fetch', function(e) {
-  // API calls - toujours depuis le réseau
-  if (e.request.url.includes('/api/')) {
-    e.respondWith(fetch(e.request).catch(function() {
-      return new Response(JSON.stringify({detail: 'Hors ligne'}), {
-        headers: {'Content-Type': 'application/json'}
-      });
-    }));
+  // Toujours réseau pour les API, POST, et ressources externes
+  if (
+    e.request.url.includes('/api/') ||
+    e.request.method !== 'GET' ||
+    e.request.url.includes('googleapis.com') ||
+    e.request.url.includes('discord') ||
+    e.request.url.includes('railway.app')
+  ) {
+    e.respondWith(fetch(e.request));
     return;
   }
-  // Autres ressources - cache first
+  // Pages HTML - réseau d'abord, cache en fallback
   e.respondWith(
-    caches.match(e.request).then(function(cached) {
-      return cached || fetch(e.request).then(function(response) {
-        if (response.ok) {
-          var clone = response.clone();
-          caches.open(CACHE_NAME).then(function(cache) {
-            cache.put(e.request, clone);
-          });
-        }
-        return response;
-      });
+    fetch(e.request).then(function(response) {
+      if (response.ok) {
+        var clone = response.clone();
+        caches.open(CACHE_NAME).then(function(cache) {
+          cache.put(e.request, clone);
+        });
+      }
+      return response;
+    }).catch(function() {
+      return caches.match(e.request);
     })
   );
 });
