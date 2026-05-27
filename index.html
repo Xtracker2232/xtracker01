@@ -131,6 +131,12 @@ footer{border-top:1px solid var(--border);padding:24px 32px;display:flex;align-i
   footer{flex-direction:column;text-align:center;padding:20px 16px}
 }
 </style>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#6366f1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Xtracker">
+  <link rel="apple-touch-icon" href="https://cdn.discordapp.com/attachments/1477415267452719208/1508616783903461417/logo.PNG">
 </head>
 <body>
 
@@ -298,5 +304,10 @@ function blink(){
 function scheduleBlink(){setTimeout(blink, 2000+Math.random()*2500)}
 scheduleBlink();
 </script>
+  <script>
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.register('/sw.js').catch(function(){});
+    }
+  </script>
 </body>
 </html>
