@@ -217,7 +217,7 @@ select option{background:var(--bg2)}
   .sb.open{transform:none}
   .main{margin-left:0}
   .page{padding:14px}
-  .topbar{padding:0 14px}
+  .topbar{padding-top:env(safe-area-inset-top);padding:0 14px}
   .search-layout{grid-template-columns:1fr}
   .search-col{position:static}
   .packs-grid{grid-template-columns:1fr}
@@ -260,6 +260,7 @@ select option{background:var(--bg2)}
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#6366f1">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Xtracker">
   <link rel="apple-touch-icon" href="https://cdn.discordapp.com/attachments/1477415267452719208/1508616783903461417/logo.PNG">
@@ -694,7 +695,7 @@ select option{background:var(--bg2)}
 
 <script>
 const API='';
-const TOKEN=localStorage.getItem('token');
+const TOKEN=localStorage.getItem('token')||sessionStorage.getItem('token');
 let USER=JSON.parse(localStorage.getItem('user')||'{}');
 if(!TOKEN){window.location.href='login.html'}
 function g(id){return document.getElementById(id)}
