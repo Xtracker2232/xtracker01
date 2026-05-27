@@ -2091,6 +2091,57 @@ async def admin_crypto_pending(admin=Depends(require_admin)):
     db.close()
     return {"orders": rows}
 
+# ── API EXTERNE / SSO ─────────────────────────────────────────────────────────
+@app.get("/api/auth/verify")
+async def verify_token(user=Depends(get_current_user)):
+    """Vérifie un token JWT et retourne les infos utilisateur - pour extensions/apps tierces"""
+    db = get_db()
+    u = fetchone(db, "SELECT id, username, email, role, credits, lifetime, banned, discord_id, discord_username FROM users WHERE id=?", (user["id"],))
+    db.close()
+    if not u:
+        raise HTTPException(404, "Utilisateur introuvable")
+    if u.get("banned"):
+        raise HTTPException(403, "Compte banni")
+    return {
+        "ok": True,
+        "user": {
+            "id": u["id"],
+            "username": u["username"],
+            "email": u["email"],
+            "role": u["role"],
+            "credits": u["credits"],
+            "lifetime": bool(u.get("lifetime")),
+            "discord_id": u.get("discord_id"),
+            "discord_username": u.get("discord_username"),
+        }
+    }
+
+@app.post("/api/auth/token-login")
+async def token_login(request: Request):
+    """Permet à une extension de se connecter avec email/password et récupérer un token"""
+    body = await request.json()
+    email = body.get("email","").strip().lower()
+    password = body.get("password","")
+    if not email or not password:
+        raise HTTPException(400, "Email et mot de passe requis")
+    db = get_db()
+    u = fetchone(db, "SELECT * FROM users WHERE (email=? OR username=?) AND banned=0", (email, email))
+    db.close()
+    if not u or not pwd_ctx.verify(password, u.get("password","")):
+        raise HTTPException(401, "Identifiants incorrects")
+    token = create_token({"sub": str(u["id"]), "role": u["role"]})
+    return {
+        "ok": True,
+        "token": token,
+        "user": {
+            "id": u["id"],
+            "username": u["username"],
+            "role": u["role"],
+            "credits": u["credits"],
+            "lifetime": bool(u.get("lifetime")),
+        }
+    }
+
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
 
 if __name__ == "__main__":
