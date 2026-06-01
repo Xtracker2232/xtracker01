@@ -715,6 +715,9 @@ async def call_brix(method: str, path: str, body: dict = None):
                 raise HTTPException(500, "Reponse invalide de l API")
         elif r.status_code == 500:
             raise HTTPException(500, "Aucun resultat pour cette recherche")
+        elif r.status_code == 403:
+            print(f"[BRIX 403] Key: {BRIX_KEY[:10]}... Response: {r.text[:200]}")
+            raise HTTPException(403, "Erreur API 403 - cle invalide ou expiree")
         elif r.status_code == 429:
             raise HTTPException(429, "Trop de requetes, reessayez dans quelques secondes")
         elif r.status_code == 401:
