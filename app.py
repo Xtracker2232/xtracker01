@@ -259,6 +259,42 @@ async def maintenance_middleware(request, call_next):
 
 
 @app.post("/api/auth/register")
+class SearchModel(BaseModel):
+    nom_famille: str = ""
+    prenom: str = ""
+    nom_naissance: str = ""
+    nom_affichage: str = ""
+    nom_utilisateur: str = ""
+    genre: str = ""
+    date_naissance: str = ""
+    annee_naissance: str = ""
+    email: str = ""
+    telephone: str = ""
+    mobile: str = ""
+    adresse: str = ""
+    code_postal: str = ""
+    ville: str = ""
+    pays: str = ""
+    region: str = ""
+    departement: str = ""
+    nir: str = ""
+    iban: str = ""
+    siret: str = ""
+    siren: str = ""
+    flexible: bool = True
+    per_page: int = 100
+    page: int = 1
+
+class LookupModel(BaseModel):
+    lookup: str = ""
+    type: str = "email"
+
+class AdminUserUpdate(BaseModel):
+    role: str = None
+    credits: int = None
+    banned: bool = None
+    lifetime: bool = None
+
 class RegisterModel(BaseModel):
     username: str
     password: str
