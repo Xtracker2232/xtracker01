@@ -605,6 +605,18 @@ async def register(data: RegisterModel, request: Request):
             execute(db, "INSERT INTO ip_used (ip) VALUES (?)", (ip,))
         except:
             pass
+    # Marquer tous les broadcasts existants comme lus pour eviter le flood
+    try:
+        user_id_new = db_id if not is_pg() else (db_id[0] if db_id else None)
+        if user_id_new:
+            broads = fetchall(db, "SELECT id FROM broadcasts", ())
+            for b in broads:
+                try:
+                    execute(db, "INSERT OR IGNORE INTO broadcast_reads (broadcast_id, user_id) VALUES (?,?)", (b["id"], user_id_new))
+                except:
+                    pass
+    except:
+        pass
     # Gérer le parrainage
     ref_code = data.ref_code.strip().upper() if hasattr(data, 'ref_code') and data.ref_code else None
     if ref_code and db_id:
