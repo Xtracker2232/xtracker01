@@ -919,7 +919,7 @@ async def set_maintenance(request: Request, admin=Depends(require_admin)):
     upsert_setting("maintenance_message", message)
     upsert_setting("maintenance_eta", str(eta_minutes) if eta_minutes else "")
     db.commit(); db.close()
-    return {"maintenance": enabled, "message": "Maintenance " + ("activee" if enabled else "desactivee")}}
+    return {"maintenance": enabled, "message": "Maintenance " + ("activee" if enabled else "desactivee")}
 
 @app.get("/api/admin/maintenance/status")
 async def get_maintenance(admin=Depends(require_admin)):
