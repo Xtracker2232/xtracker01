@@ -310,8 +310,8 @@ select option{background:var(--bg2)}
               <div class="acc open" id="acc-id">
                 <div class="acc-head" onclick="togAcc('id')"><div class="acc-left">👤 Identite <span class="acc-cnt" id="ac-id"></span></div><span class="acc-arrow">▼</span></div>
                 <div class="acc-body"><div class="fg">
-                  <div class="fgroup"><label>Nom</label><input id="f-nom" placeholder="Bardella" oninput="cnt('id')"></div>
-                  <div class="fgroup"><label>Prenom</label><input id="f-prenom" placeholder="Jordan" oninput="cnt('id')"></div>
+                  <div class="fgroup"><label>Nom</label><input id="f-nom" placeholder="Bardella" autocomplete="off" oninput="cnt('id')"></div>
+                  <div class="fgroup"><label>Prenom</label><input id="f-prenom" placeholder="Jordan" autocomplete="off" oninput="cnt('id')"></div>
                   <div class="fgroup"><label>Nom naissance</label><input id="f-nom_naissance" placeholder="Martin" oninput="cnt('id')"></div>
                   <div class="fgroup"><label>Nom affiche</label><input id="f-nom_affichage" placeholder="Jordan D." oninput="cnt('id')"></div>
                   <div class="fgroup"><label>Utilisateur</label><input id="f-nom_utilisateur" placeholder="jean_d" oninput="cnt('id')"></div>
@@ -329,7 +329,7 @@ select option{background:var(--bg2)}
               <div class="acc" id="acc-contact">
                 <div class="acc-head" onclick="togAcc('contact')"><div class="acc-left">✉️ Contact <span class="acc-cnt" id="ac-contact"></span></div><span class="acc-arrow">▼</span></div>
                 <div class="acc-body"><div class="fg">
-                  <div class="fgroup"><label>Email</label><input id="f-email" type="email" placeholder="jordan@mail.com" oninput="cnt('contact')"></div>
+                  <div class="fgroup"><label>Email</label><input id="f-email" autocomplete="off" type="email" placeholder="jordan@mail.com" oninput="cnt('contact')"></div>
                   <div class="fgroup"><label>Telephone</label><input id="f-telephone" placeholder="0612345678" oninput="cnt('contact')"></div>
                   <div class="fgroup"><label>Mobile</label><input id="f-mobile" placeholder="0612345678" oninput="cnt('contact')"></div>
                   <div class="fgroup"><label>IP</label><input id="f-adresse_ip" placeholder="192.168.1.1" oninput="cnt('contact')"></div>
@@ -340,7 +340,7 @@ select option{background:var(--bg2)}
                 <div class="acc-body"><div class="fg">
                   <div class="fgroup full"><label>Adresse</label><input id="f-adresse" placeholder="10 rue de la Paix" oninput="cnt('loc')"></div>
                   <div class="fgroup"><label>Code postal</label><input id="f-code_postal" placeholder="75001" oninput="cnt('loc')"></div>
-                  <div class="fgroup"><label>Ville</label><input id="f-ville" placeholder="Paris" oninput="cnt('loc')"></div>
+                  <div class="fgroup"><label>Ville</label><input id="f-ville" autocomplete="off" placeholder="Paris" oninput="cnt('loc')"></div>
                   <div class="fgroup"><label>Departement</label><input id="f-departement" placeholder="75" oninput="cnt('loc')"></div>
                   <div class="fgroup"><label>Region</label><input id="f-region" placeholder="Ile-de-France" oninput="cnt('loc')"></div>
                   <div class="fgroup"><label>Pays</label><input id="f-pays" placeholder="FR" oninput="cnt('loc')"></div>
@@ -804,7 +804,17 @@ function setLoad(id,on,label){const b=g(id);if(!b)return;b.disabled=on;b.innerHT
 function showErr(msg){g('results').innerHTML='<div class="err-box">'+msg+'</div>';g('state-empty').style.display='none'}
 function showNoCredits(){g('results').innerHTML='<div class="no-credits"><h3>Plus de credits</h3><p>Rechargez votre compte pour continuer.</p><button class="btn btn-a" onclick="goTo(\'credits\',null)">Acheter des credits</button></div>';g('state-empty').style.display='none'}
 
-async function doSearch(){
+async document.addEventListener('keydown', function(e){
+  if(e.key==='Enter'){
+    var active=document.activeElement;
+    // Si on est dans un champ de recherche
+    if(active&&active.tagName==='INPUT'&&active.closest('.search-form, .search-panel, [id^="f-"]')){
+      doSearch();
+    }
+  }
+});
+
+function doSearch(){
   const payload={flexible,per_page:100};
   const map={nom_famille:'f-nom',prenom:'f-prenom',nom_naissance:'f-nom_naissance',nom_affichage:'f-nom_affichage',nom_utilisateur:'f-nom_utilisateur',genre:'f-genre',annee_naissance:'f-annee_naissance',date_naissance:'f-date_naissance',ville_naissance:'f-ville_naissance',email:'f-email',telephone:'f-telephone',mobile:'f-mobile',adresse_ip:'f-adresse_ip',adresse:'f-adresse',code_postal:'f-code_postal',ville:'f-ville',departement:'f-departement',region:'f-region',pays:'f-pays',nir:'f-nir',iban:'f-iban',siret:'f-siret',societe:'f-societe',profession:'f-profession',vin_plaque:'f-vin_plaque'};
   Object.entries(map).forEach(([k,id])=>{const v=g(id)&&g(id).value.trim();if(v)payload[k]=v});
