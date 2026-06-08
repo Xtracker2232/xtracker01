@@ -710,7 +710,7 @@ async def call_brix(method: str, path: str, body: dict = None):
         "sec-ch-ua-platform": '"Windows"',
     }
     try:
-        async with httpx.AsyncClient(timeout=25, follow_redirects=True) as client:
+        async with httpx.AsyncClient(timeout=25, follow_redirects=True, http2=False) as client:
             if method == "POST":
                 r = await client.post(f"{BRIX_BASE}{path}", json=body, headers=headers)
             else:
