@@ -263,7 +263,7 @@ select option{background:var(--bg2)}
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Xtracker">
-  <link rel="apple-touch-icon" href="https://cdn.discordapp.com/attachments/1477415267452719208/1508616783903461417/logo.PNG">
+  <link rel="apple-touch-icon" href="https://cdn.discordapp.com/attachments/1496954063328252046/1509267836986462379/814A93DD-C6C4-42D0-96EE-47FE964ED9D6.jpg?ex=6a188eb5&is=6a173d35&hm=dccfe16c5eac4f1b2e42f332fbaf92ab59cd31c7a94488cfa8fd802e893a7e93&">
 </head>
 <body>
 <div class="layout">
@@ -772,6 +772,7 @@ function renderResults(results,total,took,free_left,credits){
     const name=[p.prenom,p.nom_famille].filter(Boolean).join(' ')||'Profil inconnu';
     const sub=[p.email,p.telephone,p.ville].filter(Boolean).join(' · ')||'—';
     const srcs=(p._sources||[]).slice(0,3).map(s=>'<span class="src-tag">'+s+'</span>').join('');
+    const tags=renderTags(getPersonTags(p));
     const fmap=Object.entries(p).filter(([k,v])=>!SKIP.has(k)&&v&&typeof v==='string'&&v.trim()&&v!=='undefined').map(([k,v])=>[LABELS[k]||k,v]);
     const fh=fmap.map(([k,v])=>'<div class="rf"><div class="rf-k">'+k+'</div><div class="rf-v">'+v+'</div></div>').join('');
     const famille=p.famille||p.membres_famille||p.family||[];
@@ -782,7 +783,8 @@ function renderResults(results,total,took,free_left,credits){
     }
     const allSrcs=(p._sources||[]).map(s=>'<span class="rsrc">'+s+'</span>').join('');
     const rawStr=JSON.stringify(p,null,2).replace(/</g,'&lt;');
-    html+='<div class="rcard" style="animation-delay:'+i*.04+'s"><div class="rcard-top" onclick="tog('+i+')"><div><div class="rname">'+name+'</div><div class="rmeta">'+sub+'</div></div><div class="rtop-r">'+srcs+'<span class="rarr" id="arr'+i+'">▼</span></div></div><div class="rcard-body" id="rb'+i+'"><div class="rfields">'+fh+'</div>'+(allSrcs?'<div class="rsources">'+allSrcs+'</div>':'')+famHtml+'<div class="action-row"><button class="raw-btn" onclick="toggleRaw('+i+')">Approfondir</button><button class="raw-btn" onclick="copyResult('+i+')">Copier</button></div><div class="raw-data" id="raw'+i+'">'+rawStr+'</div></div></div>';
+    const ptags=renderTags(p);
+    html+='<div class="rcard" style="animation-delay:'+i*.04+'s"><div class="rcard-top" onclick="tog('+i+')"><div><div class="rname">'+name+'</div><div class="rmeta">'+sub+'</div>'+ptags+'</div><div class="rtop-r">'+srcs+'<span class="rarr" id="arr'+i+'">▼</span></div></div><div class="rcard-body" id="rb'+i+'"><div class="rfields">'+fh+'</div>'+(allSrcs?'<div class="rsources">'+allSrcs+'</div>':'')+famHtml+'<div class="action-row"><button class="raw-btn" onclick="toggleRaw('+i+')">Approfondir</button><button class="raw-btn" onclick="copyResult('+i+')">Copier</button></div><div class="raw-data" id="raw'+i+'">'+rawStr+'</div></div></div>';
   });
   el.innerHTML=html;
 }
@@ -1001,6 +1003,52 @@ async function checkOrderStatus(orderId){
 }
 
 function showCryptoModal(data){showCryptoStep1(data);}
+
+function getPersonTags(person){
+  var tags = [];
+  var year = null;
+  
+  // Extraire l'année de naissance
+  if(person.date_naissance){
+    var match = String(person.date_naissance).match(/(\d{4})/);
+    if(match) year = parseInt(match[1]);
+  }
+  
+  var currentYear = new Date().getFullYear();
+  
+  if(year){
+    var age = currentYear - year;
+    if(age >= 95)       tags.push({label:'Probablement decede', color:'rgba(239,68,68,0.15)', border:'rgba(239,68,68,0.4)', text:'#ef4444'});
+    else if(age >= 70)  tags.push({label:'Senior', color:'rgba(251,146,60,0.15)', border:'rgba(251,146,60,0.4)', text:'#fb923c'});
+    else if(age >= 60)  tags.push({label:'Retraite', color:'rgba(234,179,8,0.15)', border:'rgba(234,179,8,0.4)', text:'#eab308'});
+    else if(age >= 18)  tags.push({label:'Actif', color:'rgba(34,197,94,0.15)', border:'rgba(34,197,94,0.4)', text:'#22c55e'});
+  }
+  
+  // Statut marital
+  var marital = person.statut_marital || person.situation_familiale || '';
+  if(marital){
+    marital = marital.toLowerCase();
+    if(marital.includes('mari') || marital.includes('conjoint') || marital.includes('pacs'))
+      tags.push({label:'Marie(e)', color:'rgba(99,102,241,0.15)', border:'rgba(99,102,241,0.4)', text:'#818cf8'});
+    else if(marital.includes('divor') || marital.includes('separ'))
+      tags.push({label:'Divorce(e)', color:'rgba(168,85,247,0.15)', border:'rgba(168,85,247,0.4)', text:'#c084fc'});
+    else if(marital.includes('veuf') || marital.includes('veuve'))
+      tags.push({label:'Veuf/Veuve', color:'rgba(107,114,128,0.15)', border:'rgba(107,114,128,0.4)', text:'#9ca3af'});
+    else if(marital.includes('celib'))
+      tags.push({label:'Celibataire', color:'rgba(6,182,212,0.15)', border:'rgba(6,182,212,0.4)', text:'#22d3ee'});
+  }
+  
+  return tags;
+}
+
+function renderTags(tags){
+  if(!tags||!tags.length) return '';
+  return '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px">'
+    + tags.map(function(t){
+        return '<span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600;letter-spacing:.3px;background:'+t.color+';border:1px solid '+t.border+';color:'+t.text+';backdrop-filter:blur(4px)">'+t.label+'</span>';
+      }).join('')
+    +'</div>';
+}
 
 function copyText(txt){
   navigator.clipboard.writeText(String(txt)).then(function(){notif('Copie !')}).catch(function(){
@@ -1733,5 +1781,59 @@ init();
       navigator.serviceWorker.register('/sw.js').catch(function(){});
     }
   </script>
+<script>
+function getPersonTags(p){
+  var tags=[];
+  var year=null;
+  if(p.date_naissance){
+    var m=String(p.date_naissance).match(/(\d{4})/);
+    if(m)year=parseInt(m[1]);
+  }
+  var cy=new Date().getFullYear();
+  if(year){
+    var age=cy-year;
+    if(age>=95)tags.push({l:'Probablement decede',c:'rgba(239,68,68,0.15)',b:'rgba(239,68,68,0.4)',t:'#ef4444'});
+    else if(age>=70)tags.push({l:'Senior',c:'rgba(251,146,60,0.15)',b:'rgba(251,146,60,0.4)',t:'#fb923c'});
+    else if(age>=60)tags.push({l:'Retraite',c:'rgba(234,179,8,0.15)',b:'rgba(234,179,8,0.4)',t:'#eab308'});
+    else if(age>=18)tags.push({l:'Actif',c:'rgba(34,197,94,0.15)',b:'rgba(34,197,94,0.4)',t:'#22c55e'});
+  }
+  var ms=(p.statut_marital||p.situation_familiale||'').toLowerCase();
+  if(ms.includes('mari')||ms.includes('pacs'))tags.push({l:'Marie(e)',c:'rgba(99,102,241,0.15)',b:'rgba(99,102,241,0.4)',t:'#818cf8'});
+  else if(ms.includes('divor'))tags.push({l:'Divorce(e)',c:'rgba(168,85,247,0.15)',b:'rgba(168,85,247,0.4)',t:'#c084fc'});
+  else if(ms.includes('veuf')||ms.includes('veuve'))tags.push({l:'Veuf/Veuve',c:'rgba(107,114,128,0.15)',b:'rgba(107,114,128,0.4)',t:'#9ca3af'});
+  else if(ms.includes('celib'))tags.push({l:'Celibataire',c:'rgba(6,182,212,0.15)',b:'rgba(6,182,212,0.4)',t:'#22d3ee'});
+  return tags;
+}
+function renderTags(p){
+  var tags=getPersonTags(p);
+  if(!tags.length)return '';
+  return '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px">'+tags.map(function(t){
+    return '<span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600;letter-spacing:.3px;background:'+t.c+';border:1px solid '+t.b+';color:'+t.t+';backdrop-filter:blur(4px)">'+t.l+'</span>';
+  }).join('')+'</div>';
+}
+// Patch renderResults pour injecter les tags
+var _origRender=window.renderResults;
+if(typeof renderResults==='function'){
+  var _orig=renderResults;
+  window.renderResults=function(results,total,took,free_left,credits){
+    _orig(results,total,took,free_left,credits);
+    // Injecter les tags dans chaque card
+    if(results&&results.length){
+      results.forEach(function(p,i){
+        var meta=document.querySelector('#rb'+i+' .rmeta')||document.querySelectorAll('.rmeta')[i];
+        if(meta&&!meta.querySelector('.person-tags')){
+          var tagsHtml=renderTags(p);
+          if(tagsHtml){
+            var div=document.createElement('div');
+            div.className='person-tags';
+            div.innerHTML=tagsHtml;
+            meta.parentNode.insertBefore(div,meta.nextSibling);
+          }
+        }
+      });
+    }
+  };
+}
+</script>
 </body>
 </html>
