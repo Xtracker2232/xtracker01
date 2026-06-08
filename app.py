@@ -347,7 +347,7 @@ async def maintenance_middleware(request, call_next):
         db = get_db()
         row = fetchone(db, "SELECT value FROM settings WHERE key='maintenance_enabled'", ())
         db.close()
-        maintenance = row and row.get("value") == "true"
+        maintenance = bool(row and row.get("value") == "true")
     except:
         maintenance = False
     if maintenance:
@@ -2048,6 +2048,17 @@ async def restore_admin(username: str):
     execute(db, "UPDATE users SET role='admin' WHERE username=? OR email=?", (username, username))
     db.commit(); db.close()
     return {"ok": True, "message": f"Compte {username} remis en admin"}
+
+@app.get("/api/admin/fix-maintenance-off")
+async def fix_maintenance_off():
+    """Route d urgence pour desactiver la maintenance"""
+    try:
+        db = get_db()
+        execute(db, "UPDATE settings SET value='false' WHERE key='maintenance_enabled'", ())
+        execute(db, "DELETE FROM settings WHERE key='maintenance_enabled'", ())
+        db.commit(); db.close()
+    except: pass
+    return {"ok": True, "message": "Maintenance desactivee"}
 
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
 
