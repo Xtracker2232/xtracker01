@@ -1785,8 +1785,9 @@ init();
 function getPersonTags(p){
   var tags=[];
   var year=null;
-  if(p.date_naissance){
-    var m=String(p.date_naissance).match(/(\d{4})/);
+  if(p.date_naissance||p.annee_naissance){
+    var dn=String(p.date_naissance||p.annee_naissance||'');
+    var m=dn.match(/(\d{4})/);
     if(m)year=parseInt(m[1]);
   }
   var cy=new Date().getFullYear();
@@ -1795,13 +1796,12 @@ function getPersonTags(p){
     if(age>=95)tags.push({l:'Probablement decede',c:'rgba(239,68,68,0.15)',b:'rgba(239,68,68,0.4)',t:'#ef4444'});
     else if(age>=70)tags.push({l:'Senior',c:'rgba(251,146,60,0.15)',b:'rgba(251,146,60,0.4)',t:'#fb923c'});
     else if(age>=60)tags.push({l:'Retraite',c:'rgba(234,179,8,0.15)',b:'rgba(234,179,8,0.4)',t:'#eab308'});
-    else if(age>=18)tags.push({l:'Actif',c:'rgba(34,197,94,0.15)',b:'rgba(34,197,94,0.4)',t:'#22c55e'});
   }
-  var ms=(p.statut_marital||p.situation_familiale||'').toLowerCase();
+  var ms=(p.statut_marital||p.situation_familiale||p.civilite||'').toLowerCase();
   if(ms.includes('mari')||ms.includes('pacs'))tags.push({l:'Marie(e)',c:'rgba(99,102,241,0.15)',b:'rgba(99,102,241,0.4)',t:'#818cf8'});
   else if(ms.includes('divor'))tags.push({l:'Divorce(e)',c:'rgba(168,85,247,0.15)',b:'rgba(168,85,247,0.4)',t:'#c084fc'});
   else if(ms.includes('veuf')||ms.includes('veuve'))tags.push({l:'Veuf/Veuve',c:'rgba(107,114,128,0.15)',b:'rgba(107,114,128,0.4)',t:'#9ca3af'});
-  else if(ms.includes('celib'))tags.push({l:'Celibataire',c:'rgba(6,182,212,0.15)',b:'rgba(6,182,212,0.4)',t:'#22d3ee'});
+  else if(ms.includes('celib')||ms.includes('mlle'))tags.push({l:'Celibataire',c:'rgba(6,182,212,0.15)',b:'rgba(6,182,212,0.4)',t:'#22d3ee'});
   return tags;
 }
 function renderTags(p){
