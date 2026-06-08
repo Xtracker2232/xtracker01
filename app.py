@@ -53,6 +53,39 @@ security = HTTPBearer(auto_error=False)
 # Rate limiting simple en mémoire
 import time
 from collections import defaultdict
+import jwt as _jwt
+
+def create_token(data: dict) -> str:
+    return _jwt.encode(data, SECRET_KEY, algorithm="HS256")
+
+def decode_token(token: str) -> dict:
+    return _jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+
+async def get_current_user(request: Request):
+    auth = request.headers.get("authorization", "")
+    if not auth.startswith("Bearer "):
+        raise HTTPException(401, "Token manquant")
+    token = auth[7:]
+    try:
+        payload = decode_token(token)
+    except Exception:
+        raise HTTPException(401, "Token invalide")
+    db = get_db()
+    u = fetchone(db, "SELECT * FROM users WHERE id=?", (int(payload["sub"]),))
+    db.close()
+    if not u:
+        raise HTTPException(401, "Utilisateur introuvable")
+    if u.get("banned"):
+        raise HTTPException(403, "Compte banni")
+    return u
+
+async def require_admin(request: Request):
+    user = await get_current_user(request)
+    if user.get("role") != "admin":
+        raise HTTPException(403, "Acces refuse")
+    return user
+
+
 _rate_limit = defaultdict(list)
 
 def check_rate_limit(key: str, max_requests: int = 5, window: int = 60) -> bool:
