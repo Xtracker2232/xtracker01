@@ -171,403 +171,61 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 
 @app.middleware("http")
 async def maintenance_middleware(request, call_next):
-    # Recharger la variable à chaque requête pour permettre l'activation à chaud
+    path = request.url.path
+    # Toujours laisser passer : admin, auth, assets statiques
+    if (path.startswith("/api/admin") or 
+        path.startswith("/api/auth") or 
+        path == "/maintenance.html" or
+        path.startswith("/static") or
+        path == "/favicon.ico" or
+        path.endswith(".js") or
+        path.endswith(".css") or
+        path.endswith(".png") or
+        path.endswith(".jpg") or
+        path == "/manifest.json" or
+        path == "/sw.js"):
+        return await call_next(request)
+    # Vérifier si maintenance active dans la BDD
     try:
-        with open(".maintenance", "r") as _f:
-            maintenance = _f.read().strip() == "true"
+        db = get_db()
+        row = fetchone(db, "SELECT value FROM settings WHERE key='maintenance_enabled'", ())
+        db.close()
+        maintenance = row and row.get("value") == "true"
     except:
-        maintenance = os.getenv("MAINTENANCE", "false").lower() == "true"
+        maintenance = False
     if maintenance:
-        path = request.url.path
-        # Laisser passer les routes API admin, maintenance.html, preview, et assets
-        if path.startswith("/api/admin") or path.startswith("/api/auth") or path == "/maintenance.html" or path.startswith("/preview"):
-            return await call_next(request)
-        # Vérifier si l'utilisateur est admin via token JWT
+        # Laisser passer les admins
         try:
             auth = request.headers.get("authorization","")
             if auth.startswith("Bearer "):
-                token = auth.split(" ")[1]
-                payload = jwt.decode(token, SECRET_KEY, [ALGORITHM])
+                token = auth[7:]
+                payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
                 if payload.get("role") == "admin":
                     return await call_next(request)
         except:
             pass
-        # Laisser passer les pages admin et dashboard pour les admins
-        if path in ["/admin.html", "/dashboard.html", "/login.html"]:
-            return await call_next(request)
-        from fastapi.responses import HTMLResponse
-        with open("maintenance.html", "r", encoding="utf-8") as f:
-            html = f.read()
-        return HTMLResponse(content=html, status_code=503)
+        # Récupérer le message et le temps estimé
+        try:
+            db = get_db()
+            msg_row = fetchone(db, "SELECT value FROM settings WHERE key='maintenance_message'", ())
+            eta_row = fetchone(db, "SELECT value FROM settings WHERE key='maintenance_eta'", ())
+            db.close()
+            msg = msg_row.get("value","") if msg_row else ""
+            eta = eta_row.get("value","") if eta_row else ""
+        except:
+            msg = ""
+            eta = ""
+        if path.startswith("/api/"):
+            from fastapi.responses import JSONResponse
+            return JSONResponse({"detail": "Maintenance en cours", "message": msg}, status_code=503)
+        from fastapi.responses import RedirectResponse
+        params = ""
+        if msg: params += f"?msg={msg}"
+        if eta: params += ("&" if params else "?") + f"eta={eta}"
+        return RedirectResponse(url=f"/maintenance.html{params}")
     return await call_next(request)
 
-# ── DATABASE ──────────────────────────────────────────────────────────────────
-def get_db():
-    if USE_PG and DATABASE_URL:
-        try:
-            conn = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
-            return conn
-        except Exception as e:
-            print(f"[DB] Erreur PostgreSQL: {e}, fallback SQLite")
-    db = sqlite3.connect(DB_PATH, check_same_thread=False)
-    db.row_factory = sqlite3.Row
-    return db
 
-def is_pg():
-    return USE_PG and bool(DATABASE_URL)
-
-def q(sql):
-    """Adapte les placeholders ? -> %s pour PostgreSQL"""
-    if is_pg():
-        return sql.replace("?", "%s")
-    return sql
-
-def fetchone(cur_or_db, sql, params=()):
-    if is_pg():
-        cur = cur_or_db.cursor()
-        cur.execute(q(sql), params)
-        row = cur.fetchone()
-        cur.close()
-        return dict(row) if row else None
-    return cur_or_db.execute(q(sql), params).fetchone()
-
-def fetchall(cur_or_db, sql, params=()):
-    if is_pg():
-        cur = cur_or_db.cursor()
-        cur.execute(q(sql), params)
-        rows = cur.fetchall()
-        cur.close()
-        return [dict(r) for r in rows]
-    return cur_or_db.execute(q(sql), params).fetchall()
-
-def execute(db, sql, params=()):
-    if is_pg():
-        cur = db.cursor()
-        cur.execute(q(sql), params)
-        lastid = None
-        try:
-            lastid = cur.fetchone()
-            if lastid: lastid = list(lastid.values())[0]
-        except: pass
-        cur.close()
-        return lastid
-    else:
-        cur = db.execute(q(sql), params)
-        return cur.lastrowid
-
-def now_sql():
-    return "NOW()" if is_pg() else "datetime('now')"
-
-def date_sql():
-    return "date(NOW())" if is_pg() else "date('now')"
-
-def init_db():
-    db = get_db()
-    if is_pg():
-        cur = db.cursor()
-        cur.execute("""CREATE TABLE IF NOT EXISTS users (
-            id         SERIAL PRIMARY KEY,
-            email      TEXT UNIQUE NOT NULL,
-            password   TEXT NOT NULL,
-            username   TEXT NOT NULL,
-            role       TEXT DEFAULT 'user',
-            credits    INTEGER DEFAULT 0,
-            free_left  INTEGER DEFAULT 5,
-            created_at TIMESTAMP DEFAULT NOW(),
-            last_login TIMESTAMP,
-            banned     BOOLEAN DEFAULT FALSE,
-            stripe_id  TEXT,
-            auth_type  TEXT DEFAULT 'local',
-            lifetime   BOOLEAN DEFAULT FALSE,
-            reg_ip     TEXT DEFAULT NULL
-        )""")
-        cur.execute("""CREATE TABLE IF NOT EXISTS searches (
-            id           SERIAL PRIMARY KEY,
-            user_id      INTEGER REFERENCES users(id),
-            query_data   TEXT,
-            result_count INTEGER DEFAULT 0,
-            cost         INTEGER DEFAULT 1,
-            created_at   TIMESTAMP DEFAULT NOW()
-        )""")
-        cur.execute("""CREATE TABLE IF NOT EXISTS transactions (
-            id         SERIAL PRIMARY KEY,
-            user_id    INTEGER REFERENCES users(id),
-            type       TEXT,
-            credits    INTEGER,
-            amount_eur FLOAT,
-            stripe_id  TEXT,
-            status     TEXT DEFAULT 'pending',
-            created_at TIMESTAMP DEFAULT NOW()
-        )""")
-        cur.execute("""CREATE TABLE IF NOT EXISTS blocklist (
-            id         SERIAL PRIMARY KEY,
-            type       TEXT NOT NULL,
-            value      TEXT NOT NULL,
-            reason     TEXT,
-            created_at TIMESTAMP DEFAULT NOW()
-        )""")
-        cur.execute("""CREATE TABLE IF NOT EXISTS ip_used (
-            id         SERIAL PRIMARY KEY,
-            ip         TEXT UNIQUE NOT NULL,
-            created_at TIMESTAMP DEFAULT NOW()
-        )""")
-        cur.execute("""CREATE TABLE IF NOT EXISTS tickets (
-            id         SERIAL PRIMARY KEY,
-            user_id    INTEGER REFERENCES users(id),
-            subject    TEXT NOT NULL,
-            status     TEXT DEFAULT 'open',
-            created_at TIMESTAMP DEFAULT NOW()
-        )""")
-        cur.execute("""CREATE TABLE IF NOT EXISTS ticket_messages (
-            id           SERIAL PRIMARY KEY,
-            ticket_id    INTEGER REFERENCES tickets(id),
-            user_id      INTEGER REFERENCES users(id),
-            message      TEXT NOT NULL,
-            is_admin     BOOLEAN DEFAULT FALSE,
-            read_by_user  BOOLEAN DEFAULT FALSE,
-            read_by_admin BOOLEAN DEFAULT FALSE,
-            created_at   TIMESTAMP DEFAULT NOW()
-        )""")
-        cur.execute("""CREATE TABLE IF NOT EXISTS broadcasts (
-            id             SERIAL PRIMARY KEY,
-            message        TEXT NOT NULL,
-            target_user_id INTEGER REFERENCES users(id),
-            created_by     INTEGER REFERENCES users(id),
-            created_at     TIMESTAMP DEFAULT NOW()
-        )""")
-        cur.execute("""CREATE TABLE IF NOT EXISTS broadcast_reads (
-            id           SERIAL PRIMARY KEY,
-            broadcast_id INTEGER REFERENCES broadcasts(id),
-            user_id      INTEGER REFERENCES users(id),
-            UNIQUE(broadcast_id, user_id)
-        )""")
-        cur.execute("""CREATE TABLE IF NOT EXISTS announcements (
-            id         SERIAL PRIMARY KEY,
-            message    TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT NOW()
-        )""")
-        # Migration auth_type
-        try:
-            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_type TEXT DEFAULT 'local'")
-            cur.execute("UPDATE users SET auth_type='local' WHERE auth_type IS NULL")
-            db.commit()
-        except: pass
-        # Migration reg_ip, lifetime, referral, discord
-        try:
-            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS reg_ip TEXT DEFAULT NULL")
-            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS lifetime BOOLEAN DEFAULT FALSE")
-            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS theme TEXT DEFAULT NULL")
-            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code TEXT DEFAULT NULL")
-            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by INTEGER DEFAULT NULL")
-            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS discord_id TEXT DEFAULT NULL")
-            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS discord_username TEXT DEFAULT NULL")
-            db.commit()
-        except: pass
-        # Table link codes temporaires
-        try:
-            cur.execute("""CREATE TABLE IF NOT EXISTS discord_link_codes (
-                id SERIAL PRIMARY KEY,
-                user_id INTEGER REFERENCES users(id),
-                code TEXT UNIQUE NOT NULL,
-                created_at TIMESTAMP DEFAULT NOW(),
-                expires_at TIMESTAMP DEFAULT (NOW() + INTERVAL '1 hour'),
-                used BOOLEAN DEFAULT FALSE
-            )""")
-            db.commit()
-        except: pass
-        # Table referrals
-        try:
-            cur.execute("""CREATE TABLE IF NOT EXISTS referrals (
-                id SERIAL PRIMARY KEY,
-                referrer_id INTEGER REFERENCES users(id),
-                referred_id INTEGER REFERENCES users(id),
-                credits_earned INTEGER DEFAULT 5,
-                created_at TIMESTAMP DEFAULT NOW()
-            )""")
-            db.commit()
-        except: pass
-        # Migration nouvelles tables
-        try:
-            cur.execute("""CREATE TABLE IF NOT EXISTS tickets (
-                id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id),
-                subject TEXT NOT NULL, status TEXT DEFAULT 'open',
-                created_at TIMESTAMP DEFAULT NOW())""")
-            cur.execute("""CREATE TABLE IF NOT EXISTS ticket_messages (
-                id SERIAL PRIMARY KEY, ticket_id INTEGER REFERENCES tickets(id),
-                user_id INTEGER REFERENCES users(id), message TEXT NOT NULL,
-                is_admin BOOLEAN DEFAULT FALSE, read_by_user BOOLEAN DEFAULT FALSE,
-                read_by_admin BOOLEAN DEFAULT FALSE, created_at TIMESTAMP DEFAULT NOW())""")
-            cur.execute("""CREATE TABLE IF NOT EXISTS broadcasts (
-                id SERIAL PRIMARY KEY, message TEXT NOT NULL,
-                target_user_id INTEGER REFERENCES users(id),
-                created_by INTEGER REFERENCES users(id),
-                created_at TIMESTAMP DEFAULT NOW())""")
-            cur.execute("""CREATE TABLE IF NOT EXISTS broadcast_reads (
-                id SERIAL PRIMARY KEY, broadcast_id INTEGER REFERENCES broadcasts(id),
-                user_id INTEGER REFERENCES users(id), UNIQUE(broadcast_id, user_id))""")
-            cur.execute("""CREATE TABLE IF NOT EXISTS announcements (
-                id SERIAL PRIMARY KEY, message TEXT NOT NULL,
-                created_at TIMESTAMP DEFAULT NOW())""")
-            db.commit()
-        except Exception as e:
-            print(f"[DB] Migration tables: {e}")
-        # Admin cree manuellement via Railway variables si besoin
-        db.commit()
-        cur.close()
-        db.close()
-        print("✓ Base de données PostgreSQL initialisée")
-    else:
-        db.executescript("""
-        CREATE TABLE IF NOT EXISTS users (
-            id         INTEGER PRIMARY KEY AUTOINCREMENT,
-            email      TEXT UNIQUE NOT NULL,
-            password   TEXT NOT NULL,
-            username   TEXT NOT NULL,
-            role       TEXT DEFAULT 'user',
-            credits    INTEGER DEFAULT 0,
-            free_left  INTEGER DEFAULT 5,
-            created_at TEXT DEFAULT (datetime('now')),
-            last_login TEXT,
-            banned     INTEGER DEFAULT 0,
-            stripe_id  TEXT
-        );
-        CREATE TABLE IF NOT EXISTS searches (
-            id           INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id      INTEGER,
-            query_data   TEXT,
-            result_count INTEGER DEFAULT 0,
-            cost         INTEGER DEFAULT 1,
-            created_at   TEXT DEFAULT (datetime('now')),
-            FOREIGN KEY(user_id) REFERENCES users(id)
-        );
-        CREATE TABLE IF NOT EXISTS transactions (
-            id         INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id    INTEGER,
-            type       TEXT,
-            credits    INTEGER,
-            amount_eur REAL,
-            stripe_id  TEXT,
-            status     TEXT DEFAULT 'pending',
-            created_at TEXT DEFAULT (datetime('now')),
-            FOREIGN KEY(user_id) REFERENCES users(id)
-        );
-        CREATE TABLE IF NOT EXISTS blocklist (
-            id         INTEGER PRIMARY KEY AUTOINCREMENT,
-            type       TEXT NOT NULL,
-            value      TEXT NOT NULL,
-            reason     TEXT,
-            created_at TEXT DEFAULT (datetime('now'))
-        );
-        CREATE TABLE IF NOT EXISTS ip_used (
-            id         INTEGER PRIMARY KEY AUTOINCREMENT,
-            ip         TEXT UNIQUE NOT NULL,
-            created_at TEXT DEFAULT (datetime('now'))
-        );
-        """)
-        # Admin cree manuellement via Railway variables si besoin
-        db.commit()
-        db.close()
-        print("✓ Base de données SQLite initialisée (fallback)")
-
-
-init_db()
-print("✓ Base de données SQLite initialisée (fallback)")
-
-# ── AUTH ──────────────────────────────────────────────────────────────────────
-def create_token(user_id: int, role: str) -> str:
-    exp = datetime.utcnow() + timedelta(minutes=TOKEN_EXPIRE)
-    return jwt.encode({"sub": str(user_id), "role": role, "exp": exp}, SECRET_KEY, ALGORITHM)
-
-def get_current_user(request: Request, creds: HTTPAuthorizationCredentials = Depends(HTTPBearer(auto_error=False))):
-    token = None
-    if creds:
-        token = creds.credentials
-    if not token:
-        raise HTTPException(401, "Non authentifié")
-    try:
-        payload = jwt.decode(token, SECRET_KEY, [ALGORITHM])
-        uid = int(payload["sub"])
-    except Exception:
-        raise HTTPException(401, "Token invalide")
-    db = get_db()
-    user = fetchone(db, "SELECT * FROM users WHERE id=?", (uid,))
-    db.close()
-    if not user: raise HTTPException(401, "Introuvable")
-    if user["banned"]: raise HTTPException(403, "Compte banni")
-    return dict(user) if not isinstance(user, dict) else user
-
-def require_admin(user=Depends(get_current_user)):
-    if user["role"] != "admin":
-        raise HTTPException(403, "Accès refusé")
-    return user
-
-# ── MODELS ────────────────────────────────────────────────────────────────────
-class RegisterModel(BaseModel):
-    username: str
-    password: str
-    ref_code: str = ""
-
-class LoginModel(BaseModel):
-    username: str
-    password: str
-
-class SearchModel(BaseModel):
-    # Identité
-    nom_famille: str = ""
-    prenom: str = ""
-    nom_naissance: str = ""
-    nom_affichage: str = ""
-    nom_utilisateur: str = ""
-    genre: str = ""
-    civilite: str = ""
-    # Naissance
-    date_naissance: str = ""
-    annee_naissance: str = ""
-    jour_naissance: int = None
-    mois_naissance: int = None
-    ville_naissance: str = ""
-    lieu_naissance: str = ""
-    # Contact
-    email: str = ""
-    telephone: str = ""
-    mobile: str = ""
-    adresse_ip: str = ""
-    # Adresse
-    adresse: str = ""
-    complement_adresse: str = ""
-    code_postal: str = ""
-    ville: str = ""
-    pays: str = ""
-    region: str = ""
-    departement: str = ""
-    # Identifiants uniques
-    nir: str = ""
-    iban: str = ""
-    bic: str = ""
-    siret: str = ""
-    siren: str = ""
-    # Véhicule
-    vin_plaque: str = ""
-    immatriculation: str = ""
-    marque: str = ""
-    modele: str = ""
-    # Professionnel
-    societe: str = ""
-    profession: str = ""
-    fonction: str = ""
-    # Options
-    flexible: bool = True
-    per_page: int = 10
-
-class LookupModel(BaseModel):
-    value: str
-
-class AdminUserUpdate(BaseModel):
-    credits: int = None
-    banned: bool = None
-    role: str = None
-
-# ── AUTH ROUTES ───────────────────────────────────────────────────────────────
 @app.post("/api/auth/register")
 async def register(data: RegisterModel, request: Request):
     import re, secrets, string
@@ -1245,10 +903,23 @@ async def delete_blocklist(item_id: int, admin=Depends(require_admin)):
 async def set_maintenance(request: Request, admin=Depends(require_admin)):
     body = await request.json()
     enabled = body.get("enabled", False)
-    # Écrire dans un fichier flag
-    with open(".maintenance", "w") as f:
-        f.write("true" if enabled else "false")
-    return {"maintenance": enabled, "message": "Maintenance " + ("activée" if enabled else "désactivée")}
+    message = body.get("message", "")
+    eta_minutes = body.get("eta_minutes", 0)
+    db = get_db()
+    # Sauvegarder dans la table settings
+    def upsert_setting(key, value):
+        try:
+            execute(db, "INSERT OR REPLACE INTO settings (key, value) VALUES (?,?)", (key, value))
+        except:
+            try:
+                execute(db, "INSERT INTO settings (key, value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", (key, value))
+            except:
+                pass
+    upsert_setting("maintenance_enabled", "true" if enabled else "false")
+    upsert_setting("maintenance_message", message)
+    upsert_setting("maintenance_eta", str(eta_minutes) if eta_minutes else "")
+    db.commit(); db.close()
+    return {"maintenance": enabled, "message": "Maintenance " + ("activee" if enabled else "desactivee")}}
 
 @app.get("/api/admin/maintenance/status")
 async def get_maintenance(admin=Depends(require_admin)):
