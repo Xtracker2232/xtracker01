@@ -293,13 +293,26 @@ tr:hover td{background:rgba(255,255,255,0.02)}
     <div class="toggle-row">
       <div>
         <div class="toggle-info">Mode maintenance</div>
-        <div class="toggle-sub">Affiche une page de maintenance aux visiteurs (les admins passent toujours)</div>
+        <div class="toggle-sub">Affiche une page de maintenance aux visiteurs. Les admins passent toujours.</div>
       </div>
       <button class="toggle-sw" id="maint-toggle" onclick="toggleMaintenance()"></button>
     </div>
-    <div class="table-wrap">
+    <div class="table-wrap" style="margin-top:12px">
+      <div class="table-head"><div class="table-title">Options</div></div>
+      <div style="padding:14px 16px;display:flex;flex-direction:column;gap:12px">
+        <div>
+          <div style="font-size:11px;color:var(--muted2);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Message (optionnel)</div>
+          <input id="maint-msg" placeholder="Ex: Mise a jour en cours..." style="width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--text);outline:none">
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--muted2);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Temps estimé (minutes)</div>
+          <input id="maint-eta" type="number" placeholder="Ex: 60 pour 1 heure" min="0" style="width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--text);outline:none">
+        </div>
+      </div>
+    </div>
+    <div class="table-wrap" style="margin-top:12px">
       <div class="table-head"><div class="table-title">Actions rapides</div></div>
-      <div style="padding:14px 16px;display:flex;flex-direction:column;gap:8px">
+      <div style="padding:14px 16px">
         <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:var(--bg3);border-radius:7px">
           <div style="font-size:13px">Logs Railway</div>
           <a href="https://railway.app" target="_blank" class="btn btn-g">Ouvrir</a>
