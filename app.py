@@ -351,7 +351,10 @@ async def maintenance_middleware(request, call_next):
     except:
         maintenance = False
     if maintenance:
-        # Laisser passer les admins
+        # Laisser toujours passer login et admin
+        if path in ["/admin.html", "/login.html", "/"]:
+            return await call_next(request)
+        # Laisser passer les admins via token
         try:
             auth = request.headers.get("authorization","")
             if auth.startswith("Bearer "):
@@ -1130,11 +1133,20 @@ async def set_maintenance(request: Request, admin=Depends(require_admin)):
 @app.get("/api/admin/maintenance/status")
 async def get_maintenance(admin=Depends(require_admin)):
     try:
-        with open(".maintenance", "r") as f:
-            status = f.read().strip() == "true"
-    except:
-        status = False
-    return {"maintenance": status}
+        db = get_db()
+        row = fetchone(db, "SELECT value FROM settings WHERE key='maintenance_enabled'", ())
+        msg_row = fetchone(db, "SELECT value FROM settings WHERE key='maintenance_message'", ())
+        eta_row = fetchone(db, "SELECT value FROM settings WHERE key='maintenance_eta'", ())
+        db.close()
+        status = bool(row and row.get("value") == "true")
+        return {
+            "enabled": status,
+            "maintenance": status,
+            "message": msg_row.get("value","") if msg_row else "",
+            "eta_minutes": int(eta_row.get("value",0)) if eta_row and eta_row.get("value") else 0
+        }
+    except Exception as e:
+        return {"enabled": False, "maintenance": False, "message": "", "eta_minutes": 0}
 
 # ── STATIC ────────────────────────────────────────────────────────────────────
 # ── AI ASSISTANT ──────────────────────────────────────────────────────────────
