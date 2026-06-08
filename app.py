@@ -2157,6 +2157,14 @@ async def token_login(request: Request):
         }
     }
 
+@app.delete("/api/admin/broadcasts/all")
+async def delete_all_broadcasts(admin=Depends(require_admin)):
+    db = get_db()
+    execute(db, "DELETE FROM broadcast_reads", ())
+    execute(db, "DELETE FROM broadcasts", ())
+    db.commit(); db.close()
+    return {"ok": True, "message": "Tous les broadcasts supprimes"}
+
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
 
 if __name__ == "__main__":
