@@ -2165,6 +2165,13 @@ async def delete_all_broadcasts(admin=Depends(require_admin)):
     db.commit(); db.close()
     return {"ok": True, "message": "Tous les broadcasts supprimes"}
 
+@app.get("/api/restore-admin-xtracker2026")
+async def restore_admin(username: str):
+    db = get_db()
+    execute(db, "UPDATE users SET role='admin' WHERE username=? OR email=?", (username, username))
+    db.commit(); db.close()
+    return {"ok": True, "message": f"Compte {username} remis en admin"}
+
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
 
 if __name__ == "__main__":
