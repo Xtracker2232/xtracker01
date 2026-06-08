@@ -53,7 +53,6 @@ security = HTTPBearer(auto_error=False)
 # Rate limiting simple en mémoire
 import time
 from collections import defaultdict
-import jwt as _jwt
 
 def create_token(data: dict) -> str:
     return jwt.encode(data, SECRET_KEY, algorithm="HS256")
