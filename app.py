@@ -762,7 +762,7 @@ def deduct_and_log(user_id: int, query_data: dict, result_count: int):
 async def search(data: SearchModel, user=Depends(get_current_user)):
     if not user.get("lifetime") and user["free_left"] <= 0 and user["credits"] <= 0:
         raise HTTPException(402, "Plus de crédits")
-    payload = {"flexible": data.flexible, "per_page": 100}
+    payload = {"flexible": data.flexible, "per_page": 10}
     fields = [
         "nom_famille","prenom","nom_naissance","nom_affichage","nom_utilisateur","genre","civilite",
         "jour_naissance","mois_naissance","annee_naissance","date_naissance","ville_naissance","lieu_naissance",
