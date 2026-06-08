@@ -60,6 +60,126 @@ def create_token(data: dict) -> str:
 def decode_token(token: str) -> dict:
     return jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
 
+def is_pg():
+    return USE_PG and bool(DATABASE_URL)
+
+def q(sql):
+    if is_pg():
+        return sql.replace("?", "%s").replace("INTEGER PRIMARY KEY AUTOINCREMENT","SERIAL PRIMARY KEY").replace("DATETIME","TIMESTAMP").replace("INSERT OR IGNORE","INSERT").replace("INSERT OR REPLACE","INSERT")
+    return sql
+
+def get_db():
+    if is_pg():
+        conn = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
+        conn.autocommit = False
+        return conn
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def fetchone(db, sql, params=()):
+    if is_pg():
+        cur = db.cursor()
+        cur.execute(q(sql), params)
+        row = cur.fetchone()
+        cur.close()
+        return dict(row) if row else None
+    row = db.execute(q(sql), params).fetchone()
+    return dict(row) if row else None
+
+def fetchall(db, sql, params=()):
+    if is_pg():
+        cur = db.cursor()
+        cur.execute(q(sql), params)
+        rows = cur.fetchall()
+        cur.close()
+        return [dict(r) for r in rows]
+    return [dict(r) for r in db.execute(q(sql), params).fetchall()]
+
+def execute(db, sql, params=()):
+    if is_pg():
+        cur = db.cursor()
+        cur.execute(q(sql), params)
+        try:
+            result = cur.fetchone()
+            db.commit()
+            cur.close()
+            return dict(result) if result else None
+        except:
+            db.commit()
+            cur.close()
+            return None
+    return db.execute(q(sql), params)
+
+def init_db():
+    db = get_db()
+    if is_pg():
+        cur = db.cursor()
+        cur.execute("""CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY, email TEXT UNIQUE, password TEXT, username TEXT UNIQUE,
+            role TEXT DEFAULT 'user', credits INTEGER DEFAULT 0, free_left INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT NOW(), banned BOOLEAN DEFAULT FALSE,
+            lifetime BOOLEAN DEFAULT FALSE, auth_type TEXT DEFAULT 'local',
+            reg_ip TEXT, discord_id TEXT, discord_username TEXT,
+            referral_code TEXT, referred_by INTEGER, theme TEXT DEFAULT 'default')""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS searches (
+            id SERIAL PRIMARY KEY, user_id INTEGER, query_data TEXT,
+            result_count INTEGER DEFAULT 0, created_at TIMESTAMP DEFAULT NOW())""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS transactions (
+            id SERIAL PRIMARY KEY, user_id INTEGER, type TEXT, credits INTEGER DEFAULT 0,
+            amount_eur REAL DEFAULT 0, stripe_id TEXT, status TEXT DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT NOW())""")
+        cur.execute("CREATE TABLE IF NOT EXISTS blocklist (id SERIAL PRIMARY KEY, type TEXT, value TEXT, created_at TIMESTAMP DEFAULT NOW())")
+        cur.execute("CREATE TABLE IF NOT EXISTS ip_used (id SERIAL PRIMARY KEY, ip TEXT UNIQUE)")
+        cur.execute("""CREATE TABLE IF NOT EXISTS tickets (
+            id SERIAL PRIMARY KEY, user_id INTEGER, subject TEXT, status TEXT DEFAULT 'open',
+            created_at TIMESTAMP DEFAULT NOW())""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS ticket_messages (
+            id SERIAL PRIMARY KEY, ticket_id INTEGER, user_id INTEGER, message TEXT,
+            created_at TIMESTAMP DEFAULT NOW())""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS broadcasts (
+            id SERIAL PRIMARY KEY, message TEXT, active BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMP DEFAULT NOW())""")
+        cur.execute("CREATE TABLE IF NOT EXISTS broadcast_reads (id SERIAL PRIMARY KEY, broadcast_id INTEGER, user_id INTEGER, read_at TIMESTAMP DEFAULT NOW(), UNIQUE(broadcast_id, user_id))")
+        cur.execute("CREATE TABLE IF NOT EXISTS announcements (id SERIAL PRIMARY KEY, message TEXT, active BOOLEAN DEFAULT TRUE, created_at TIMESTAMP DEFAULT NOW())")
+        cur.execute("CREATE TABLE IF NOT EXISTS referrals (id SERIAL PRIMARY KEY, referrer_id INTEGER, referred_id INTEGER, credits_given INTEGER DEFAULT 5, created_at TIMESTAMP DEFAULT NOW())")
+        cur.execute("CREATE TABLE IF NOT EXISTS discord_link_codes (id SERIAL PRIMARY KEY, user_id INTEGER, code TEXT UNIQUE, expires_at TIMESTAMP, used BOOLEAN DEFAULT FALSE)")
+        cur.execute("CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)")
+        db.commit()
+        cur.close()
+        print("✓ Base de données PostgreSQL initialisée")
+    else:
+        db.execute("""CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT UNIQUE, password TEXT,
+            username TEXT UNIQUE, role TEXT DEFAULT 'user', credits INTEGER DEFAULT 0,
+            free_left INTEGER DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            banned INTEGER DEFAULT 0, lifetime INTEGER DEFAULT 0,
+            auth_type TEXT DEFAULT 'local', reg_ip TEXT, discord_id TEXT,
+            discord_username TEXT, referral_code TEXT, referred_by INTEGER,
+            theme TEXT DEFAULT 'default')""")
+        db.execute("""CREATE TABLE IF NOT EXISTS searches (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, query_data TEXT,
+            result_count INTEGER DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)""")
+        db.execute("""CREATE TABLE IF NOT EXISTS transactions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, type TEXT,
+            credits INTEGER DEFAULT 0, amount_eur REAL DEFAULT 0, stripe_id TEXT,
+            status TEXT DEFAULT 'pending', created_at DATETIME DEFAULT CURRENT_TIMESTAMP)""")
+        db.execute("CREATE TABLE IF NOT EXISTS blocklist (id INTEGER PRIMARY KEY AUTOINCREMENT, type TEXT, value TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)")
+        db.execute("CREATE TABLE IF NOT EXISTS ip_used (id INTEGER PRIMARY KEY AUTOINCREMENT, ip TEXT UNIQUE)")
+        db.execute("CREATE TABLE IF NOT EXISTS tickets (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, subject TEXT, status TEXT DEFAULT 'open', created_at DATETIME DEFAULT CURRENT_TIMESTAMP)")
+        db.execute("CREATE TABLE IF NOT EXISTS ticket_messages (id INTEGER PRIMARY KEY AUTOINCREMENT, ticket_id INTEGER, user_id INTEGER, message TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)")
+        db.execute("CREATE TABLE IF NOT EXISTS broadcasts (id INTEGER PRIMARY KEY AUTOINCREMENT, message TEXT, active INTEGER DEFAULT 1, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)")
+        db.execute("CREATE TABLE IF NOT EXISTS broadcast_reads (id INTEGER PRIMARY KEY AUTOINCREMENT, broadcast_id INTEGER, user_id INTEGER, read_at DATETIME DEFAULT CURRENT_TIMESTAMP, UNIQUE(broadcast_id, user_id))")
+        db.execute("CREATE TABLE IF NOT EXISTS announcements (id INTEGER PRIMARY KEY AUTOINCREMENT, message TEXT, active INTEGER DEFAULT 1, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)")
+        db.execute("CREATE TABLE IF NOT EXISTS referrals (id INTEGER PRIMARY KEY AUTOINCREMENT, referrer_id INTEGER, referred_id INTEGER, credits_given INTEGER DEFAULT 5, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)")
+        db.execute("CREATE TABLE IF NOT EXISTS discord_link_codes (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, code TEXT UNIQUE, expires_at DATETIME, used INTEGER DEFAULT 0)")
+        db.execute("CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)")
+        db.commit()
+        print("✓ Base de données SQLite initialisée (fallback)")
+    db.close()
+
+init_db()
+
 async def get_current_user(request: Request):
     auth = request.headers.get("authorization", "")
     if not auth.startswith("Bearer "):
