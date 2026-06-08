@@ -54,8 +54,13 @@ security = HTTPBearer(auto_error=False)
 import time
 from collections import defaultdict
 
-def create_token(data: dict) -> str:
-    return jwt.encode(data, SECRET_KEY, algorithm="HS256")
+def create_token(data, role=None) -> str:
+    if isinstance(data, dict):
+        payload = data
+    else:
+        payload = {"sub": str(data), "role": role or "user"}
+    payload["exp"] = datetime.utcnow() + timedelta(minutes=TOKEN_EXPIRE)
+    return jwt.encode(payload, SECRET_KEY, algorithm="HS256")
 
 def decode_token(token: str) -> dict:
     return jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
