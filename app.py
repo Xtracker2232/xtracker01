@@ -56,10 +56,10 @@ from collections import defaultdict
 import jwt as _jwt
 
 def create_token(data: dict) -> str:
-    return _jwt.encode(data, SECRET_KEY, algorithm="HS256")
+    return jwt.encode(data, SECRET_KEY, algorithm="HS256")
 
 def decode_token(token: str) -> dict:
-    return _jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+    return jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
 
 async def get_current_user(request: Request):
     auth = request.headers.get("authorization", "")
