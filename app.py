@@ -699,8 +699,15 @@ async def call_brix(method: str, path: str, body: dict = None):
     headers = {
         "X-API-Key":    BRIX_KEY,
         "Content-Type": "application/json",
-        "Accept":       "application/json",
-        "User-Agent":   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36",
+        "Accept":       "application/json, text/plain, */*",
+        "User-Agent":   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Origin": "https://brixhub.net",
+        "Referer": "https://brixhub.net/",
+        "sec-ch-ua": '"Chromium";v="124", "Google Chrome";v="124"',
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": '"Windows"',
     }
     try:
         async with httpx.AsyncClient(timeout=25, follow_redirects=True) as client:
