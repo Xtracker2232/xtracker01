@@ -1965,26 +1965,27 @@ async function removeFromFiche(personId){
   openFiche(currentFicheId, document.getElementById('fiche-detail-name').textContent);
 }
 function addResultToFiche(i){addToFiche(window['_r'+i]);}
+let _pendingFicheData=null;
 async function addToFiche(personData){
   const r=await fetch(API+'/api/fiches',{headers:hdr()});
   const fiches=await r.json();
-  if(!fiches.length){notif('Creez une fiche d\'abord','err');return;}
-  const opts=fiches.map(f=>`${f.id}:${f.name} (${f.person_count||0}/10)`).join('\n');
-  const choice=prompt('Ajouter à quelle fiche ?\n'+fiches.map((f,i)=>`${i+1}. ${f.name} (${f.person_count||0}/10)`).join('\n')+'\n\nEntrez le numéro :');
-  const idx=parseInt(choice)-1;
-  if(isNaN(idx)||!fiches[idx])return;
-  const fiche=fiches[idx];
-  const res=await fetch(API+'/api/fiches/'+fiche.id+'/persons',{method:'POST',headers:hdr(),body:JSON.stringify({data:personData})});
+  if(!fiches.length){notif('Creez une fiche dabord','err');return;}
+  _pendingFicheData=personData;
+  const items=fiches.map(f=>'<div onclick="selectFiche('+f.id+',\"'+f.name.replace(/"/g,'')+'\")" style="padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:space-between" onmouseover="this.style.background=\'rgba(99,102,241,0.08)\'" onmouseout="this.style.background=\'\'">'+'<div style="font-size:13px;font-weight:600">'+f.name+'</div><div style="font-size:11px;color:var(--muted2)">'+(f.person_count||0)+'/10</div></div>').join('');
+  document.getElementById('fiche-picker-list').innerHTML=items;
+  document.getElementById('fiche-picker-modal').style.display='flex';
+}
+function closeFichePicker(){document.getElementById('fiche-picker-modal').style.display='none';_pendingFicheData=null;}
+async function selectFiche(ficheId,ficheName){
+  document.getElementById('fiche-picker-modal').style.display='none';
+  if(!_pendingFicheData)return;
+  const res=await fetch(API+'/api/fiches/'+ficheId+'/persons',{method:'POST',headers:hdr(),body:JSON.stringify({data:_pendingFicheData})});
   const d=await res.json();
+  _pendingFicheData=null;
   if(!res.ok){notif(d.detail||'Erreur','err');return;}
-  notif('Ajouté à "'+fiche.name+'" !');
+  notif('Ajouté à "'+ficheName+'" !');
 }
 
-if('serviceWorker' in navigator){
-      navigator.serviceWorker.register('/sw.js').catch(function(){});
-    }
-  </script>
-<script>
 function getPersonTags(p){
   var tags=[];
   var year=null;
@@ -2038,5 +2039,16 @@ if(typeof renderResults==='function'){
   };
 }
 </script>
+
+<div id="fiche-picker-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:2000;align-items:center;justify-content:center">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;width:90%;max-width:360px;overflow:hidden">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700">Ajouter à une fiche</div>
+      <button onclick="closeFichePicker()" style="background:none;border:none;color:var(--muted2);cursor:pointer;font-size:20px;line-height:1">×</button>
+    </div>
+    <div id="fiche-picker-list" style="max-height:300px;overflow-y:auto"></div>
+  </div>
+</div>
+
 </body>
 </html>
