@@ -394,7 +394,6 @@ async def maintenance_middleware(request, call_next):
     return await call_next(request)
 
 
-@app.post("/api/auth/register")
 class SearchModel(BaseModel):
     nom_famille: str = ""
     prenom: str = ""
@@ -444,6 +443,7 @@ class ChangePasswordModel(BaseModel):
     old_password: str
     new_password: str
 
+@app.post("/api/auth/register")
 async def register(data: RegisterModel, request: Request):
     import re, secrets, string
     ip = request.headers.get("CF-Connecting-IP") or request.headers.get("X-Forwarded-For","").split(",")[0].strip() or request.client.host
