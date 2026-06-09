@@ -150,6 +150,8 @@ def init_db():
         cur.execute("CREATE TABLE IF NOT EXISTS referrals (id SERIAL PRIMARY KEY, referrer_id INTEGER, referred_id INTEGER, credits_given INTEGER DEFAULT 5, created_at TIMESTAMP DEFAULT NOW())")
         cur.execute("CREATE TABLE IF NOT EXISTS discord_link_codes (id SERIAL PRIMARY KEY, user_id INTEGER, code TEXT UNIQUE, expires_at TIMESTAMP, used BOOLEAN DEFAULT FALSE)")
         cur.execute("CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)")
+        cur.execute("CREATE TABLE IF NOT EXISTS fiches (id SERIAL PRIMARY KEY, user_id INTEGER, name TEXT, created_at TIMESTAMP DEFAULT NOW())")
+        cur.execute("CREATE TABLE IF NOT EXISTS fiche_persons (id SERIAL PRIMARY KEY, fiche_id INTEGER, data TEXT, added_at TIMESTAMP DEFAULT NOW())")
         db.commit()
         cur.close()
         print("✓ Base de données PostgreSQL initialisée")
@@ -179,6 +181,8 @@ def init_db():
         db.execute("CREATE TABLE IF NOT EXISTS referrals (id INTEGER PRIMARY KEY AUTOINCREMENT, referrer_id INTEGER, referred_id INTEGER, credits_given INTEGER DEFAULT 5, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)")
         db.execute("CREATE TABLE IF NOT EXISTS discord_link_codes (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, code TEXT UNIQUE, expires_at DATETIME, used INTEGER DEFAULT 0)")
         db.execute("CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)")
+        db.execute("CREATE TABLE IF NOT EXISTS fiches (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, name TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)")
+        db.execute("CREATE TABLE IF NOT EXISTS fiche_persons (id INTEGER PRIMARY KEY AUTOINCREMENT, fiche_id INTEGER, data TEXT, added_at DATETIME DEFAULT CURRENT_TIMESTAMP)")
         db.commit()
         print("✓ Base de données SQLite initialisée (fallback)")
     db.close()
@@ -2117,6 +2121,81 @@ async def test_register():
         return {"ok": True, "real_id": real_id, "sub_in_token": payload.get("sub"), "secret_key_len": len(SECRET_KEY)}
     except Exception as e:
         return {"error": str(e), "real_id": real_id, "secret_key_len": len(SECRET_KEY)}
+
+# ── FICHES ────────────────────────────────────────────────────────────────────
+@app.get("/api/fiches")
+async def get_fiches(user=Depends(get_current_user)):
+    db = get_db()
+    fiches = fetchall(db, "SELECT f.id, f.name, f.created_at, COUNT(fp.id) as person_count FROM fiches f LEFT JOIN fiche_persons fp ON fp.fiche_id=f.id WHERE f.user_id=? GROUP BY f.id ORDER BY f.created_at DESC", (user["id"],))
+    db.close()
+    return fiches
+
+@app.post("/api/fiches")
+async def create_fiche(request: Request, user=Depends(get_current_user)):
+    body = await request.json()
+    name = body.get("name","").strip()
+    if not name:
+        raise HTTPException(400, "Nom requis")
+    db = get_db()
+    count = fetchone(db, "SELECT COUNT(*) as c FROM fiches WHERE user_id=?", (user["id"],))
+    if count and count["c"] >= 10:
+        db.close()
+        raise HTTPException(400, "Maximum 10 fiches")
+    if is_pg():
+        fiche = execute(db, "INSERT INTO fiches (user_id, name) VALUES (?,?) RETURNING id", (user["id"], name))
+        fiche_id = fiche["id"] if fiche else None
+    else:
+        result = execute(db, "INSERT INTO fiches (user_id, name) VALUES (?,?)", (user["id"], name))
+        fiche_id = result.lastrowid
+    db.commit(); db.close()
+    return {"ok": True, "id": fiche_id, "name": name}
+
+@app.delete("/api/fiches/{fiche_id}")
+async def delete_fiche(fiche_id: int, user=Depends(get_current_user)):
+    db = get_db()
+    execute(db, "DELETE FROM fiche_persons WHERE fiche_id=?", (fiche_id,))
+    execute(db, "DELETE FROM fiches WHERE id=? AND user_id=?", (fiche_id, user["id"]))
+    db.commit(); db.close()
+    return {"ok": True}
+
+@app.get("/api/fiches/{fiche_id}/persons")
+async def get_fiche_persons(fiche_id: int, user=Depends(get_current_user)):
+    db = get_db()
+    fiche = fetchone(db, "SELECT id FROM fiches WHERE id=? AND user_id=?", (fiche_id, user["id"]))
+    if not fiche:
+        db.close()
+        raise HTTPException(404, "Fiche introuvable")
+    persons = fetchall(db, "SELECT id, data, added_at FROM fiche_persons WHERE fiche_id=? ORDER BY added_at DESC", (fiche_id,))
+    db.close()
+    return persons
+
+@app.post("/api/fiches/{fiche_id}/persons")
+async def add_person_to_fiche(fiche_id: int, request: Request, user=Depends(get_current_user)):
+    body = await request.json()
+    data = body.get("data", {})
+    db = get_db()
+    fiche = fetchone(db, "SELECT id FROM fiches WHERE id=? AND user_id=?", (fiche_id, user["id"]))
+    if not fiche:
+        db.close()
+        raise HTTPException(404, "Fiche introuvable")
+    count = fetchone(db, "SELECT COUNT(*) as c FROM fiche_persons WHERE fiche_id=?", (fiche_id,))
+    if count and count["c"] >= 10:
+        db.close()
+        raise HTTPException(400, "Maximum 10 personnes par fiche")
+    execute(db, "INSERT INTO fiche_persons (fiche_id, data) VALUES (?,?)", (fiche_id, json.dumps(data)))
+    db.commit(); db.close()
+    return {"ok": True}
+
+@app.delete("/api/fiches/{fiche_id}/persons/{person_id}")
+async def remove_person_from_fiche(fiche_id: int, person_id: int, user=Depends(get_current_user)):
+    db = get_db()
+    fiche = fetchone(db, "SELECT id FROM fiches WHERE id=? AND user_id=?", (fiche_id, user["id"]))
+    if not fiche:
+        db.close()
+        raise HTTPException(404, "Fiche introuvable")
+    execute(db, "DELETE FROM fiche_persons WHERE id=? AND fiche_id=?", (person_id, fiche_id))
+    db.commit(); db.close()
+    return {"ok": True}
 
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
 
