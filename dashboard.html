@@ -1964,10 +1964,11 @@ async function removeFromFiche(personId){
   notif('Retiré de la fiche');
   openFiche(currentFicheId, document.getElementById('fiche-detail-name').textContent);
 }
+function addResultToFiche(i){addToFiche(window['_r'+i]);}
 async function addToFiche(personData){
   const r=await fetch(API+'/api/fiches',{headers:hdr()});
   const fiches=await r.json();
-  if(!fiches.length){notif('Créez d'abord une fiche','err');return;}
+  if(!fiches.length){notif('Creez une fiche d\'abord','err');return;}
   const opts=fiches.map(f=>`${f.id}:${f.name} (${f.person_count||0}/10)`).join('\n');
   const choice=prompt('Ajouter à quelle fiche ?\n'+fiches.map((f,i)=>`${i+1}. ${f.name} (${f.person_count||0}/10)`).join('\n')+'\n\nEntrez le numéro :');
   const idx=parseInt(choice)-1;
