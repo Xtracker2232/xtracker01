@@ -524,14 +524,14 @@ async def register(data: RegisterModel, request: Request):
         "token": token,
         "user_id": user_uid,
         "user": {
-            "id": db_id,
+            "id": real_id,
             "email": fake_email,
             "username": data.username,
             "role": "user",
             "credits": 0,
             "free_left": free_left
         },
-        "message": "Compte créé avec succès !"
+        "message": "Compte cree avec succes !"
     }
 
 @app.post("/api/auth/login")
@@ -561,7 +561,9 @@ async def login(data: LoginModel, request: Request):
         raise HTTPException(403, "Compte banni")
     from datetime import datetime as _dt
     _now = _dt.utcnow().isoformat()
-    execute(db, "UPDATE users SET last_login=? WHERE id=?", (_now, user["id"]))
+    try:
+        execute(db, "UPDATE users SET last_login=? WHERE id=?", (_now, user["id"]))
+    except: pass
     db.commit()
     db.close()
     user = dict(user) if not isinstance(user, dict) else user
