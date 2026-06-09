@@ -512,7 +512,12 @@ async def register(data: RegisterModel, request: Request):
                     execute(db, "UPDATE users SET credits=credits+5 WHERE id=?", (referrer["id"],))
     db.commit()
     db.close()
-    token = create_token(db_id, "user")
+    # Extraire l'ID réel selon PostgreSQL ou SQLite
+    if is_pg():
+        real_id = db_id["id"] if isinstance(db_id, dict) else db_id
+    else:
+        real_id = db_id.lastrowid if hasattr(db_id, 'lastrowid') else db_id
+    token = create_token(real_id, "user")
     return {
         "token": token,
         "user_id": user_uid,
