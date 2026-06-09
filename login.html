@@ -137,12 +137,14 @@ async function doRegister(){
     const r=await fetch(API+'/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,password:pass,ref_code:refCode})});
     const d=await r.json();
     if(!r.ok){showErr(d.detail||'Erreur inscription.');return}
-    localStorage.clear();
-    localStorage.setItem('token',d.token);
-    sessionStorage.setItem('token',d.token);
-    localStorage.setItem('user',JSON.stringify(d.user));
-    sessionStorage.setItem('user',JSON.stringify(d.user));
-    window.location.href='dashboard.html';
+    const tok = d.token || (d.data && d.data.token);
+    const usr = d.user || d.data;
+    if(!tok){showErr('Erreur: token manquant');return;}
+    localStorage.setItem('token', tok);
+    sessionStorage.setItem('token', tok);
+    localStorage.setItem('user', JSON.stringify(usr||{}));
+    sessionStorage.setItem('user', JSON.stringify(usr||{}));
+    window.location.replace('dashboard.html');
   }catch(e){showErr('Erreur réseau.')}
   finally{setLoad('btn-register',false,'Créer mon compte')}
 }
