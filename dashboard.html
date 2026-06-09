@@ -696,7 +696,7 @@ select option{background:var(--bg2)}
 <script>
 const API='';
 const TOKEN=localStorage.getItem('token')||sessionStorage.getItem('token');
-let USER=JSON.parse(localStorage.getItem('user')||'{}');
+let USER={}; try{USER=JSON.parse(localStorage.getItem('user')||'{}')}catch(e){}
 if(!TOKEN){window.location.href='login.html'}
 function g(id){return document.getElementById(id)}
 function hdr(){return{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'}}
@@ -737,6 +737,7 @@ function switchPTab(t,btn){
 function togAcc(id){g('acc-'+id).classList.toggle('open')}
 
 let flexible=true;
+let chatWelcomeDone=false;
 function togFlex(){flexible=!flexible;g('flex-tog').classList.toggle('on',flexible)}
 
 const acFields={
