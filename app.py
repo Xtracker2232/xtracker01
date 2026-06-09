@@ -379,9 +379,17 @@ async def maintenance_middleware(request, call_next):
             from fastapi.responses import JSONResponse
             return JSONResponse({"detail": "Maintenance en cours", "message": msg}, status_code=503)
         from fastapi.responses import RedirectResponse
+        try:
+            db2 = get_db()
+            sat_row = fetchone(db2, "SELECT value FROM settings WHERE key='maintenance_started_at'", ())
+            db2.close()
+            started_at = sat_row.get("value","") if sat_row else ""
+        except:
+            started_at = ""
         params = ""
         if msg: params += f"?msg={msg}"
         if eta: params += ("&" if params else "?") + f"eta={eta}"
+        if started_at: params += ("&" if params else "?") + f"started={started_at}"
         return RedirectResponse(url=f"/maintenance.html{params}")
     return await call_next(request)
 
@@ -1117,16 +1125,20 @@ async def set_maintenance(request: Request, admin=Depends(require_admin)):
     db = get_db()
     # Sauvegarder dans la table settings
     try:
+        import time as _time
+        start_at = str(int(_time.time())) if enabled else ""
         if is_pg():
             cur = db.cursor()
             cur.execute("INSERT INTO settings (key, value) VALUES ('maintenance_enabled', %s) ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value", ("true" if enabled else "false",))
             cur.execute("INSERT INTO settings (key, value) VALUES ('maintenance_message', %s) ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value", (message,))
             cur.execute("INSERT INTO settings (key, value) VALUES ('maintenance_eta', %s) ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value", (str(eta_minutes) if eta_minutes else "",))
+            cur.execute("INSERT INTO settings (key, value) VALUES ('maintenance_started_at', %s) ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value", (start_at,))
             cur.close()
         else:
             db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('maintenance_enabled', ?)", ("true" if enabled else "false",))
             db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('maintenance_message', ?)", (message,))
             db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('maintenance_eta', ?)", (str(eta_minutes) if eta_minutes else "",))
+            db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('maintenance_started_at', ?)", (start_at,))
         db.commit()
     except Exception as e:
         print(f"[MAINTENANCE] Erreur: {e}")
@@ -1142,11 +1154,14 @@ async def get_maintenance(admin=Depends(require_admin)):
         eta_row = fetchone(db, "SELECT value FROM settings WHERE key='maintenance_eta'", ())
         db.close()
         status = bool(row and row.get("value") == "true")
+        started_row = fetchone(db, "SELECT value FROM settings WHERE key='maintenance_started_at'", ())
+        started_at = int(started_row.get("value",0)) if started_row and started_row.get("value") else 0
         return {
             "enabled": status,
             "maintenance": status,
             "message": msg_row.get("value","") if msg_row else "",
-            "eta_minutes": int(eta_row.get("value",0)) if eta_row and eta_row.get("value") else 0
+            "eta_minutes": int(eta_row.get("value",0)) if eta_row and eta_row.get("value") else 0,
+            "started_at": started_at
         }
     except Exception as e:
         return {"enabled": False, "maintenance": False, "message": "", "eta_minutes": 0}
