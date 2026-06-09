@@ -411,18 +411,55 @@ select option{background:var(--bg2)}
       </div>
       <button class="btn btn-a" onclick="goTo('credits',document.getElementById('nav-credits'))" style="font-size:13px;padding:10px 18px">Recharger</button>
     </div>
-    <div class="packs-grid">
-      <div class="pack"><div class="pack-tag" style="color:#22c55e">Decouverte</div><div class="pack-credits">10 credits</div><div style="font-size:11px;color:var(--muted2);text-decoration:line-through">2,99€</div><div class="pack-price" style="color:#22c55e"><sup>€</sup>0,99</div><div class="pack-per">Parfait pour tester</div><button class="pack-btn" style="background:linear-gradient(135deg,#22c55e,#16a34a)" onclick="openPaymentChoice('decouverte')">Acheter</button></div>
-      <div class="pack"><div class="pack-tag">Starter</div><div class="pack-credits">50 credits</div><div style="font-size:11px;color:var(--muted2);text-decoration:line-through">9,99€</div><div class="pack-price"><sup>€</sup>4,99</div><div class="pack-per">0,10€ / recherche</div><button class="pack-btn" onclick="openPaymentChoice('starter')">Acheter</button></div>
-      <div class="pack feat"><div class="pack-tag">Pro ⭐</div><div class="pack-credits">200 credits</div><div style="font-size:11px;color:var(--muted2);text-decoration:line-through">29,99€</div><div class="pack-price"><sup>€</sup>14,99</div><div class="pack-per">0,07€ / recherche</div><button class="pack-btn feat" onclick="openPaymentChoice('pro')">Acheter</button></div>
-      <div class="pack"><div class="pack-tag">Enterprise</div><div class="pack-credits">1000 credits</div><div style="font-size:11px;color:var(--muted2);text-decoration:line-through">99,99€</div><div class="pack-price"><sup>€</sup>49,99</div><div class="pack-per">0,05€ / recherche</div><button class="pack-btn" onclick="openPaymentChoice('enterprise')">Acheter</button></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-bottom:14px">
+
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px;position:relative">
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#22c55e;margin-bottom:10px">Decouverte</div>
+        <div style="font-size:11px;color:var(--muted2);text-decoration:line-through;margin-bottom:2px">2,99€</div>
+        <div style="font-size:26px;font-weight:800;font-family:'Syne',sans-serif;color:var(--text)">0,99€</div>
+        <div style="font-size:12px;color:var(--muted2);margin-top:4px;margin-bottom:14px">10 crédits</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:14px">Parfait pour tester</div>
+        <button class="pack-btn" style="width:100%;background:linear-gradient(135deg,#22c55e,#16a34a)" onclick="openPaymentChoice('decouverte')">Acheter</button>
+      </div>
+
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px;position:relative">
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--accent);margin-bottom:10px">Starter</div>
+        <div style="font-size:11px;color:var(--muted2);text-decoration:line-through;margin-bottom:2px">9,99€</div>
+        <div style="font-size:26px;font-weight:800;font-family:'Syne',sans-serif;color:var(--text)">4,99€</div>
+        <div style="font-size:12px;color:var(--muted2);margin-top:4px;margin-bottom:14px">50 crédits</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:14px">0,10€ / recherche</div>
+        <button class="pack-btn" style="width:100%" onclick="openPaymentChoice('starter')">Acheter</button>
+      </div>
+
+      <div style="background:var(--bg2);border:2px solid var(--accent);border-radius:12px;padding:18px;position:relative">
+        <div style="position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:6px;white-space:nowrap">⭐ Plus populaire</div>
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--accent);margin-bottom:10px">Pro</div>
+        <div style="font-size:11px;color:var(--muted2);text-decoration:line-through;margin-bottom:2px">29,99€</div>
+        <div style="font-size:26px;font-weight:800;font-family:'Syne',sans-serif;color:var(--text)">14,99€</div>
+        <div style="font-size:12px;color:var(--muted2);margin-top:4px;margin-bottom:14px">200 crédits</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:14px">0,07€ / recherche</div>
+        <button class="pack-btn feat" style="width:100%" onclick="openPaymentChoice('pro')">Acheter</button>
+      </div>
+
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px;position:relative">
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--accent);margin-bottom:10px">Enterprise</div>
+        <div style="font-size:11px;color:var(--muted2);text-decoration:line-through;margin-bottom:2px">99,99€</div>
+        <div style="font-size:26px;font-weight:800;font-family:'Syne',sans-serif;color:var(--text)">49,99€</div>
+        <div style="font-size:12px;color:var(--muted2);margin-top:4px;margin-bottom:14px">1000 crédits</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:14px">0,05€ / recherche</div>
+        <button class="pack-btn" style="width:100%" onclick="openPaymentChoice('enterprise')">Acheter</button>
+      </div>
+
     </div>
-    <div class="pack" style="margin-top:12px;background:linear-gradient(135deg,rgba(245,158,11,0.08),rgba(251,191,36,0.04));border-color:rgba(245,158,11,0.3)">
-      <div class="pack-tag" style="color:#f59e0b">Lifetime ♾️</div>
-      <div class="pack-credits">Credits illimités à vie</div>
-      <div style="font-size:11px;color:rgba(245,158,11,0.5);text-decoration:line-through">299€</div><div class="pack-price" style="color:#f59e0b"><sup>€</sup>149</div>
-      <div class="pack-per">Paiement unique · Accès illimité pour toujours</div>
-      <button class="pack-btn" style="background:linear-gradient(135deg,#f59e0b,#d97706)" onclick="openPaymentChoice('lifetime')">Obtenir le Lifetime</button>
+
+    <div style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.25);border-radius:12px;padding:20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#f59e0b;margin-bottom:6px">Lifetime</div>
+        <div style="font-size:11px;color:rgba(245,158,11,0.5);text-decoration:line-through;margin-bottom:2px">299€</div>
+        <div style="font-size:28px;font-weight:800;font-family:'Syne',sans-serif;color:#f59e0b">149€</div>
+        <div style="font-size:12px;color:var(--muted2);margin-top:4px">Crédits illimités · Paiement unique · À vie</div>
+      </div>
+      <button class="pack-btn" style="background:linear-gradient(135deg,#f59e0b,#d97706);white-space:nowrap;flex-shrink:0" onclick="openPaymentChoice('lifetime')">Obtenir le Lifetime</button>
     </div>
   </div>
 
