@@ -642,7 +642,7 @@ def deduct_and_log(user_id: int, query_data: dict, result_count: int):
 async def search(data: SearchModel, user=Depends(get_current_user)):
     if not user.get("lifetime") and user["free_left"] <= 0 and user["credits"] <= 0:
         raise HTTPException(402, "Plus de crédits")
-    payload = {"flexible": data.flexible, "per_page": 10}
+    payload = {"flexible": data.flexible, "per_page": 100}
     fields = [
         "nom_famille","prenom","nom_naissance","nom_affichage","nom_utilisateur","genre","civilite",
         "jour_naissance","mois_naissance","annee_naissance","date_naissance","ville_naissance","lieu_naissance",
@@ -821,7 +821,7 @@ async def history_replay(search_id: int, user=Depends(get_current_user)):
         famille = []
         if p.get("adresse") and p.get("code_postal"):
             try:
-                pr = await call_brix("POST", "/search", {"adresse": p["adresse"], "code_postal": p["code_postal"], "flexible": False, "per_page": 10})
+                pr = await call_brix("POST", "/search", {"adresse": p["adresse"], "code_postal": p["code_postal"], "flexible": False, "per_page": 100})
                 for m in pr.get("data", {}).get("results", []):
                     if m.get("nom_famille") == p.get("nom_famille") and m.get("prenom") == p.get("prenom"):
                         continue
