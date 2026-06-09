@@ -513,10 +513,15 @@ async def register(data: RegisterModel, request: Request):
     db.commit()
     db.close()
     # Extraire l'ID réel selon PostgreSQL ou SQLite
+    print(f"[REGISTER] db_id={db_id} type={type(db_id)}")
     if is_pg():
-        real_id = db_id["id"] if isinstance(db_id, dict) else db_id
+        if isinstance(db_id, dict):
+            real_id = db_id.get("id") or list(db_id.values())[0]
+        else:
+            real_id = db_id
     else:
         real_id = db_id.lastrowid if hasattr(db_id, 'lastrowid') else db_id
+    print(f"[REGISTER] real_id={real_id}")
     token = create_token(real_id, "user")
     return {
         "token": token,
