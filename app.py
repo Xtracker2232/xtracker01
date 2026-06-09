@@ -519,7 +519,10 @@ async def register(data: RegisterModel, request: Request):
     real_id = new_user["id"] if new_user else None
     if not real_id:
         raise HTTPException(500, "Erreur creation compte")
-    token = create_token(real_id, "user")
+    try:
+        token = create_token(real_id, "user")
+    except Exception as e:
+        raise HTTPException(500, f"Erreur token: {str(e)} - real_id={real_id} - SECRET_KEY_len={len(SECRET_KEY)}")
     return {
         "token": token,
         "user_id": user_uid,
