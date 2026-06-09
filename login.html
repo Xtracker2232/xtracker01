@@ -249,35 +249,7 @@ input::placeholder{color:var(--muted)}
 <div class="bg-glow"></div>
 <div class="bg-glow2"></div>
 
-<div class="card">
-  <div class="logo-wrap">
-    
-    <div class="logo-title">X<span>tracker</span></div>
-    <div class="logo-sub" id="ref-msg">Connectez-vous pour accéder à la plateforme</div>
-  </div>
 
-  <div class="tabs">
-    <button class="tab active" id="tab-login" onclick="switchTab('login')">Connexion</button>
-    <button class="tab" id="tab-register" onclick="switchTab('register')">Inscription</button>
-  </div>
-
-  <div id="msg-err" class="err"></div>
-  <div id="msg-ok" class="ok"></div>
-
-  <div id="pane-login">
-    <div class="fgroup"><label>Nom d'utilisateur</label><input id="l-user" type="text" placeholder="VotreNom" autocomplete="username"></div>
-    <div class="fgroup"><label>Mot de passe</label><input id="l-pass" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
-    <button class="btn-submit" id="btn-login" onclick="doLogin()">Se connecter</button>
-  </div>
-
-  <div id="pane-register" style="display:none">
-    <div class="fgroup"><label>Nom d'utilisateur</label><input id="r-user" type="text" placeholder="VotreNom" autocomplete="username"></div>
-    <div class="fgroup"><label>Mot de passe</label><input id="r-pass" type="password" placeholder="8 caractères minimum" autocomplete="new-password" onkeydown="if(event.key==='Enter')doRegister()"></div>
-    <button class="btn-submit" id="btn-register" onclick="doRegister()">Créer mon compte</button>
-  </div>
-
-  <div class="cgu-line">En continuant, vous acceptez les <a href="cgu.html">CGU</a> de Xtracker</div>
-</div>
 
 <script>
 const API='';
