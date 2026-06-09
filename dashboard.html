@@ -872,7 +872,7 @@ function renderResults(results,total,took,free_left,credits){
     const allSrcs=(p._sources||[]).map(s=>'<span class="rsrc">'+s+'</span>').join('');
     const rawStr=JSON.stringify(p,null,2).replace(/</g,'&lt;');
     const ptags=renderTags(p);
-    html+='<div class="rcard" style="animation-delay:'+i*.04+'s"><div class="rcard-top" onclick="tog('+i+')"><div><div class="rname">'+name+'</div><div class="rmeta">'+sub+'</div>'+ptags+'</div><div class="rtop-r">'+srcs+'<span class="rarr" id="arr'+i+'">▼</span></div></div><div class="rcard-body" id="rb'+i+'"><div class="rfields">'+fh+'</div>'+(allSrcs?'<div class="rsources">'+allSrcs+'</div>':'')+famHtml+'<div class="action-row"><button class="raw-btn" onclick="toggleRaw('+i+')">Approfondir</button><button class="raw-btn" onclick="copyResult('+i+')">Copier</button><button class="raw-btn" onclick="addToFiche(window['_r'+i])">+ Fiche</button></div><div class="raw-data" id="raw'+i+'">'+rawStr+'</div></div></div>';
+    html+='<div class="rcard" style="animation-delay:'+i*.04+'s"><div class="rcard-top" onclick="tog('+i+')"><div><div class="rname">'+name+'</div><div class="rmeta">'+sub+'</div>'+ptags+'</div><div class="rtop-r">'+srcs+'<span class="rarr" id="arr'+i+'">▼</span></div></div><div class="rcard-body" id="rb'+i+'"><div class="rfields">'+fh+'</div>'+(allSrcs?'<div class="rsources">'+allSrcs+'</div>':'')+famHtml+'<div class="action-row"><button class="raw-btn" onclick="toggleRaw('+i+')">Approfondir</button><button class="raw-btn" onclick="copyResult('+i+')">Copier</button><button class="raw-btn" onclick="addResultToFiche('+i+')">+ Fiche</button></div><div class="raw-data" id="raw'+i+'">'+rawStr+'</div></div></div>';
   });
   el.innerHTML=html;
 }
