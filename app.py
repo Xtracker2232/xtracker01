@@ -510,15 +510,15 @@ async def register(data: RegisterModel, request: Request):
                     execute(db, "UPDATE users SET referred_by=? WHERE id=?", (referrer["id"], db_id))
                     execute(db, "INSERT INTO referrals (referrer_id, referred_id, credits_earned) VALUES (?,?,?)", (referrer["id"], db_id, 5))
                     execute(db, "UPDATE users SET credits=credits+5 WHERE id=?", (referrer["id"],))
-    # Récupérer l'ID réel depuis la BDD après insertion
+    db.commit()
+    db.close()
+    # Récupérer l'ID réel depuis la BDD après commit
     db2 = get_db()
     new_user = fetchone(db2, "SELECT id FROM users WHERE username=?", (data.username,))
     db2.close()
     real_id = new_user["id"] if new_user else None
     if not real_id:
-        raise HTTPException(500, "Erreur création compte")
-    db.commit()
-    db.close()
+        raise HTTPException(500, "Erreur creation compte")
     token = create_token(real_id, "user")
     return {
         "token": token,
