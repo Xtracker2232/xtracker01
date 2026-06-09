@@ -357,6 +357,20 @@ select option{background:var(--bg2)}
                   <div class="fgroup"><label>Plaque</label><input id="f-vin_plaque" placeholder="AB-123-CD" oninput="cnt('adv')"></div>
                 </div></div>
               </div>
+              
+              <div class="acc-section" id="acc-fivem">
+                <div class="acc-head" onclick="togAcc('fivem')"><div class="acc-left">🎮 FiveM / GTA RP <span class="acc-cnt" id="ac-fivem"></span></div><span class="acc-arrow">▼</span></div>
+                <div class="acc-body"><div class="fg">
+                  <div class="fgroup"><label>Steam ID</label><input id="f-steam_id" placeholder="76561198..." oninput="cnt('fivem')" autocomplete="off"></div>
+                  <div class="fgroup"><label>FiveM License</label><input id="f-fivem_license" placeholder="license:abc..." oninput="cnt('fivem')" autocomplete="off"></div>
+                  <div class="fgroup"><label>FiveM License 2</label><input id="f-fivem_license2" placeholder="license2:abc..." oninput="cnt('fivem')" autocomplete="off"></div>
+                  <div class="fgroup"><label>FiveM ID</label><input id="f-fivem_id" placeholder="12345" oninput="cnt('fivem')" autocomplete="off"></div>
+                  <div class="fgroup"><label>Discord ID</label><input id="f-discord_id_search" placeholder="123456789..." oninput="cnt('fivem')" autocomplete="off"></div>
+                  <div class="fgroup"><label>Xbox Live (XBL)</label><input id="f-xbox_live_id" placeholder="xbl:..." oninput="cnt('fivem')" autocomplete="off"></div>
+                  <div class="fgroup"><label>Live ID</label><input id="f-live_id" placeholder="live:..." oninput="cnt('fivem')" autocomplete="off"></div>
+                </div></div>
+              </div>
+
               <div class="search-bar">
                 <div class="flex-toggle" onclick="togFlex()">
                   <div class="tog on" id="flex-tog"></div>
@@ -783,6 +797,7 @@ const acFields={
   contact:['f-email','f-telephone','f-mobile','f-adresse_ip'],
   loc:['f-adresse','f-code_postal','f-ville','f-departement','f-region','f-pays'],
   adv:['f-nir','f-iban','f-siret','f-societe','f-profession','f-vin_plaque'],
+  fivem:['f-steam_id','f-fivem_license','f-fivem_license2','f-fivem_id','f-discord_id_search','f-xbox_live_id','f-live_id'],
 };
 function cnt(name){
   const n=(acFields[name]||[]).filter(id=>{const el=g(id);return el&&el.value.trim()}).length;
@@ -854,7 +869,7 @@ document.addEventListener('keydown', function(e){
 
 async function doSearch(){
   const payload={flexible,per_page:100};
-  const map={nom_famille:'f-nom',prenom:'f-prenom',nom_naissance:'f-nom_naissance',nom_affichage:'f-nom_affichage',nom_utilisateur:'f-nom_utilisateur',genre:'f-genre',annee_naissance:'f-annee_naissance',date_naissance:'f-date_naissance',ville_naissance:'f-ville_naissance',email:'f-email',telephone:'f-telephone',mobile:'f-mobile',adresse_ip:'f-adresse_ip',adresse:'f-adresse',code_postal:'f-code_postal',ville:'f-ville',departement:'f-departement',region:'f-region',pays:'f-pays',nir:'f-nir',iban:'f-iban',siret:'f-siret',societe:'f-societe',profession:'f-profession',vin_plaque:'f-vin_plaque'};
+  const map={nom_famille:'f-nom',prenom:'f-prenom',nom_naissance:'f-nom_naissance',nom_affichage:'f-nom_affichage',nom_utilisateur:'f-nom_utilisateur',genre:'f-genre',annee_naissance:'f-annee_naissance',date_naissance:'f-date_naissance',ville_naissance:'f-ville_naissance',email:'f-email',telephone:'f-telephone',mobile:'f-mobile',adresse_ip:'f-adresse_ip',adresse:'f-adresse',code_postal:'f-code_postal',ville:'f-ville',departement:'f-departement',region:'f-region',pays:'f-pays',nir:'f-nir',iban:'f-iban',siret:'f-siret',societe:'f-societe',profession:'f-profession',vin_plaque:'f-vin_plaque',steam_id:'f-steam_id',fivem_license:'f-fivem_license',fivem_license2:'f-fivem_license2',fivem_id:'f-fivem_id',discord_id:'f-discord_id_search',xbox_live_id:'f-xbox_live_id',live_id:'f-live_id'};
   Object.entries(map).forEach(([k,id])=>{const v=g(id)&&g(id).value.trim();if(v)payload[k]=v});
   if(Object.keys(payload).length<=2){showErr('Remplissez au moins un champ.');return}
   setLoad('btn-search',true,'Rechercher');
