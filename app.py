@@ -1116,18 +1116,21 @@ async def set_maintenance(request: Request, admin=Depends(require_admin)):
     eta_minutes = body.get("eta_minutes", 0)
     db = get_db()
     # Sauvegarder dans la table settings
-    def upsert_setting(key, value):
-        try:
-            execute(db, "INSERT OR REPLACE INTO settings (key, value) VALUES (?,?)", (key, value))
-        except:
-            try:
-                execute(db, "INSERT INTO settings (key, value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", (key, value))
-            except:
-                pass
-    upsert_setting("maintenance_enabled", "true" if enabled else "false")
-    upsert_setting("maintenance_message", message)
-    upsert_setting("maintenance_eta", str(eta_minutes) if eta_minutes else "")
-    db.commit(); db.close()
+    try:
+        if is_pg():
+            cur = db.cursor()
+            cur.execute("INSERT INTO settings (key, value) VALUES ('maintenance_enabled', %s) ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value", ("true" if enabled else "false",))
+            cur.execute("INSERT INTO settings (key, value) VALUES ('maintenance_message', %s) ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value", (message,))
+            cur.execute("INSERT INTO settings (key, value) VALUES ('maintenance_eta', %s) ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value", (str(eta_minutes) if eta_minutes else "",))
+            cur.close()
+        else:
+            db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('maintenance_enabled', ?)", ("true" if enabled else "false",))
+            db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('maintenance_message', ?)", (message,))
+            db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('maintenance_eta', ?)", (str(eta_minutes) if eta_minutes else "",))
+        db.commit()
+    except Exception as e:
+        print(f"[MAINTENANCE] Erreur: {e}")
+    db.close()
     return {"maintenance": enabled, "message": "Maintenance " + ("activee" if enabled else "desactivee")}
 
 @app.get("/api/admin/maintenance/status")
