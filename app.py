@@ -2102,6 +2102,22 @@ async def fix_maintenance_off():
     except: pass
     return {"ok": True, "message": "Maintenance desactivee"}
 
+@app.get("/api/test/register-debug")
+async def test_register():
+    """Route de debug temporaire"""
+    db = get_db()
+    u = fetchone(db, "SELECT id, username FROM users ORDER BY id DESC LIMIT 1", ())
+    db.close()
+    if not u:
+        return {"error": "no user"}
+    real_id = u["id"]
+    try:
+        token = create_token(real_id, "user")
+        payload = decode_token(token)
+        return {"ok": True, "real_id": real_id, "sub_in_token": payload.get("sub"), "secret_key_len": len(SECRET_KEY)}
+    except Exception as e:
+        return {"error": str(e), "real_id": real_id, "secret_key_len": len(SECRET_KEY)}
+
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
 
 if __name__ == "__main__":
