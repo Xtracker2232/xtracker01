@@ -316,11 +316,11 @@ def filter_results(results: list) -> list:
     return clean
 
 CREDIT_PACKS = {
-    "decouverte":  {"credits": 10,   "price_eur": 0.99,   "label": "Decouverte"},
-    "starter":    {"credits": 20,   "price_eur": 5.00,   "label": "Starter"},
-    "pro":        {"credits": 200,  "price_eur": 14.99,  "label": "Pro"},
-    "enterprise": {"credits": 1000, "price_eur": 49.99,  "label": "Enterprise"},
-    "lifetime":   {"credits": -1,   "price_eur": 150.00, "label": "Lifetime"},
+    "decouverte":  {"credits": 10,   "price_eur": 0.99,  "old_price": 2.99,  "label": "Decouverte"},
+    "starter":     {"credits": 50,   "price_eur": 4.99,  "old_price": 9.99,  "label": "Starter"},
+    "pro":         {"credits": 200,  "price_eur": 14.99, "old_price": 29.99, "label": "Pro"},
+    "enterprise":  {"credits": 1000, "price_eur": 49.99, "old_price": 99.99, "label": "Enterprise"},
+    "lifetime":    {"credits": -1,   "price_eur": 149.00,"old_price": 299.00,"label": "Lifetime"},
 }
 
 app = FastAPI(title="Xtracker API")
