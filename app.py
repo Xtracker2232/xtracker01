@@ -510,18 +510,15 @@ async def register(data: RegisterModel, request: Request):
                     execute(db, "UPDATE users SET referred_by=? WHERE id=?", (referrer["id"], db_id))
                     execute(db, "INSERT INTO referrals (referrer_id, referred_id, credits_earned) VALUES (?,?,?)", (referrer["id"], db_id, 5))
                     execute(db, "UPDATE users SET credits=credits+5 WHERE id=?", (referrer["id"],))
+    # Récupérer l'ID réel depuis la BDD après insertion
+    db2 = get_db()
+    new_user = fetchone(db2, "SELECT id FROM users WHERE username=?", (data.username,))
+    db2.close()
+    real_id = new_user["id"] if new_user else None
+    if not real_id:
+        raise HTTPException(500, "Erreur création compte")
     db.commit()
     db.close()
-    # Extraire l'ID réel selon PostgreSQL ou SQLite
-    print(f"[REGISTER] db_id={db_id} type={type(db_id)}")
-    if is_pg():
-        if isinstance(db_id, dict):
-            real_id = db_id.get("id") or list(db_id.values())[0]
-        else:
-            real_id = db_id
-    else:
-        real_id = db_id.lastrowid if hasattr(db_id, 'lastrowid') else db_id
-    print(f"[REGISTER] real_id={real_id}")
     token = create_token(real_id, "user")
     return {
         "token": token,
