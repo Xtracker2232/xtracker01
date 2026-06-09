@@ -139,9 +139,10 @@ async function doRegister(){
     if(!r.ok){showErr(d.detail||'Erreur inscription.');return}
     localStorage.clear();
     localStorage.setItem('token',d.token);
+    sessionStorage.setItem('token',d.token);
     localStorage.setItem('user',JSON.stringify(d.user));
-    showOk('Compte créé ! Redirection...');
-    setTimeout(()=>{window.location.href='dashboard.html'},600);
+    sessionStorage.setItem('user',JSON.stringify(d.user));
+    window.location.href='dashboard.html';
   }catch(e){showErr('Erreur réseau.')}
   finally{setLoad('btn-register',false,'Créer mon compte')}
 }
