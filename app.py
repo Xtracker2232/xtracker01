@@ -347,6 +347,7 @@ async def maintenance_middleware(request, call_next):
         path == "/sw.js"):
         return await call_next(request)
     # Vérifier si maintenance active dans la BDD
+    maintenance = False
     try:
         db = get_db()
         row = fetchone(db, "SELECT value FROM settings WHERE key='maintenance_enabled'", ())
@@ -1064,11 +1065,23 @@ async def admin_update(user_id: int, data: AdminUserUpdate, admin=Depends(requir
 @app.delete("/api/admin/users/{user_id}")
 async def admin_delete(user_id: int, admin=Depends(require_admin)):
     db = get_db()
-    execute(db, "DELETE FROM searches WHERE user_id=?", (user_id,))
-    execute(db, "DELETE FROM transactions WHERE user_id=?", (user_id,))
+    try: execute(db, "DELETE FROM searches WHERE user_id=?", (user_id,))
+    except: pass
+    try: execute(db, "DELETE FROM transactions WHERE user_id=?", (user_id,))
+    except: pass
+    try: execute(db, "DELETE FROM ticket_messages WHERE ticket_id IN (SELECT id FROM tickets WHERE user_id=?)", (user_id,))
+    except: pass
+    try: execute(db, "DELETE FROM tickets WHERE user_id=?", (user_id,))
+    except: pass
+    try: execute(db, "DELETE FROM broadcast_reads WHERE user_id=?", (user_id,))
+    except: pass
+    try: execute(db, "DELETE FROM fiche_persons WHERE fiche_id IN (SELECT id FROM fiches WHERE user_id=?)", (user_id,))
+    except: pass
+    try: execute(db, "DELETE FROM fiches WHERE user_id=?", (user_id,))
+    except: pass
     execute(db, "DELETE FROM users WHERE id=?", (user_id,))
     db.commit(); db.close()
-    return {"message": "Supprimé"}
+    return {"message": "Supprime"}
 
 @app.post("/api/admin/users/{user_id}/add-credits")
 async def admin_add_credits(user_id: int, request: Request, admin=Depends(require_admin)):
