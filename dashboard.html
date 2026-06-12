@@ -554,6 +554,7 @@ select option{background:var(--bg2)}
         <div class="ctx-item" onclick="ctxInvestigate()">🔍 Investiguer</div>
         <div class="ctx-item" onclick="ctxShowFiche()">📋 Voir la fiche</div>
         <div class="ctx-item" onclick="ctxStartLink()">🔗 Relier à...</div>
+        <div class="ctx-item" onclick="ctxCollapse()">🔵 Réduire le groupe</div>
         <div class="ctx-item" onclick="ctxEditNode()">✏️ Modifier</div>
         <div class="ctx-item" onclick="ctxChangeColor()">🎨 Couleur</div>
         <div class="ctx-item" style="color:#ef4444;border-top:1px solid var(--border);margin-top:4px;padding-top:8px" onclick="ctxDelete()">🗑 Supprimer</div>
@@ -2548,9 +2549,16 @@ function drawMainGraph(){
     mainGraphCtx.lineWidth=2/graphScale;
     mainGraphCtx.fill();mainGraphCtx.stroke();
     mainGraphCtx.fillStyle='#eef0ff';
-    mainGraphCtx.font=(13/graphScale)+'px sans-serif';
+    mainGraphCtx.font=(n.collapsed?'16':'13')+'px sans-serif';
     mainGraphCtx.textAlign='center';mainGraphCtx.textBaseline='middle';
-    mainGraphCtx.fillText('👤',n.x,n.y);
+    mainGraphCtx.fillText(n.collapsed?'👥':'👤',n.x,n.y);
+    if(n.collapsed){
+      mainGraphCtx.beginPath();mainGraphCtx.arc(n.x+n.r*0.5,n.y-n.r*0.5,10/graphScale,0,Math.PI*2);
+      mainGraphCtx.fillStyle=n.color||'#6366f1';mainGraphCtx.fill();
+      mainGraphCtx.fillStyle='#fff';mainGraphCtx.font='bold '+(9/graphScale)+'px Inter';
+      mainGraphCtx.textBaseline='middle';
+      mainGraphCtx.fillText((n.collapsedNodes?n.collapsedNodes.length:''),n.x+n.r*0.5,n.y-n.r*0.5);
+    }
     mainGraphCtx.fillStyle='rgba(238,240,255,0.92)';
     mainGraphCtx.font='bold '+(11/graphScale)+'px Inter';
     mainGraphCtx.textBaseline='top';
@@ -2571,6 +2579,22 @@ function showCtxMenu(n, rx, ry){
   var menu = document.getElementById('graph-ctx-menu');
   var nameEl = document.getElementById('ctx-node-name');
   if(nameEl) nameEl.textContent = n.label;
+  // Adapter le menu si c'est un groupe réduit
+  var collapseBtn = menu.querySelector('[onclick="ctxCollapse()"]');
+  var expandBtn = menu.querySelector('[onclick="ctxExpand()"]');
+  if(n.collapsed){
+    if(collapseBtn) collapseBtn.style.display='none';
+    if(!expandBtn){
+      var div=document.createElement('div');
+      div.className='ctx-item';
+      div.setAttribute('onclick','ctxExpand()');
+      div.textContent='🔓 Développer le groupe';
+      collapseBtn && collapseBtn.parentNode.insertBefore(div, collapseBtn);
+    } else { expandBtn.style.display='block'; }
+  } else {
+    if(collapseBtn) collapseBtn.style.display='block';
+    if(expandBtn) expandBtn.style.display='none';
+  }
   menu.style.display = 'block';
   var wrap = document.getElementById('main-graph-wrap');
   var maxX = wrap.offsetWidth - 200;
@@ -2582,6 +2606,62 @@ function showCtxMenu(n, rx, ry){
 function hideCtxMenu(){
   var menu = document.getElementById('graph-ctx-menu');
   if(menu) menu.style.display='none';
+}
+
+function ctxCollapse(){
+  if(!graphCtxNode)return;
+  hideCtxMenu();
+  var src = graphCtxNode;
+  // Trouver tous les voisins liés
+  var neighborIds = mainGraphEdges
+    .filter(function(e){return e.a===src.id||e.b===src.id;})
+    .map(function(e){return e.a===src.id?e.b:e.a;});
+  if(neighborIds.length===0){notif('Aucun voisin à regrouper','err');return;}
+  var neighbors = mainGraphNodes.filter(function(n){return neighborIds.indexOf(n.id)>-1;});
+  // Créer un nœud groupe
+  var cx = neighbors.reduce(function(s,n){return s+n.x;},src.x)/(neighbors.length+1);
+  var cy = neighbors.reduce(function(s,n){return s+n.y;},src.y)/(neighbors.length+1);
+  var groupId = 'group_'+Date.now();
+  var groupNode = {
+    id: groupId,
+    label: src.label+' +'+neighbors.length,
+    x: cx, y: cy,
+    r: 36,
+    color: src.color||'#6366f1',
+    bg: (src.color||'#6366f1')+'25',
+    data: src.data,
+    lien: src.lien||'',
+    collapsed: true,
+    collapsedNodes: [src].concat(neighbors),
+    collapsedEdges: mainGraphEdges.filter(function(e){
+      return neighborIds.concat([src.id]).indexOf(e.a)>-1 || neighborIds.concat([src.id]).indexOf(e.b)>-1;
+    })
+  };
+  // Supprimer les noeuds et liens du groupe
+  var toRemove = neighborIds.concat([src.id]);
+  mainGraphNodes = mainGraphNodes.filter(function(n){return toRemove.indexOf(n.id)===-1;});
+  mainGraphEdges = mainGraphEdges.filter(function(e){return toRemove.indexOf(e.a)===-1&&toRemove.indexOf(e.b)===-1;});
+  // Ajouter le nœud groupe
+  mainGraphNodes.push(groupNode);
+  saveGraphState();
+  drawMainGraph();
+  notif('Groupe de '+(neighbors.length+1)+' personnes réduit');
+}
+
+function ctxExpand(){
+  if(!graphCtxNode||!graphCtxNode.collapsed)return;
+  hideCtxMenu();
+  var group = graphCtxNode;
+  // Restaurer les noeuds et liens
+  mainGraphNodes = mainGraphNodes.filter(function(n){return n.id!==group.id;});
+  group.collapsedNodes.forEach(function(n){mainGraphNodes.push(n);});
+  group.collapsedEdges.forEach(function(e){
+    var exists = mainGraphEdges.find(function(ex){return ex.a===e.a&&ex.b===e.b;});
+    if(!exists) mainGraphEdges.push(e);
+  });
+  saveGraphState();
+  initMainGraph();
+  notif('Groupe développé');
 }
 
 function ctxDelete(){
@@ -2699,6 +2779,46 @@ function restoreGraph(idx){
     if(document.getElementById('page-graphe').classList.contains('active'))initMainGraph();
     notif('Graphe "'+all[idx].name+'" chargé !');
   }catch(e){}
+}
+
+function deleteGraph(idx){
+  try{
+    var all=JSON.parse(localStorage.getItem('xtracker_saved_graphs')||'[]');
+    all.splice(idx,1);
+    localStorage.setItem('xtracker_saved_graphs',JSON.stringify(all));
+    loadSavedGraphs();
+  }catch(e){}
+}
+
+
+function saveGraphNamed(){
+  customPrompt('Sauvegarder le graphe','Donnez un nom :','',function(name){
+    if(!name)return;
+    try{
+      var all=JSON.parse(localStorage.getItem('xtracker_saved_graphs')||'[]');
+      all.push({id:'g_'+Date.now(),name:name,nodes:mainGraphNodes,edges:mainGraphEdges,date:new Date().toLocaleDateString('fr-FR')});
+      localStorage.setItem('xtracker_saved_graphs',JSON.stringify(all));
+      notif('Graphe "'+name+'" sauvegardé !');
+    }catch(e){notif('Erreur sauvegarde','err');}
+  });
+}
+
+function loadSavedGraphs(){
+  try{
+    var all=JSON.parse(localStorage.getItem('xtracker_saved_graphs')||'[]');
+    var el=document.getElementById('saved-graphs-list');
+    if(!el)return;
+    if(!all.length){el.innerHTML='<div style="color:var(--muted2);text-align:center;padding:20px">Aucun graphe sauvegardé</div>';
+    } else {
+      el.innerHTML=all.map(function(g,i){
+        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px;border-bottom:1px solid var(--border)">'
+          +'<div><div style="font-weight:600">'+g.name+'</div><div style="font-size:11px;color:var(--muted2)">'+(g.nodes?g.nodes.length:0)+' personnes · '+g.date+'</div></div>'
+          +'<div style="display:flex;gap:6px"><button class="btn btn-a" style="padding:4px 10px;font-size:11px" onclick="restoreGraph('+i+')">Charger</button>'
+          +'<button class="btn" style="padding:4px 10px;font-size:11px;color:#ef4444" onclick="deleteGraph('+i+')">✕</button></div></div>';
+      }).join('');
+    }
+    document.getElementById('saved-graphs-modal').style.display='flex';
+  }catch(e){notif('Erreur chargement','err');}
 }
 
 function deleteGraph(idx){
