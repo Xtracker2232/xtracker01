@@ -2687,7 +2687,8 @@ function clearGraph(){
     mainGraphNodes=[];mainGraphEdges=[];
     saveGraphState();initMainGraph();
   });
-}nction restoreGraph(idx){
+}
+function restoreGraph(idx){
   try{
     var all=JSON.parse(localStorage.getItem('xtracker_saved_graphs')||'[]');
     if(!all[idx])return;
