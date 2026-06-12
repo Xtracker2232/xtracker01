@@ -2683,36 +2683,11 @@ function confirmAddNode(){
 
 function clearGraph(){
   customConfirm('Effacer le graphe','Tout sera supprimé. Confirmer ?',function(ok){
-  if(!ok)return;
-  mainGraphNodes=[];mainGraphEdges=[];
-  saveGraphState();initMainGraph();
-});}
-
-function saveGraphNamed(){
-  customPrompt('Sauvegarder le graphe','Donnez un nom à ce graphe :','',function(name){
-  if(!name)return;
-  try{
-  try{
-    var all=JSON.parse(localStorage.getItem('xtracker_saved_graphs')||'[]');
-    all.push({id:'g_'+Date.now(),name:name,nodes:mainGraphNodes,edges:mainGraphEdges,date:new Date().toLocaleDateString('fr-FR')});
-    localStorage.setItem('xtracker_saved_graphs',JSON.stringify(all));
-    notif('Graphe "'+name+'" sauvegardé !');
-  }catch(e){notif('Erreur sauvegarde','err');}
-});}
-
-function loadSavedGraphs(){
-  try{
-    var all=JSON.parse(localStorage.getItem('xtracker_saved_graphs')||'[]');
-    var el=document.getElementById('saved-graphs-list');
-    if(!all.length){el.innerHTML='<div style="color:var(--muted2);text-align:center;padding:20px">Aucun graphe sauvegardé</div>';return;}
-    el.innerHTML=all.map(function(g,i){
-      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px;border-bottom:1px solid var(--border)">'+'<div><div style="font-weight:600">'+g.name+'</div><div style="font-size:11px;color:var(--muted2)">'+g.nodes.length+' personnes · '+g.date+'</div></div>'+'<div style="display:flex;gap:6px"><button class="btn btn-a" style="padding:4px 10px;font-size:11px" onclick="restoreGraph('+i+')">Charger</button><button class="btn" style="padding:4px 10px;font-size:11px;color:#ef4444" onclick="deleteGraph('+i+')">✕</button></div>'+'</div>';
-    }).join('');
-    document.getElementById('saved-graphs-modal').style.display='flex';
-  }catch(e){}
-}
-
-function restoreGraph(idx){
+    if(!ok)return;
+    mainGraphNodes=[];mainGraphEdges=[];
+    saveGraphState();initMainGraph();
+  });
+}nction restoreGraph(idx){
   try{
     var all=JSON.parse(localStorage.getItem('xtracker_saved_graphs')||'[]');
     if(!all[idx])return;
