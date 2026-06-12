@@ -881,7 +881,7 @@ function renderResults(results,total,took,free_left,credits){
     const allSrcs=(p._sources||[]).map(s=>'<span class="rsrc">'+s+'</span>').join('');
     const rawStr=JSON.stringify(p,null,2).replace(/</g,'&lt;');
     const ptags=renderTags(p);
-    html+='<div class="rcard" style="animation-delay:'+i*.04+'s"><div class="rcard-top" onclick="tog('+i+')"><div><div class="rname">'+name+'</div><div class="rmeta">'+sub+'</div>'+ptags+'</div><div class="rtop-r">'+srcs+'<span class="rarr" id="arr'+i+'">▼</span></div></div><div class="rcard-body" id="rb'+i+'"><div class="rfields">'+fh+'</div>'+(allSrcs?'<div class="rsources">'+allSrcs+'</div>':'')+famHtml+'<div class="action-row"><button class="raw-btn" onclick="toggleRaw('+i+')">Approfondir</button><button class="raw-btn" onclick="copyResult('+i+')">Copier</button><button class="raw-btn" onclick="addResultToFiche('+i+')">+ Fiche</button></div><div class="raw-data" id="raw'+i+'">'+rawStr+'</div></div></div>';
+    html+='<div class="rcard" style="animation-delay:'+i*.04+'s"><div class="rcard-top" onclick="tog('+i+')"><div><div class="rname">'+name+'</div><div class="rmeta">'+sub+'</div>'+ptags+'</div><div class="rtop-r">'+srcs+'<span class="rarr" id="arr'+i+'">▼</span></div></div><div class="rcard-body" id="rb'+i+'"><div class="rfields">'+fh+'</div>'+(allSrcs?'<div class="rsources">'+allSrcs+'</div>':'')+famHtml+'<div class="action-row"><button class="raw-btn" onclick="toggleRaw('+i+')">Approfondir</button><button class="raw-btn" onclick="copyResult('+i+')">Copier</button><button class="raw-btn" onclick="addResultToFiche('+i+')">+ Fiche</button><button class="raw-btn" onclick="showPersonGraph('+i+')">◎ Graphe</button></div><div class="raw-data" id="raw'+i+'">'+rawStr+'</div></div></div>';
   });
   el.innerHTML=html;
 }
@@ -2158,6 +2158,134 @@ function graphClick(e){
   }
 }
 
+
+// ── GRAPHE RÉSULTAT ───────────────────────────────────────────────────────────
+function showPersonGraph(idx){
+  const p = window['_r'+idx];
+  if(!p) return;
+  const modal = document.getElementById('person-graph-modal');
+  modal.style.display = 'flex';
+  
+  const canvas = document.getElementById('person-graph-canvas');
+  const ctx = canvas.getContext('2d');
+  const W = Math.min(window.innerWidth - 80, 700);
+  const H = 420;
+  canvas.width = W;
+  canvas.height = H;
+  canvas.style.width = W+'px';
+  canvas.style.height = H+'px';
+
+  const famille = p.famille || [];
+  
+  // Construire les noeuds
+  const nodes = [];
+  
+  // Noeud principal au centre
+  const mainName = [p.prenom, p.nom_famille].filter(Boolean).join(' ') || 'Personne';
+  nodes.push({id:'main', label:mainName, sub:[p.telephone,p.email,p.ville].filter(Boolean)[0]||'', x:W/2, y:H/2, r:30, color:'#6366f1', main:true});
+  
+  // Membres famille
+  famille.forEach(function(m, i){
+    const angle = (i / Math.max(famille.length,1)) * Math.PI * 2 - Math.PI/2;
+    const radius = 150;
+    const name = [m.prenom, m.nom_famille].filter(Boolean).join(' ') || 'Membre';
+    nodes.push({
+      id:'f'+i, label:name,
+      sub: m.lien || (m.telephone||m.email||''),
+      x: W/2 + Math.cos(angle)*radius,
+      y: H/2 + Math.sin(angle)*radius,
+      r:22, color:'#818cf8', main:false, data:m
+    });
+  });
+
+  let dragging=null, off={x:0,y:0};
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    // Liens
+    nodes.slice(1).forEach(function(n){
+      ctx.beginPath();
+      ctx.moveTo(nodes[0].x, nodes[0].y);
+      ctx.lineTo(n.x, n.y);
+      ctx.strokeStyle='rgba(99,102,241,0.35)';
+      ctx.lineWidth=1.5;
+      ctx.setLineDash([4,4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      // Label lien au milieu
+      if(n.data && n.data.lien){
+        ctx.fillStyle='rgba(129,140,248,0.7)';
+        ctx.font='10px Inter';
+        ctx.textAlign='center';
+        ctx.fillText(n.data.lien, (nodes[0].x+n.x)/2, (nodes[0].y+n.y)/2 - 6);
+      }
+    });
+    // Noeuds
+    nodes.forEach(function(n){
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r+4, 0, Math.PI*2);
+      ctx.fillStyle='rgba(99,102,241,0.06)';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r, 0, Math.PI*2);
+      ctx.fillStyle = n.main ? 'rgba(99,102,241,0.25)' : 'rgba(129,140,248,0.12)';
+      ctx.strokeStyle = n.color;
+      ctx.lineWidth = n.main ? 2.5 : 1.5;
+      ctx.fill();
+      ctx.stroke();
+      // Emoji
+      ctx.fillStyle='#eef0ff';
+      ctx.font=(n.main?'16':'13')+'px sans-serif';
+      ctx.textAlign='center';
+      ctx.textBaseline='middle';
+      ctx.fillText(n.main?'👤':'👥', n.x, n.y);
+      // Label
+      ctx.fillStyle='rgba(238,240,255,0.9)';
+      ctx.font='bold 11px Inter';
+      ctx.textBaseline='top';
+      let lbl=n.label;
+      if(lbl.length>14) lbl=lbl.slice(0,13)+'…';
+      ctx.fillText(lbl, n.x, n.y+n.r+5);
+      if(n.sub){
+        ctx.fillStyle='rgba(238,240,255,0.45)';
+        ctx.font='10px Inter';
+        let sub=n.sub;
+        if(sub.length>16) sub=sub.slice(0,15)+'…';
+        ctx.fillText(sub, n.x, n.y+n.r+18);
+      }
+    });
+  }
+
+  draw();
+
+  // Drag
+  canvas.onmousedown=function(e){
+    const r=canvas.getBoundingClientRect();
+    const x=e.clientX-r.left, y=e.clientY-r.top;
+    dragging=nodes.find(n=>Math.sqrt((n.x-x)**2+(n.y-y)**2)<=n.r+6)||null;
+    if(dragging) off={x:dragging.x-x,y:dragging.y-y};
+  };
+  canvas.onmousemove=function(e){
+    const r=canvas.getBoundingClientRect();
+    const x=e.clientX-r.left, y=e.clientY-r.top;
+    if(dragging){dragging.x=x+off.x;dragging.y=y+off.y;draw();}
+  };
+  canvas.onmouseup=function(){dragging=null;};
+
+  // Message si pas de famille
+  if(famille.length===0){
+    const info = document.getElementById('person-graph-info');
+    if(info) info.textContent = 'Aucun lien familial trouvé pour cette personne.';
+  } else {
+    const info = document.getElementById('person-graph-info');
+    if(info) info.textContent = famille.length + ' lien(s) familial(aux) trouvé(s)';
+  }
+}
+
+function closePersonGraph(){
+  document.getElementById('person-graph-modal').style.display='none';
+}
+
 let _pendingFicheData=null;
 async function addToFiche(personData){
   const r=await fetch(API+'/api/fiches',{headers:hdr()});
@@ -2240,6 +2368,25 @@ if(typeof renderResults==='function'){
       <button onclick="closeFichePicker()" style="background:none;border:none;color:var(--muted2);cursor:pointer;font-size:20px;line-height:1">×</button>
     </div>
     <div id="fiche-picker-list" style="max-height:300px;overflow-y:auto"></div>
+  </div>
+</div>
+
+
+<div id="person-graph-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:3000;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--bg2);border:1px solid rgba(99,102,241,0.25);border-radius:16px;width:100%;max-width:740px;overflow:hidden">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700">Graphe de connexions</div>
+        <div id="person-graph-info" style="font-size:12px;color:var(--muted2);margin-top:2px"></div>
+      </div>
+      <button onclick="closePersonGraph()" style="background:none;border:none;color:var(--muted2);cursor:pointer;font-size:22px;line-height:1">×</button>
+    </div>
+    <div style="padding:16px;overflow:auto">
+      <canvas id="person-graph-canvas" style="display:block;border-radius:8px;background:rgba(7,10,20,0.6)"></canvas>
+    </div>
+    <div style="padding:12px 20px;border-top:1px solid var(--border);font-size:11px;color:var(--muted2);text-align:center">
+      Glisse les noeuds pour réorganiser le graphe
+    </div>
   </div>
 </div>
 
