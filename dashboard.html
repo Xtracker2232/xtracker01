@@ -502,12 +502,20 @@ select option{background:var(--bg2)}
 
     <!-- Détail d'une fiche -->
     <div id="fiche-detail" style="display:none">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
         <button class="btn" onclick="backToFiches()">← Retour</button>
         <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800" id="fiche-detail-name"></div>
-        <button class="btn" style="margin-left:auto;color:#ef4444;border-color:rgba(239,68,68,0.3)" onclick="deleteFiche(currentFicheId)">Supprimer</button>
+        <div style="margin-left:auto;display:flex;gap:8px">
+          <button class="btn" id="btn-vue-liste" onclick="setFicheView('liste')" style="background:rgba(99,102,241,0.15);border-color:rgba(99,102,241,0.4)">≡ Liste</button>
+          <button class="btn" id="btn-vue-graphe" onclick="setFicheView('graphe')">◎ Graphe</button>
+          <button class="btn" style="color:#ef4444;border-color:rgba(239,68,68,0.3)" onclick="deleteFiche(currentFicheId)">Supprimer</button>
+        </div>
       </div>
       <div id="fiche-persons-list"></div>
+      <div id="fiche-graph-container" style="display:none;background:rgba(12,15,32,0.8);border:1px solid rgba(99,102,241,0.2);border-radius:12px;overflow:hidden;position:relative">
+        <canvas id="fiche-graph-canvas" style="width:100%;display:block"></canvas>
+        <div id="fiche-graph-tooltip" style="display:none;position:absolute;background:rgba(12,15,32,0.95);border:1px solid rgba(99,102,241,0.3);border-radius:8px;padding:10px 14px;font-size:12px;pointer-events:none;z-index:10;min-width:150px"></div>
+      </div>
       <div id="fiche-empty" style="display:none;text-align:center;padding:40px;color:var(--muted2);font-size:13px">Aucune personne dans cette fiche.<br>Ajoutez des résultats depuis la recherche.</div>
     </div>
   </div>
@@ -1933,6 +1941,7 @@ async function openFiche(id, name){
   const el=document.getElementById('fiche-persons-list');
   const empty=document.getElementById('fiche-empty');
   if(!persons.length){el.innerHTML='';empty.style.display='block';return;}
+  graphPersons = persons;
   empty.style.display='none';
   el.innerHTML=persons.map(p=>{
     const d=JSON.parse(p.data||'{}');
@@ -1966,6 +1975,189 @@ async function removeFromFiche(personId){
   openFiche(currentFicheId, document.getElementById('fiche-detail-name').textContent);
 }
 function addResultToFiche(i){addToFiche(window['_r'+i]);}
+
+// ── GRAPHE FICHE ──────────────────────────────────────────────────────────────
+let ficheViewMode = 'liste';
+let graphPersons = [];
+let graphNodes = [];
+let graphDragging = null;
+let graphOffset = {x:0, y:0};
+let graphCanvas = null;
+let graphCtx = null;
+
+function setFicheView(mode){
+  ficheViewMode = mode;
+  const btnL = document.getElementById('btn-vue-liste');
+  const btnG = document.getElementById('btn-vue-graphe');
+  const liste = document.getElementById('fiche-persons-list');
+  const graph = document.getElementById('fiche-graph-container');
+  if(mode === 'liste'){
+    liste.style.display = 'block';
+    graph.style.display = 'none';
+    if(btnL){btnL.style.background='rgba(99,102,241,0.15)';btnL.style.borderColor='rgba(99,102,241,0.4)';}
+    if(btnG){btnG.style.background='';btnG.style.borderColor='';}
+  } else {
+    liste.style.display = 'none';
+    graph.style.display = 'block';
+    if(btnG){btnG.style.background='rgba(99,102,241,0.15)';btnG.style.borderColor='rgba(99,102,241,0.4)';}
+    if(btnL){btnL.style.background='';btnL.style.borderColor='';}
+    renderGraph();
+  }
+}
+
+function buildGraphNodes(persons){
+  const W = graphCanvas.offsetWidth || 600;
+  const H = Math.max(400, persons.length * 80);
+  graphCanvas.width = W;
+  graphCanvas.height = H;
+  graphCanvas.style.height = H + 'px';
+
+  // Nœud central "Fiche"
+  const nodes = [{
+    id: 0, type: 'fiche',
+    label: document.getElementById('fiche-detail-name').textContent,
+    x: W/2, y: 60, r: 28,
+    color: '#6366f1', data: null
+  }];
+
+  // Nœuds personnes en cercle autour du centre
+  persons.forEach(function(p, i){
+    const d = typeof p.data === 'string' ? JSON.parse(p.data||'{}') : (p.data||{});
+    const name = [d.prenom, d.nom_famille].filter(Boolean).join(' ') || 'Profil '+(i+1);
+    const angle = (i / persons.length) * Math.PI * 2 - Math.PI/2;
+    const radius = Math.min(W/2 - 60, 180);
+    nodes.push({
+      id: p.id, type: 'person',
+      label: name,
+      sub: [d.email, d.telephone, d.ville].filter(Boolean)[0] || '',
+      x: W/2 + Math.cos(angle) * radius,
+      y: H/2 + Math.sin(angle) * radius,
+      r: 22, color: '#818cf8', data: d
+    });
+  });
+
+  return nodes;
+}
+
+function renderGraph(){
+  graphCanvas = document.getElementById('fiche-graph-canvas');
+  if(!graphCanvas) return;
+  graphCtx = graphCanvas.getContext('2d');
+  graphNodes = buildGraphNodes(graphPersons);
+  drawGraph();
+  graphCanvas.onmousedown = graphMouseDown;
+  graphCanvas.onmousemove = graphMouseMove;
+  graphCanvas.onmouseup = function(){graphDragging=null;};
+  graphCanvas.onmouseleave = function(){graphDragging=null;};
+  graphCanvas.onclick = graphClick;
+}
+
+function drawGraph(){
+  if(!graphCtx||!graphCanvas) return;
+  graphCtx.clearRect(0,0,graphCanvas.width,graphCanvas.height);
+
+  // Dessiner les liens
+  graphNodes.slice(1).forEach(function(n){
+    graphCtx.beginPath();
+    graphCtx.moveTo(graphNodes[0].x, graphNodes[0].y);
+    graphCtx.lineTo(n.x, n.y);
+    graphCtx.strokeStyle = 'rgba(99,102,241,0.3)';
+    graphCtx.lineWidth = 1.5;
+    graphCtx.stroke();
+  });
+
+  // Dessiner les nœuds
+  graphNodes.forEach(function(n){
+    // Ombre
+    graphCtx.beginPath();
+    graphCtx.arc(n.x, n.y, n.r+4, 0, Math.PI*2);
+    graphCtx.fillStyle = 'rgba(99,102,241,0.08)';
+    graphCtx.fill();
+
+    // Cercle
+    graphCtx.beginPath();
+    graphCtx.arc(n.x, n.y, n.r, 0, Math.PI*2);
+    graphCtx.fillStyle = n.type==='fiche' ? 'rgba(99,102,241,0.3)' : 'rgba(129,140,248,0.15)';
+    graphCtx.strokeStyle = n.color;
+    graphCtx.lineWidth = 2;
+    graphCtx.fill();
+    graphCtx.stroke();
+
+    // Icône
+    graphCtx.fillStyle = '#eef0ff';
+    graphCtx.font = n.type==='fiche' ? 'bold 14px Inter' : '12px Inter';
+    graphCtx.textAlign = 'center';
+    graphCtx.textBaseline = 'middle';
+    graphCtx.fillText(n.type==='fiche' ? '📁' : '👤', n.x, n.y);
+
+    // Label
+    graphCtx.fillStyle = 'rgba(238,240,255,0.9)';
+    graphCtx.font = '11px Inter';
+    graphCtx.textAlign = 'center';
+    graphCtx.textBaseline = 'top';
+    const maxW = 90;
+    let lbl = n.label;
+    if(graphCtx.measureText(lbl).width > maxW) lbl = lbl.slice(0,12)+'...';
+    graphCtx.fillText(lbl, n.x, n.y + n.r + 5);
+  });
+}
+
+function getNodeAt(x, y){
+  return graphNodes.find(function(n){
+    return Math.sqrt((n.x-x)**2+(n.y-y)**2) <= n.r+6;
+  });
+}
+
+function graphMouseDown(e){
+  const rect = graphCanvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  const n = getNodeAt(x, y);
+  if(n){
+    graphDragging = n;
+    graphOffset = {x: n.x-x, y: n.y-y};
+  }
+}
+
+function graphMouseMove(e){
+  const rect = graphCanvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  if(graphDragging){
+    graphDragging.x = x + graphOffset.x;
+    graphDragging.y = y + graphOffset.y;
+    drawGraph();
+  }
+  // Tooltip
+  const n = getNodeAt(x, y);
+  const tt = document.getElementById('fiche-graph-tooltip');
+  if(n && n.type==='person' && n.data){
+    const d = n.data;
+    let html = '<div style="font-weight:700;margin-bottom:4px">'+n.label+'</div>';
+    if(d.email) html += '<div style="color:var(--muted2)">'+d.email+'</div>';
+    if(d.telephone) html += '<div style="color:var(--muted2)">'+d.telephone+'</div>';
+    if(d.ville) html += '<div style="color:var(--muted2)">'+d.ville+'</div>';
+    if(d.date_naissance) html += '<div style="color:var(--muted2)">Né le '+d.date_naissance+'</div>';
+    tt.innerHTML = html;
+    tt.style.display = 'block';
+    tt.style.left = (x+15)+'px';
+    tt.style.top = (y-10)+'px';
+  } else {
+    tt.style.display = 'none';
+  }
+}
+
+function graphClick(e){
+  if(graphDragging) return;
+  const rect = graphCanvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  const n = getNodeAt(x, y);
+  if(n && n.type==='person') {
+    // On pourrait ouvrir un popup de détail ici
+  }
+}
+
 let _pendingFicheData=null;
 async function addToFiche(personData){
   const r=await fetch(API+'/api/fiches',{headers:hdr()});
