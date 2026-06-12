@@ -143,6 +143,8 @@ select option{background:var(--bg2)}
 .history-meta{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--muted2)}
 
 /* CREDITS */
+.ctx-item{padding:8px 12px;border-radius:6px;cursor:pointer;font-size:13px;transition:background .15s;}
+.ctx-item:hover{background:rgba(99,102,241,0.15);}
 .packs-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .pack{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px}
 .pack.feat{border-color:rgba(99,102,241,0.4)}
@@ -220,7 +222,9 @@ select option{background:var(--bg2)}
   .topbar{padding-top:env(safe-area-inset-top);padding:0 14px}
   .search-layout{grid-template-columns:1fr}
   .search-col{position:static}
-  .packs-grid{grid-template-columns:1fr}
+  .ctx-item{padding:8px 12px;border-radius:6px;cursor:pointer;font-size:13px;transition:background .15s;}
+.ctx-item:hover{background:rgba(99,102,241,0.15);}
+.packs-grid{grid-template-columns:1fr}
   .stat-grid{grid-template-columns:1fr 1fr}
 }
 @media(max-width:480px){
@@ -523,21 +527,46 @@ select option{background:var(--bg2)}
 
   <!-- PAGE GRAPHE -->
   <div class="page" id="page-graphe">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
       <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800">Graphe de connexions</div>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-a" onclick="addNodeManual()">+ Ajouter une personne</button>
-        <button class="btn" onclick="clearGraph()" style="color:#ef4444;border-color:rgba(239,68,68,0.3)">Effacer tout</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" onclick="addNodeManual()">+ Personne</button>
+        <button class="btn" onclick="saveGraphNamed()">💾 Sauvegarder</button>
+        <button class="btn" onclick="loadSavedGraphs()">📂 Mes graphes</button>
+        <button class="btn" onclick="clearGraph()" style="color:#ef4444;border-color:rgba(239,68,68,0.3)">🗑 Effacer</button>
       </div>
     </div>
-    <div style="font-size:12px;color:var(--muted2);margin-bottom:12px">Glisse les noeuds · Clique droit pour supprimer · Utilise "+ Ajouter au graphe" depuis les résultats de recherche</div>
-    <div style="background:rgba(12,15,32,0.8);border:1px solid rgba(99,102,241,0.2);border-radius:12px;overflow:hidden;position:relative" id="main-graph-wrap">
+    <div style="font-size:11px;color:var(--muted2);margin-bottom:10px">
+      Clic gauche = menu · Drag = déplacer · Scroll = zoom · Clic droit = supprimer · Alt+Drag = déplacer la vue
+    </div>
+    <div style="background:rgba(7,10,20,0.9);border:1px solid rgba(99,102,241,0.2);border-radius:12px;overflow:hidden;position:relative;user-select:none" id="main-graph-wrap">
       <canvas id="main-graph-canvas" style="width:100%;display:block;cursor:grab"></canvas>
-      <div id="main-graph-tooltip" style="display:none;position:absolute;background:rgba(12,15,32,0.95);border:1px solid rgba(99,102,241,0.3);border-radius:8px;padding:10px 14px;font-size:12px;pointer-events:none;z-index:10;min-width:160px"></div>
       <div id="main-graph-empty" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted2);font-size:13px;pointer-events:none">
-        <div style="font-size:40px;margin-bottom:12px">◎</div>
-        <div>Aucun noeud — Ajoutez une personne depuis les résultats de recherche</div>
-        <div style="margin-top:6px;font-size:11px">ou cliquez sur "+ Ajouter une personne"</div>
+        <div style="font-size:48px;margin-bottom:12px">◎</div>
+        <div>Graphe vide — Ajoutez une personne depuis les résultats</div>
+        <div style="margin-top:6px;font-size:11px">ou cliquez sur "+ Personne"</div>
+      </div>
+      <!-- Tooltip -->
+      <div id="main-graph-tooltip" style="display:none;position:absolute;background:rgba(7,10,20,0.97);border:1px solid rgba(99,102,241,0.35);border-radius:8px;padding:10px 14px;font-size:12px;pointer-events:none;z-index:10;min-width:160px;max-width:220px"></div>
+      <!-- Menu contextuel clic gauche -->
+      <div id="graph-ctx-menu" style="display:none;position:absolute;background:rgba(12,15,32,0.98);border:1px solid rgba(99,102,241,0.3);border-radius:10px;padding:6px;z-index:20;min-width:180px;box-shadow:0 8px 32px rgba(0,0,0,0.5)">
+        <div id="ctx-node-name" style="font-size:11px;font-weight:700;color:var(--muted2);padding:4px 10px 8px;border-bottom:1px solid var(--border);margin-bottom:4px"></div>
+        <div class="ctx-item" onclick="ctxInvestigate()">🔍 Investiguer</div>
+        <div class="ctx-item" onclick="ctxShowFiche()">📋 Voir la fiche</div>
+        <div class="ctx-item" onclick="ctxStartLink()">🔗 Relier à...</div>
+        <div class="ctx-item" onclick="ctxEditNode()">✏️ Modifier</div>
+        <div class="ctx-item" onclick="ctxChangeColor()">🎨 Couleur</div>
+        <div class="ctx-item" style="color:#ef4444;border-top:1px solid var(--border);margin-top:4px;padding-top:8px" onclick="ctxDelete()">🗑 Supprimer</div>
+      </div>
+      <!-- Modal fiche complète -->
+      <div id="graph-fiche-modal" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.7);z-index:30;align-items:center;justify-content:center;padding:20px">
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;width:100%;max-width:480px;max-height:80vh;overflow-y:auto">
+          <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg2)">
+            <div id="graph-fiche-title" style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700"></div>
+            <button onclick="document.getElementById('graph-fiche-modal').style.display='none'" style="background:none;border:none;color:var(--muted2);cursor:pointer;font-size:20px">×</button>
+          </div>
+          <div id="graph-fiche-body" style="padding:16px 20px"></div>
+        </div>
       </div>
     </div>
 
@@ -546,12 +575,12 @@ select option{background:var(--bg2)}
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:24px;width:90%;max-width:400px">
         <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:16px">Ajouter une personne</div>
         <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
-          <input id="node-prenom" placeholder="Prénom" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--text);outline:none">
-          <input id="node-nom" placeholder="Nom de famille" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--text);outline:none">
-          <input id="node-tel" placeholder="Téléphone" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--text);outline:none">
-          <input id="node-email" placeholder="Email" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--text);outline:none">
-          <input id="node-ville" placeholder="Ville" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--text);outline:none">
-          <input id="node-lien" placeholder="Lien avec les autres (ex: Père, Frère, Ami...)" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--text);outline:none">
+          <input id="node-prenom" placeholder="Prénom" autocomplete="off" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--text);outline:none">
+          <input id="node-nom" placeholder="Nom de famille" autocomplete="off" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--text);outline:none">
+          <input id="node-tel" placeholder="Téléphone" autocomplete="off" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--text);outline:none">
+          <input id="node-email" placeholder="Email" autocomplete="off" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--text);outline:none">
+          <input id="node-ville" placeholder="Ville" autocomplete="off" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--text);outline:none">
+          <input id="node-lien" placeholder="Rôle (ex: Père, Suspect, Témoin...)" autocomplete="off" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--text);outline:none">
         </div>
         <div style="display:flex;gap:8px">
           <button class="btn" style="flex:1" onclick="document.getElementById('add-node-modal').style.display='none'">Annuler</button>
@@ -559,9 +588,18 @@ select option{background:var(--bg2)}
         </div>
       </div>
     </div>
+
+    <!-- Modal mes graphes -->
+    <div id="saved-graphs-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:2000;align-items:center;justify-content:center">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:24px;width:90%;max-width:400px">
+        <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:16px">Mes graphes sauvegardés</div>
+        <div id="saved-graphs-list" style="max-height:300px;overflow-y:auto;margin-bottom:16px"></div>
+        <button class="btn" style="width:100%" onclick="document.getElementById('saved-graphs-modal').style.display='none'">Fermer</button>
+      </div>
+    </div>
   </div>
 
-  <!-- PAGE PROFIL -->
+<!-- PAGE PROFIL -->
   <div class="page" id="page-profile">
     <div style="display:grid;grid-template-columns:1fr;gap:12px" id="profile-grid">
 
@@ -2329,21 +2367,48 @@ function closePersonGraph(){
 }
 
 
+// ── GRAPHE PRINCIPAL REFACTORISÉ ──────────────────────────────────────────────
 let mainGraphNodes = [];
-try{ mainGraphNodes = JSON.parse(localStorage.getItem('xtracker_graph')||'[]'); }catch(e){}
+let mainGraphEdges = [];
 let mainGraphDragging = null;
 let mainGraphOff = {x:0,y:0};
 let mainGraphCtx = null;
 let mainGraphCanvas = null;
+let graphCtxNode = null; // noeud sélectionné pour menu
+let graphLinkMode = false; // mode relier
+let graphLinkSource = null;
+let graphPan = {x:0, y:0};
+let graphScale = 1;
+let graphPanning = false;
+let graphPanStart = {x:0, y:0};
 
-function saveGraph(){ try{localStorage.setItem('xtracker_graph', JSON.stringify(mainGraphNodes));}catch(e){} }
+try{ 
+  var saved = JSON.parse(localStorage.getItem('xtracker_graph_current')||'{}');
+  mainGraphNodes = saved.nodes || [];
+  mainGraphEdges = saved.edges || [];
+}catch(e){}
+
+function saveGraphState(){
+  try{localStorage.setItem('xtracker_graph_current', JSON.stringify({nodes:mainGraphNodes,edges:mainGraphEdges}));}catch(e){}
+}
+
+function toCanvas(cx,cy){return {x: cx*graphScale+graphPan.x, y: cy*graphScale+graphPan.y};}
+function toWorld(cx,cy){return {x: (cx-graphPan.x)/graphScale, y: (cy-graphPan.y)/graphScale};}
+
+function getNodeAt(rx, ry){
+  var w = toWorld(rx, ry);
+  return mainGraphNodes.find(function(n){
+    var dx=n.x-w.x, dy=n.y-w.y;
+    return Math.sqrt(dx*dx+dy*dy) <= n.r/graphScale+6;
+  });
+}
 
 function initMainGraph(){
   mainGraphCanvas = document.getElementById('main-graph-canvas');
   if(!mainGraphCanvas) return;
   var wrap = document.getElementById('main-graph-wrap');
   var W = wrap.offsetWidth || 700;
-  var H = Math.max(500, mainGraphNodes.length * 90 + 100);
+  var H = 520;
   mainGraphCanvas.width = W;
   mainGraphCanvas.height = H;
   mainGraphCanvas.style.height = H+'px';
@@ -2351,76 +2416,275 @@ function initMainGraph(){
   var empty = document.getElementById('main-graph-empty');
   if(empty) empty.style.display = mainGraphNodes.length ? 'none' : 'flex';
   drawMainGraph();
+
   mainGraphCanvas.onmousedown = function(e){
-    var r=mainGraphCanvas.getBoundingClientRect();
-    var x=e.clientX-r.left, y=e.clientY-r.top;
-    mainGraphDragging=mainGraphNodes.find(function(n){return Math.sqrt((n.x-x)*(n.x-x)+(n.y-y)*(n.y-y))<=n.r+6;})||null;
-    if(mainGraphDragging){mainGraphOff={x:mainGraphDragging.x-x,y:mainGraphDragging.y-y};mainGraphCanvas.style.cursor='grabbing';}
-  };
-  mainGraphCanvas.onmousemove = function(e){
-    var r=mainGraphCanvas.getBoundingClientRect();
-    var x=e.clientX-r.left, y=e.clientY-r.top;
-    if(mainGraphDragging){mainGraphDragging.x=x+mainGraphOff.x;mainGraphDragging.y=y+mainGraphOff.y;drawMainGraph();}
-    var n=mainGraphNodes.find(function(nd){return Math.sqrt((nd.x-x)*(nd.x-x)+(nd.y-y)*(nd.y-y))<=nd.r+6;});
-    var tt=document.getElementById('main-graph-tooltip');
-    if(n&&tt){
-      var html='<div style="font-weight:700;margin-bottom:4px">'+n.label+'</div>';
-      if(n.data){
-        if(n.data.telephone)html+='<div style="color:var(--muted2)">'+n.data.telephone+'</div>';
-        if(n.data.email)html+='<div style="color:var(--muted2)">'+n.data.email+'</div>';
-        if(n.data.ville)html+='<div style="color:var(--muted2)">'+n.data.ville+'</div>';
+    hideCtxMenu();
+    var r = mainGraphCanvas.getBoundingClientRect();
+    var rx = e.clientX-r.left, ry = e.clientY-r.top;
+    var n = getNodeAt(rx, ry);
+
+    if(e.button===2){ // clic droit = supprimer
+      if(n){
+        mainGraphNodes = mainGraphNodes.filter(function(nd){return nd.id!==n.id;});
+        mainGraphEdges = mainGraphEdges.filter(function(ed){return ed.a!==n.id&&ed.b!==n.id;});
+        saveGraphState(); initMainGraph();
       }
-      if(n.lien)html+='<div style="color:#818cf8;margin-top:4px">'+n.lien+'</div>';
-      html+='<div style="color:rgba(239,68,68,0.6);font-size:10px;margin-top:4px">Clic droit = supprimer</div>';
-      tt.innerHTML=html;tt.style.display='block';tt.style.left=(x+15)+'px';tt.style.top=(y-10)+'px';
-    } else { if(tt)tt.style.display='none'; }
+      return;
+    }
+
+    if(graphLinkMode){ // mode relier
+      if(n && n.id !== graphLinkSource.id){
+        var exists = mainGraphEdges.find(function(ed){return (ed.a===graphLinkSource.id&&ed.b===n.id)||(ed.b===graphLinkSource.id&&ed.a===n.id);});
+        if(!exists){
+          mainGraphEdges.push({a:graphLinkSource.id, b:n.id, label:''});
+          notif('Lien créé !');
+        } else {
+          mainGraphEdges = mainGraphEdges.filter(function(ed){return !((ed.a===graphLinkSource.id&&ed.b===n.id)||(ed.b===graphLinkSource.id&&ed.a===n.id));});
+          notif('Lien supprimé');
+        }
+        saveGraphState(); drawMainGraph();
+      }
+      graphLinkMode = false; graphLinkSource = null;
+      mainGraphCanvas.style.cursor = 'grab';
+      return;
+    }
+
+    if(n){
+      mainGraphDragging = n;
+      mainGraphOff = {x:n.x - toWorld(rx,ry).x, y:n.y - toWorld(rx,ry).y};
+      mainGraphCanvas.style.cursor = 'grabbing';
+    } else if(e.altKey || e.button===1){
+      graphPanning = true;
+      graphPanStart = {x:e.clientX-graphPan.x, y:e.clientY-graphPan.y};
+      mainGraphCanvas.style.cursor = 'move';
+    }
   };
-  mainGraphCanvas.onmouseup=function(){mainGraphDragging=null;saveGraph();};
-  mainGraphCanvas.oncontextmenu=function(e){
+
+  mainGraphCanvas.onmousemove = function(e){
+    var r = mainGraphCanvas.getBoundingClientRect();
+    var rx = e.clientX-r.left, ry = e.clientY-r.top;
+    if(mainGraphDragging){
+      var w = toWorld(rx,ry);
+      mainGraphDragging.x = w.x + mainGraphOff.x;
+      mainGraphDragging.y = w.y + mainGraphOff.y;
+      drawMainGraph(); return;
+    }
+    if(graphPanning){
+      graphPan.x = e.clientX - graphPanStart.x;
+      graphPan.y = e.clientY - graphPanStart.y;
+      drawMainGraph(); return;
+    }
+    var n = getNodeAt(rx, ry);
+    var tt = document.getElementById('main-graph-tooltip');
+    if(n && tt){
+      var html = '<div style="font-weight:700;margin-bottom:4px;color:var(--accent)">'+n.label+'</div>';
+      if(n.data){
+        if(n.data.telephone)html+='<div>📞 '+n.data.telephone+'</div>';
+        if(n.data.email)html+='<div>✉️ '+n.data.email+'</div>';
+        if(n.data.ville)html+='<div>📍 '+n.data.ville+'</div>';
+        if(n.data.date_naissance)html+='<div>🎂 '+n.data.date_naissance+'</div>';
+      }
+      if(n.lien)html+='<div style="color:#818cf8;margin-top:4px;font-weight:600">'+n.lien+'</div>';
+      tt.innerHTML=html; tt.style.display='block';
+      tt.style.left=Math.min(rx+15, mainGraphCanvas.width-230)+'px';
+      tt.style.top=Math.max(ry-10,5)+'px';
+      mainGraphCanvas.style.cursor = graphLinkMode ? 'crosshair' : 'pointer';
+    } else {
+      if(tt) tt.style.display='none';
+      if(!mainGraphDragging&&!graphPanning) mainGraphCanvas.style.cursor = graphLinkMode ? 'crosshair' : 'grab';
+    }
+  };
+
+  mainGraphCanvas.onmouseup = function(e){
+    if(mainGraphDragging){mainGraphDragging=null;saveGraphState();}
+    if(graphPanning){graphPanning=false;}
+    mainGraphCanvas.style.cursor='grab';
+  };
+
+  mainGraphCanvas.onclick = function(e){
+    if(Math.abs(e.movementX)+Math.abs(e.movementY)>5) return; // drag pas clic
+    var r = mainGraphCanvas.getBoundingClientRect();
+    var rx = e.clientX-r.left, ry = e.clientY-r.top;
+    var n = getNodeAt(rx, ry);
+    if(n && !graphLinkMode){
+      showCtxMenu(n, rx, ry);
+    }
+  };
+
+  mainGraphCanvas.oncontextmenu = function(e){ e.preventDefault(); };
+
+  mainGraphCanvas.onwheel = function(e){
     e.preventDefault();
-    var r=mainGraphCanvas.getBoundingClientRect();
-    var x=e.clientX-r.left,y=e.clientY-r.top;
-    var n=mainGraphNodes.find(function(nd){return Math.sqrt((nd.x-x)*(nd.x-x)+(nd.y-y)*(nd.y-y))<=nd.r+6;});
-    if(n){mainGraphNodes=mainGraphNodes.filter(function(nd){return nd.id!==n.id;});saveGraph();initMainGraph();}
+    var r = mainGraphCanvas.getBoundingClientRect();
+    var mx = e.clientX-r.left, my = e.clientY-r.top;
+    var delta = e.deltaY > 0 ? 0.9 : 1.1;
+    graphScale = Math.max(0.3, Math.min(3, graphScale*delta));
+    graphPan.x = mx - (mx-graphPan.x)*delta;
+    graphPan.y = my - (my-graphPan.y)*delta;
+    drawMainGraph();
   };
 }
 
 function drawMainGraph(){
   if(!mainGraphCtx||!mainGraphCanvas)return;
-  var W=mainGraphCanvas.width,H=mainGraphCanvas.height;
+  var W=mainGraphCanvas.width, H=mainGraphCanvas.height;
   mainGraphCtx.clearRect(0,0,W,H);
-  mainGraphCtx.strokeStyle='rgba(99,102,241,0.04)';mainGraphCtx.lineWidth=1;
-  for(var gi=0;gi<W;gi+=50){mainGraphCtx.beginPath();mainGraphCtx.moveTo(gi,0);mainGraphCtx.lineTo(gi,H);mainGraphCtx.stroke();}
-  for(var gi=0;gi<H;gi+=50){mainGraphCtx.beginPath();mainGraphCtx.moveTo(0,gi);mainGraphCtx.lineTo(W,gi);mainGraphCtx.stroke();}
-  for(var a=0;a<mainGraphNodes.length;a++){
-    for(var b=a+1;b<mainGraphNodes.length;b++){
-      var na=mainGraphNodes[a],nb=mainGraphNodes[b];
-      mainGraphCtx.beginPath();mainGraphCtx.moveTo(na.x,na.y);mainGraphCtx.lineTo(nb.x,nb.y);
-      mainGraphCtx.strokeStyle='rgba(99,102,241,0.15)';mainGraphCtx.lineWidth=1;
-      mainGraphCtx.setLineDash([4,6]);mainGraphCtx.stroke();mainGraphCtx.setLineDash([]);
+  mainGraphCtx.save();
+  mainGraphCtx.translate(graphPan.x, graphPan.y);
+  mainGraphCtx.scale(graphScale, graphScale);
+
+  // Grille
+  var step=60;
+  mainGraphCtx.strokeStyle='rgba(99,102,241,0.04)';mainGraphCtx.lineWidth=1/graphScale;
+  var ox=-graphPan.x/graphScale, oy=-graphPan.y/graphScale;
+  for(var gx=Math.floor(ox/step)*step;gx<ox+W/graphScale;gx+=step){mainGraphCtx.beginPath();mainGraphCtx.moveTo(gx,oy);mainGraphCtx.lineTo(gx,oy+H/graphScale);mainGraphCtx.stroke();}
+  for(var gy=Math.floor(oy/step)*step;gy<oy+H/graphScale;gy+=step){mainGraphCtx.beginPath();mainGraphCtx.moveTo(ox,gy);mainGraphCtx.lineTo(ox+W/graphScale,gy);mainGraphCtx.stroke();}
+
+  // Liens
+  mainGraphEdges.forEach(function(ed){
+    var na=mainGraphNodes.find(function(n){return n.id===ed.a;});
+    var nb=mainGraphNodes.find(function(n){return n.id===ed.b;});
+    if(!na||!nb)return;
+    mainGraphCtx.beginPath();mainGraphCtx.moveTo(na.x,na.y);mainGraphCtx.lineTo(nb.x,nb.y);
+    mainGraphCtx.strokeStyle='rgba(99,102,241,0.5)';mainGraphCtx.lineWidth=1.5/graphScale;
+    mainGraphCtx.stroke();
+    if(ed.label){
+      mainGraphCtx.fillStyle='rgba(129,140,248,0.7)';
+      mainGraphCtx.font=(10/graphScale)+'px Inter';
+      mainGraphCtx.textAlign='center';
+      mainGraphCtx.fillText(ed.label,(na.x+nb.x)/2,(na.y+nb.y)/2-4/graphScale);
     }
-  }
-  mainGraphNodes.forEach(function(n){
-    mainGraphCtx.beginPath();mainGraphCtx.arc(n.x,n.y,n.r,0,Math.PI*2);
-    mainGraphCtx.fillStyle='rgba(99,102,241,0.12)';mainGraphCtx.strokeStyle=n.color||'#6366f1';mainGraphCtx.lineWidth=2;
-    mainGraphCtx.fill();mainGraphCtx.stroke();
-    mainGraphCtx.fillStyle='#eef0ff';mainGraphCtx.font='13px sans-serif';mainGraphCtx.textAlign='center';mainGraphCtx.textBaseline='middle';
-    mainGraphCtx.fillText('\u{1F464}',n.x,n.y);
-    mainGraphCtx.fillStyle='rgba(238,240,255,0.9)';mainGraphCtx.font='bold 11px Inter';mainGraphCtx.textBaseline='top';
-    var lbl=n.label||'?';if(lbl.length>16)lbl=lbl.slice(0,15)+'\u2026';
-    mainGraphCtx.fillText(lbl,n.x,n.y+n.r+4);
-    if(n.lien){mainGraphCtx.fillStyle='rgba(129,140,248,0.6)';mainGraphCtx.font='10px Inter';mainGraphCtx.fillText(n.lien,n.x,n.y+n.r+17);}
   });
+
+  // Noeuds
+  mainGraphNodes.forEach(function(n){
+    var r=n.r||24;
+    // Glow si mode link source
+    if(graphLinkMode && graphLinkSource && n.id===graphLinkSource.id){
+      mainGraphCtx.beginPath();mainGraphCtx.arc(n.x,n.y,r+8,0,Math.PI*2);
+      mainGraphCtx.fillStyle='rgba(99,102,241,0.2)';mainGraphCtx.fill();
+    }
+    mainGraphCtx.beginPath();mainGraphCtx.arc(n.x,n.y,r,0,Math.PI*2);
+    mainGraphCtx.fillStyle=n.bg||'rgba(99,102,241,0.12)';
+    mainGraphCtx.strokeStyle=n.color||'#6366f1';
+    mainGraphCtx.lineWidth=2/graphScale;
+    mainGraphCtx.fill();mainGraphCtx.stroke();
+    mainGraphCtx.fillStyle='#eef0ff';
+    mainGraphCtx.font=(13/graphScale)+'px sans-serif';
+    mainGraphCtx.textAlign='center';mainGraphCtx.textBaseline='middle';
+    mainGraphCtx.fillText('👤',n.x,n.y);
+    mainGraphCtx.fillStyle='rgba(238,240,255,0.92)';
+    mainGraphCtx.font='bold '+(11/graphScale)+'px Inter';
+    mainGraphCtx.textBaseline='top';
+    var lbl=n.label||'?';if(lbl.length>16)lbl=lbl.slice(0,15)+'…';
+    mainGraphCtx.fillText(lbl,n.x,n.y+r+4/graphScale);
+    if(n.lien){
+      mainGraphCtx.fillStyle='rgba(129,140,248,0.65)';
+      mainGraphCtx.font=(10/graphScale)+'px Inter';
+      mainGraphCtx.fillText(n.lien,n.x,n.y+r+(4+14)/graphScale);
+    }
+  });
+
+  mainGraphCtx.restore();
+}
+
+function showCtxMenu(n, rx, ry){
+  graphCtxNode = n;
+  var menu = document.getElementById('graph-ctx-menu');
+  var nameEl = document.getElementById('ctx-node-name');
+  if(nameEl) nameEl.textContent = n.label;
+  menu.style.display = 'block';
+  var wrap = document.getElementById('main-graph-wrap');
+  var maxX = wrap.offsetWidth - 200;
+  var maxY = wrap.offsetHeight - 220;
+  menu.style.left = Math.min(rx, maxX)+'px';
+  menu.style.top = Math.min(ry, maxY)+'px';
+}
+
+function hideCtxMenu(){
+  var menu = document.getElementById('graph-ctx-menu');
+  if(menu) menu.style.display='none';
+}
+
+function ctxDelete(){
+  if(!graphCtxNode)return;
+  mainGraphNodes=mainGraphNodes.filter(function(n){return n.id!==graphCtxNode.id;});
+  mainGraphEdges=mainGraphEdges.filter(function(e){return e.a!==graphCtxNode.id&&e.b!==graphCtxNode.id;});
+  hideCtxMenu();saveGraphState();initMainGraph();
+}
+
+function ctxInvestigate(){
+  if(!graphCtxNode||!graphCtxNode.data)return;
+  hideCtxMenu();
+  var d=graphCtxNode.data;
+  var payload={flexible:true,per_page:100};
+  if(d.nom_famille)payload.nom_famille=d.nom_famille;
+  if(d.prenom)payload.prenom=d.prenom;
+  if(d.telephone)payload.telephone=d.telephone;
+  if(d.email)payload.email=d.email;
+  if(d.ville)payload.ville=d.ville;
+  // Remplir les champs et lancer la recherche
+  if(d.nom_famille&&document.getElementById('f-nom'))document.getElementById('f-nom').value=d.nom_famille;
+  if(d.prenom&&document.getElementById('f-prenom'))document.getElementById('f-prenom').value=d.prenom;
+  if(d.telephone&&document.getElementById('f-tel'))document.getElementById('f-tel').value=d.telephone;
+  if(d.email&&document.getElementById('f-email'))document.getElementById('f-email').value=d.email;
+  goTo('search',document.getElementById('nav-search'));
+  setTimeout(function(){doSearch();},300);
+}
+
+function ctxShowFiche(){
+  if(!graphCtxNode)return;
+  hideCtxMenu();
+  var d=graphCtxNode.data||{};
+  var title=graphCtxNode.label;
+  var skip=new Set(['_confidence','_sources','_es_ids','_source_files','famille']);
+  var labels={nom_famille:'Nom',prenom:'Prénom',date_naissance:'Naissance',email:'Email',telephone:'Téléphone',mobile:'Mobile',adresse:'Adresse',code_postal:'Code postal',ville:'Ville',region:'Région',pays:'Pays',nir:'NIR',iban:'IBAN',societe:'Société',profession:'Profession',genre:'Genre'};
+  var rows=Object.entries(d).filter(function(e){return !skip.has(e[0])&&e[1]&&typeof e[1]==='string';}).map(function(e){
+    return '<div style="display:flex;padding:8px 0;border-bottom:1px solid var(--border)"><div style="font-size:11px;font-weight:600;color:var(--muted2);width:120px;flex-shrink:0">'+(labels[e[0]]||e[0])+'</div><div style="font-size:13px">'+e[1]+'</div></div>';
+  }).join('');
+  var srcs=(d._sources||[]).map(function(s){return '<span class="src-tag">'+s+'</span>';}).join('');
+  var fam=(d.famille||[]);
+  var famHtml=fam.length?'<div style="margin-top:12px"><div style="font-size:11px;font-weight:600;color:var(--muted2);margin-bottom:8px">FAMILLE ('+fam.length+')</div>'+fam.map(function(m){return '<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:12px"><strong>'+(m.prenom||'')+' '+(m.nom_famille||'')+'</strong>'+(m.lien?' · <span style="color:#818cf8">'+m.lien+'</span>':'')+(m.telephone?' · '+m.telephone:'')+'</div>';}).join('')+'</div>':'';
+  document.getElementById('graph-fiche-title').textContent=title;
+  document.getElementById('graph-fiche-body').innerHTML=rows+(srcs?'<div style="margin-top:10px">'+srcs+'</div>':'')+famHtml;
+  document.getElementById('graph-fiche-modal').style.display='flex';
+}
+
+function ctxStartLink(){
+  if(!graphCtxNode)return;
+  graphLinkSource=graphCtxNode;
+  graphLinkMode=true;
+  hideCtxMenu();
+  notif('Clique sur un autre noeud pour créer/supprimer un lien');
+  mainGraphCanvas.style.cursor='crosshair';
+}
+
+function ctxEditNode(){
+  if(!graphCtxNode)return;
+  hideCtxMenu();
+  var n=graphCtxNode;
+  var lien=prompt('Rôle / libellé (ex: Suspect, Témoin, Père...)', n.lien||'');
+  if(lien!==null){n.lien=lien;saveGraphState();drawMainGraph();}
+}
+
+var ctxColors=['#6366f1','#ef4444','#f59e0b','#22c55e','#06b6d4','#ec4899','#8b5cf6'];
+function ctxChangeColor(){
+  if(!graphCtxNode)return;
+  hideCtxMenu();
+  var idx=ctxColors.indexOf(graphCtxNode.color);
+  graphCtxNode.color=ctxColors[(idx+1)%ctxColors.length];
+  graphCtxNode.bg=graphCtxNode.color+'20';
+  saveGraphState();drawMainGraph();
 }
 
 function addToMainGraph(personData, lien){
   var name=[personData.prenom,personData.nom_famille].filter(Boolean).join(' ')||'Inconnu';
-  var W=700; try{W=(document.getElementById('main-graph-wrap')||{offsetWidth:700}).offsetWidth;}catch(e){}
-  var angle=Math.random()*Math.PI*2;
-  var radius=120+Math.random()*80;
   var id='node_'+Date.now();
-  mainGraphNodes.push({id:id,label:name,x:mainGraphNodes.length===0?W/2:W/2+Math.cos(angle)*radius,y:mainGraphNodes.length===0?250:250+Math.sin(angle)*radius,r:24,color:'#6366f1',data:personData,lien:lien||''});
-  saveGraph();
+  var angle=Math.random()*Math.PI*2;
+  var radius=150+Math.random()*80;
+  var cx=300, cy=260;
+  mainGraphNodes.push({id:id,label:name,x:mainGraphNodes.length===0?cx:cx+Math.cos(angle)*radius,y:mainGraphNodes.length===0?cy:cy+Math.sin(angle)*radius,r:24,color:'#6366f1',bg:'rgba(99,102,241,0.12)',data:personData,lien:lien||''});
+  saveGraphState();
   notif('"'+name+'" ajouté au graphe !');
 }
 
@@ -2440,7 +2704,53 @@ function confirmAddNode(){
 
 function clearGraph(){
   if(!confirm('Effacer tout le graphe ?'))return;
-  mainGraphNodes=[];saveGraph();initMainGraph();
+  mainGraphNodes=[];mainGraphEdges=[];
+  saveGraphState();initMainGraph();
+}
+
+function saveGraphNamed(){
+  var name=prompt('Nom du graphe :');
+  if(!name)return;
+  try{
+    var all=JSON.parse(localStorage.getItem('xtracker_saved_graphs')||'[]');
+    all.push({id:'g_'+Date.now(),name:name,nodes:mainGraphNodes,edges:mainGraphEdges,date:new Date().toLocaleDateString('fr-FR')});
+    localStorage.setItem('xtracker_saved_graphs',JSON.stringify(all));
+    notif('Graphe "'+name+'" sauvegardé !');
+  }catch(e){notif('Erreur sauvegarde','err');}
+}
+
+function loadSavedGraphs(){
+  try{
+    var all=JSON.parse(localStorage.getItem('xtracker_saved_graphs')||'[]');
+    var el=document.getElementById('saved-graphs-list');
+    if(!all.length){el.innerHTML='<div style="color:var(--muted2);text-align:center;padding:20px">Aucun graphe sauvegardé</div>';return;}
+    el.innerHTML=all.map(function(g,i){
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px;border-bottom:1px solid var(--border)">'+'<div><div style="font-weight:600">'+g.name+'</div><div style="font-size:11px;color:var(--muted2)">'+g.nodes.length+' personnes · '+g.date+'</div></div>'+'<div style="display:flex;gap:6px"><button class="btn btn-a" style="padding:4px 10px;font-size:11px" onclick="restoreGraph('+i+')">Charger</button><button class="btn" style="padding:4px 10px;font-size:11px;color:#ef4444" onclick="deleteGraph('+i+')">✕</button></div>'+'</div>';
+    }).join('');
+    document.getElementById('saved-graphs-modal').style.display='flex';
+  }catch(e){}
+}
+
+function restoreGraph(idx){
+  try{
+    var all=JSON.parse(localStorage.getItem('xtracker_saved_graphs')||'[]');
+    if(!all[idx])return;
+    mainGraphNodes=all[idx].nodes||[];
+    mainGraphEdges=all[idx].edges||[];
+    saveGraphState();
+    document.getElementById('saved-graphs-modal').style.display='none';
+    if(document.getElementById('page-graphe').classList.contains('active'))initMainGraph();
+    notif('Graphe "'+all[idx].name+'" chargé !');
+  }catch(e){}
+}
+
+function deleteGraph(idx){
+  try{
+    var all=JSON.parse(localStorage.getItem('xtracker_saved_graphs')||'[]');
+    all.splice(idx,1);
+    localStorage.setItem('xtracker_saved_graphs',JSON.stringify(all));
+    loadSavedGraphs();
+  }catch(e){}
 }
 
 function addResultToMainGraph(i){
@@ -2449,6 +2759,7 @@ function addResultToMainGraph(i){
   addToMainGraph(p,'');
   if(document.getElementById('page-graphe').classList.contains('active'))initMainGraph();
 }
+
 
 let _pendingFicheData=null;
 async function addToFiche(personData){
