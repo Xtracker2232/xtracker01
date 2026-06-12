@@ -2424,11 +2424,11 @@ function initMainGraph(){
     var n = getNodeAt(rx, ry);
 
     if(e.button===2){ // clic droit = menu contextuel
-      if(n){
-        mainGraphNodes = mainGraphNodes.filter(function(nd){return nd.id!==n.id;});
-        mainGraphEdges = mainGraphEdges.filter(function(ed){return ed.a!==n.id&&ed.b!==n.id;});
-        saveGraphState(); initMainGraph();
-      }
+      if(n){ showCtxMenu(n, rx, ry); }
+
+
+
+
       return;
     }
 
@@ -2453,7 +2453,7 @@ function initMainGraph(){
       mainGraphDragging = n;
       mainGraphOff = {x:n.x - toWorld(rx,ry).x, y:n.y - toWorld(rx,ry).y};
       mainGraphCanvas.style.cursor = 'grabbing';
-    } else if(e.altKey || e.button===1){
+    } else { // fond = pan
       graphPanning = true;
       graphPanStart = {x:e.clientX-graphPan.x, y:e.clientY-graphPan.y};
       mainGraphCanvas.style.cursor = 'move';
@@ -2475,24 +2475,7 @@ function initMainGraph(){
       drawMainGraph(); return;
     }
     var n = getNodeAt(rx, ry);
-    var tt = document.getElementById('main-graph-tooltip');
-    if(n && tt){
-      var html = '<div style="font-weight:700;margin-bottom:4px;color:var(--accent)">'+n.label+'</div>';
-      if(n.data){
-        if(n.data.telephone)html+='<div>📞 '+n.data.telephone+'</div>';
-        if(n.data.email)html+='<div>✉️ '+n.data.email+'</div>';
-        if(n.data.ville)html+='<div>📍 '+n.data.ville+'</div>';
-        if(n.data.date_naissance)html+='<div>🎂 '+n.data.date_naissance+'</div>';
-      }
-      if(n.lien)html+='<div style="color:#818cf8;margin-top:4px;font-weight:600">'+n.lien+'</div>';
-      tt.innerHTML=html; tt.style.display='block';
-      tt.style.left=Math.min(rx+15, mainGraphCanvas.width-230)+'px';
-      tt.style.top=Math.max(ry-10,5)+'px';
-      mainGraphCanvas.style.cursor = graphLinkMode ? 'crosshair' : 'pointer';
-    } else {
-      if(tt) tt.style.display='none';
-      if(!mainGraphDragging&&!graphPanning) mainGraphCanvas.style.cursor = graphLinkMode ? 'crosshair' : 'grab';
-    }
+    mainGraphCanvas.style.cursor = graphLinkMode ? 'crosshair' : (n ? 'pointer' : 'grab');
   };
 
   mainGraphCanvas.onmouseup = function(e){
