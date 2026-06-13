@@ -2971,30 +2971,42 @@ function buildFamilyTree(p){
 
   var genLabels=['👴 Grands-parents / Ancêtres','👨 Parents / Oncles','👤 Même génération','👶 Enfants / Neveux'];
 
-  var html=css+'<div class="tree-wrap">';
+    var wrap=document.createElement('div');
+  wrap.className='tree-wrap';
+  wrap.insertAdjacentHTML('beforeend',css);
   [0,1,2,3].forEach(function(g){
     if(!gens[g].length)return;
-    html+='<div style="font-size:10px;color:var(--muted2);text-align:center;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">'+genLabels[g]+'</div>';
-    html+='<div class="tree-gen">';
-    gens[g].forEach(function(m){
+    var lbl=document.createElement('div');
+    lbl.style.cssText='font-size:10px;color:var(--muted2);text-align:center;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.5px';
+    lbl.textContent=genLabels[g];
+    wrap.appendChild(lbl);
+    var genEl=document.createElement('div');
+    genEl.className='tree-gen';
+    gens[g].forEach(function(m,mi){
       var name=((m.prenom||'')+(m.nom_famille?' '+m.nom_famille:'')).trim()||'Inconnu';
       var age=getAge(m.date_naissance);
       var ageStr=age?age+' ans':'';
       var yearStr=m.date_naissance?'('+m.date_naissance.split('-')[0]+')':'';
-      html+='<div class="tree-card'+(m._main?' tree-main':'')+'" onclick="editTreeMember(''+m.id+'')">'
-        +'<button class="tree-card-edit" onclick="event.stopPropagation();editTreeMember(''+m.id+'')">✏️</button>'
+      var card=document.createElement('div');
+      card.className='tree-card'+(m._main?' tree-main':'');
+      card.innerHTML='<button class="tree-card-edit" title="Modifier">✏️</button>'
         +'<div class="tree-card-name">'+name+'</div>'
         +(ageStr?'<div class="tree-card-age">'+ageStr+' '+yearStr+'</div>':'')
         +(m.lien?'<div class="tree-card-lien">'+m.lien+'</div>':'')
         +(m.email?'<div style="font-size:10px;color:var(--muted2);margin-top:2px">'+m.email+'</div>':'')
-        +(m.telephone?'<div style="font-size:10px;color:var(--muted2)">'+m.telephone+'</div>':'')
-        +'</div>';
+        +(m.telephone?'<div style="font-size:10px;color:var(--muted2)">'+m.telephone+'</div>':'');
+      (function(mm){
+        card.onclick=function(){editTreeMember(mm.id);};
+        card.querySelector('.tree-card-edit').onclick=function(e){e.stopPropagation();editTreeMember(mm.id);};
+      })(m);
+      genEl.appendChild(card);
     });
-    html+='</div>';
-    if(g<3 && gens[g].length) html+='<div class="tree-connector"><div class="tree-connector-line"></div></div>';
+    wrap.appendChild(genEl);
+    if(g<3&&gens[g].length){var conn=document.createElement('div');conn.className='tree-connector';conn.innerHTML='<div class="tree-connector-line"></div>';wrap.appendChild(conn);}
   });
-  html+='</div>';
-  el.innerHTML=html;
+  el.innerHTML='';
+  el.insertAdjacentHTML('beforeend',css);
+  el.appendChild(wrap);
   el._members=allMembers;
 }
 
