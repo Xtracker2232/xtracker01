@@ -290,7 +290,7 @@ select option{background:var(--bg2)}
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span id="notif-dot" style="display:none;position:absolute;top:2px;right:2px;width:8px;height:8px;background:#ef4444;border-radius:50%"></span>
     </button>
     <a href="admin.html" id="admin-btn" style="display:none;padding:6px 12px;border-radius:7px;font-size:12px;font-weight:600;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#ef4444;text-decoration:none">Panel Admin</a>
-    <div class="credits-pill desktop-only"><span>⚡</span><span id="paid-credits">—</span></div>
+    <div class="credits-pill desktop-only"><span></span><span id="paid-credits">—</span></div>
     <span id="user-name" style="font-size:12px;color:var(--muted2)" class="desktop-only"></span>
     <button class="hamburger" onclick="openDrawer()">
       <span></span><span></span><span></span>
@@ -314,7 +314,7 @@ select option{background:var(--bg2)}
           <div class="panel-body">
             <div id="pane-fr">
               <div class="acc open" id="acc-id">
-                <div class="acc-head" onclick="togAcc('id')"><div class="acc-left">👤 Identite <span class="acc-cnt" id="ac-id"></span></div><span class="acc-arrow">▼</span></div>
+                <div class="acc-head" onclick="togAcc('id')"><div class="acc-left"> Identite <span class="acc-cnt" id="ac-id"></span></div><span class="acc-arrow">▼</span></div>
                 <div class="acc-body"><div class="fg">
                   <div class="fgroup"><label>Nom</label><input id="f-nom" placeholder="Bardella" autocomplete="off" oninput="cnt('id')"></div>
                   <div class="fgroup"><label>Prenom</label><input id="f-prenom" placeholder="Jordan" autocomplete="off" oninput="cnt('id')"></div>
@@ -325,7 +325,7 @@ select option{background:var(--bg2)}
                 </div></div>
               </div>
               <div class="acc" id="acc-naiss">
-                <div class="acc-head" onclick="togAcc('naiss')"><div class="acc-left">🎂 Naissance <span class="acc-cnt" id="ac-naiss"></span></div><span class="acc-arrow">▼</span></div>
+                <div class="acc-head" onclick="togAcc('naiss')"><div class="acc-left"> Naissance <span class="acc-cnt" id="ac-naiss"></span></div><span class="acc-arrow">▼</span></div>
                 <div class="acc-body"><div class="fg">
                   <div class="fgroup"><label>Annee</label><input id="f-annee_naissance" placeholder="1990" oninput="cnt('naiss')"></div>
                   <div class="fgroup"><label>Date exacte</label><input id="f-date_naissance" placeholder="1990-06-15" oninput="cnt('naiss')"></div>
@@ -333,7 +333,7 @@ select option{background:var(--bg2)}
                 </div></div>
               </div>
               <div class="acc" id="acc-contact">
-                <div class="acc-head" onclick="togAcc('contact')"><div class="acc-left">✉️ Contact <span class="acc-cnt" id="ac-contact"></span></div><span class="acc-arrow">▼</span></div>
+                <div class="acc-head" onclick="togAcc('contact')"><div class="acc-left"> Contact <span class="acc-cnt" id="ac-contact"></span></div><span class="acc-arrow">▼</span></div>
                 <div class="acc-body"><div class="fg">
                   <div class="fgroup"><label>Email</label><input id="f-email" autocomplete="off" type="email" placeholder="jordan@mail.com" oninput="cnt('contact')"></div>
                   <div class="fgroup"><label>Telephone</label><input id="f-telephone" placeholder="0612345678" oninput="cnt('contact')"></div>
@@ -342,7 +342,7 @@ select option{background:var(--bg2)}
                 </div></div>
               </div>
               <div class="acc" id="acc-loc">
-                <div class="acc-head" onclick="togAcc('loc')"><div class="acc-left">📍 Localisation <span class="acc-cnt" id="ac-loc"></span></div><span class="acc-arrow">▼</span></div>
+                <div class="acc-head" onclick="togAcc('loc')"><div class="acc-left"> Localisation <span class="acc-cnt" id="ac-loc"></span></div><span class="acc-arrow">▼</span></div>
                 <div class="acc-body"><div class="fg">
                   <div class="fgroup full"><label>Adresse</label><input id="f-adresse" placeholder="10 rue de la Paix" oninput="cnt('loc')"></div>
                   <div class="fgroup"><label>Code postal</label><input id="f-code_postal" placeholder="75001" oninput="cnt('loc')"></div>
@@ -353,7 +353,7 @@ select option{background:var(--bg2)}
                 </div></div>
               </div>
               <div class="acc" id="acc-adv">
-                <div class="acc-head" onclick="togAcc('adv')"><div class="acc-left">🔑 Avance <span class="acc-cnt" id="ac-adv"></span></div><span class="acc-arrow">▼</span></div>
+                <div class="acc-head" onclick="togAcc('adv')"><div class="acc-left"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="15" r="5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg> Avance <span class="acc-cnt" id="ac-adv"></span></div><span class="acc-arrow">▼</span></div>
                 <div class="acc-body"><div class="fg">
                   <div class="fgroup"><label>NIR (Secu)</label><input id="f-nir" placeholder="123456789..." oninput="cnt('adv')"></div>
                   <div class="fgroup"><label>IBAN</label><input id="f-iban" placeholder="FR76..." oninput="cnt('adv')"></div>
@@ -365,7 +365,7 @@ select option{background:var(--bg2)}
               </div>
               
               <div class="acc" id="acc-fivem">
-                <div class="acc-head" onclick="togAcc('fivem')"><div class="acc-left">🎮 FiveM / GTA RP <span class="acc-cnt" id="ac-fivem"></span></div><span class="acc-arrow">▼</span></div>
+                <div class="acc-head" onclick="togAcc('fivem')"><div class="acc-left"> FiveM / GTA RP <span class="acc-cnt" id="ac-fivem"></span></div><span class="acc-arrow">▼</span></div>
                 <div class="acc-body"><div class="fg">
                   <div class="fgroup"><label>Steam ID</label><input id="f-steam_id" placeholder="76561198..." oninput="cnt('fivem')" autocomplete="off"></div>
                   <div class="fgroup"><label>FiveM License</label><input id="f-fivem_license" placeholder="license:abc..." oninput="cnt('fivem')" autocomplete="off"></div>
@@ -405,7 +405,7 @@ select option{background:var(--bg2)}
       </div>
       <div class="results-col">
         <div class="state" id="state-empty">
-          <div class="state-ico">🔍</div>
+          <div class="state-ico"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
           <div class="state-title">Pret a rechercher</div>
           <div class="state-sub">Remplissez au moins un champ et lancez la recherche.</div>
         </div>
@@ -417,7 +417,7 @@ select option{background:var(--bg2)}
   <!-- PAGE HISTORIQUE -->
   <div class="page" id="page-history">
     <div id="history-list">
-      <div class="state"><div class="state-ico">📋</div><div class="state-title">Chargement...</div></div>
+      <div class="state"><div class="state-ico"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="4" rx="1"/><rect x="3" y="6" width="18" height="16" rx="2"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="16" y2="16"/></svg></div><div class="state-title">Chargement...</div></div>
     </div>
   </div>
 
@@ -512,7 +512,7 @@ select option{background:var(--bg2)}
         <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800" id="fiche-detail-name"></div>
         <div style="margin-left:auto;display:flex;gap:8px">
           <button class="btn" id="btn-vue-liste" onclick="setFicheView('liste')" style="background:rgba(99,102,241,0.15);border-color:rgba(99,102,241,0.4)">≡ Liste</button>
-          <button class="btn" id="btn-vue-graphe" onclick="setFicheView('graphe')">◎ Graphe</button>
+          <button class="btn" id="btn-vue-graphe" onclick="setFicheView('graphe')">Graphe</button>
           <button class="btn" style="color:#ef4444;border-color:rgba(239,68,68,0.3)" onclick="deleteFiche(currentFicheId)">Supprimer</button>
         </div>
       </div>
@@ -531,9 +531,9 @@ select option{background:var(--bg2)}
       <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800">Graphe de connexions</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn" onclick="addNodeManual()">+ Personne</button>
-        <button class="btn" onclick="saveGraphNamed()">💾 Sauvegarder</button>
-        <button class="btn" onclick="loadSavedGraphs()">📂 Mes graphes</button>
-        <button class="btn" onclick="clearGraph()" style="color:#ef4444;border-color:rgba(239,68,68,0.3)">🗑 Effacer</button>
+        <button class="btn" onclick="saveGraphNamed()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Sauvegarder</button>
+        <button class="btn" onclick="loadSavedGraphs()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> Mes graphes</button>
+        <button class="btn" onclick="clearGraph()" style="color:#ef4444;border-color:rgba(239,68,68,0.3)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg> Effacer</button>
       </div>
     </div>
     <div style="font-size:11px;color:var(--muted2);margin-bottom:10px">
@@ -551,13 +551,13 @@ select option{background:var(--bg2)}
       <!-- Menu contextuel clic gauche -->
       <div id="graph-ctx-menu" style="display:none;position:absolute;background:rgba(12,15,32,0.98);border:1px solid rgba(99,102,241,0.3);border-radius:10px;padding:6px;z-index:20;min-width:180px;box-shadow:0 8px 32px rgba(0,0,0,0.5)">
         <div id="ctx-node-name" style="font-size:11px;font-weight:700;color:var(--muted2);padding:4px 10px 8px;border-bottom:1px solid var(--border);margin-bottom:4px"></div>
-        <div class="ctx-item" onclick="ctxInvestigate()">🔍 Investiguer</div>
-        <div class="ctx-item" onclick="ctxShowFiche()">📋 Voir la fiche</div>
-        <div class="ctx-item" onclick="ctxStartLink()">🔗 Relier à...</div>
-        <div class="ctx-item" onclick="ctxCollapse()">🔵 Réduire le groupe</div>
-        <div class="ctx-item" onclick="ctxEditNode()">✏️ Modifier</div>
-        <div class="ctx-item" onclick="ctxChangeColor()">🎨 Couleur</div>
-        <div class="ctx-item" style="color:#ef4444;border-top:1px solid var(--border);margin-top:4px;padding-top:8px" onclick="ctxDelete()">🗑 Supprimer</div>
+        <div class="ctx-item" onclick="ctxInvestigate()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Investiguer</div>
+        <div class="ctx-item" onclick="ctxShowFiche()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="4" rx="1"/><rect x="3" y="6" width="18" height="16" rx="2"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="16" y2="16"/></svg> Voir la fiche</div>
+        <div class="ctx-item" onclick="ctxStartLink()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Relier à...</div>
+        <div class="ctx-item" onclick="ctxCollapse()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="8" y1="12" x2="16" y2="12"/></svg> Réduire le groupe</div>
+        <div class="ctx-item" onclick="ctxEditNode()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Modifier</div>
+        <div class="ctx-item" onclick="ctxChangeColor()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg> Couleur</div>
+        <div class="ctx-item" style="color:#ef4444;border-top:1px solid var(--border);margin-top:4px;padding-top:8px" onclick="ctxDelete()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg> Supprimer</div>
       </div>
       <!-- Modal fiche complète -->
       <div id="graph-fiche-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:4000;align-items:center;justify-content:center;padding:20px">
@@ -739,7 +739,7 @@ select option{background:var(--bg2)}
   <div class="page" id="page-assistant">
     <div style="display:flex;flex-direction:column;height:calc(100vh - 90px);max-width:800px;margin:0 auto;width:100%">
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 16px;margin-bottom:12px;flex-shrink:0">
-        <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:3px">🤖 Assistant Xtracker</div>
+        <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:3px"> Assistant Xtracker</div>
         <div style="font-size:12px;color:var(--muted2)">Decrivez la personne en langage naturel, l'IA comprend et lance la recherche.</div>
       </div>
       <div id="chat-messages" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 2px;margin-bottom:12px"></div>
@@ -830,7 +830,7 @@ select option{background:var(--bg2)}
     <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px">
       <button id="pay-card-btn" style="padding:16px;border-radius:12px;border:1px solid rgba(99,102,241,0.3);background:rgba(99,102,241,0.08);cursor:pointer;font-family:inherit;color:var(--text);transition:all .2s;text-align:left;width:100%">
         <div style="display:flex;align-items:center;gap:12px">
-          <div style="font-size:24px">💳</div>
+          <div style="font-size:24px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
           <div><div style="font-weight:700;font-size:14px">Carte bancaire</div><div style="font-size:12px;color:var(--muted2)">Visa, Mastercard, Apple Pay</div></div>
         </div>
       </button>
@@ -849,7 +849,7 @@ select option{background:var(--bg2)}
 <!-- BROADCAST POPUP -->
 <div id="broadcast-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:300;align-items:center;justify-content:center;padding:20px">
   <div style="background:#1a0a00;border:2px solid #f97316;border-radius:16px;padding:28px;max-width:500px;width:100%;text-align:center;position:relative;animation:fadeUp .3s ease">
-    <div style="font-size:28px;margin-bottom:10px">📢</div>
+    <div style="font-size:28px;margin-bottom:10px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
     <div id="broadcast-msg" style="font-size:15px;color:#fdba74;line-height:1.6;font-weight:500;margin-bottom:18px"></div>
     <div id="broadcast-timer-wrap" style="margin-bottom:14px">
       <div style="font-size:12px;color:rgba(253,186,116,0.6);margin-bottom:6px">Fermeture dans <span id="broadcast-countdown">5</span>s</div>
@@ -943,7 +943,7 @@ function renderResults(results,total,took,free_left,credits){
     g('card-total').textContent=(parseInt(free_left)||0)+(parseInt(credits)||0);
   }
   const el=g('results');g('state-empty').style.display='none';
-  if(!results.length){el.innerHTML='<div class="state"><div class="state-ico">😶</div><div class="state-title">Aucun resultat</div><div class="state-sub">Essayez avec moins de criteres.</div></div>';return}
+  if(!results.length){el.innerHTML='<div class="state"><div class="state-ico"></div><div class="state-title">Aucun resultat</div><div class="state-sub">Essayez avec moins de criteres.</div></div>';return}
   let html='<div class="results-header"><div class="results-count">'+total.toLocaleString()+' resultat'+(total>1?'s':'')+'</div><div class="results-meta">'+results.length+' affiche(s)'+(took?' · '+took+'ms':'')+'</div></div>';
   results.forEach((p,i)=>{
     window['_r'+i]=p;
@@ -962,7 +962,7 @@ function renderResults(results,total,took,free_left,credits){
     const allSrcs=(p._sources||[]).map(s=>'<span class="rsrc">'+s+'</span>').join('');
     const rawStr=JSON.stringify(p,null,2).replace(/</g,'&lt;');
     const ptags=renderTags(p);
-    html+='<div class="rcard" style="animation-delay:'+i*.04+'s"><div class="rcard-top" onclick="tog('+i+')"><div><div class="rname">'+name+'</div><div class="rmeta">'+sub+'</div>'+ptags+'</div><div class="rtop-r">'+srcs+'<span class="rarr" id="arr'+i+'">▼</span></div></div><div class="rcard-body" id="rb'+i+'"><div class="rfields">'+fh+'</div>'+(allSrcs?'<div class="rsources">'+allSrcs+'</div>':'')+famHtml+'<div class="action-row"><button class="raw-btn" onclick="toggleRaw('+i+')">Approfondir</button><button class="raw-btn" onclick="copyResult('+i+')">Copier</button><button class="raw-btn" onclick="addResultToFiche('+i+')">+ Fiche</button><button class="raw-btn" onclick="showPersonGraph('+i+')">◎ Graphe</button><button class="raw-btn" onclick="addResultToMainGraph('+i+')">+ Graphe</button></div><div class="raw-data" id="raw'+i+'">'+rawStr+'</div></div></div>';
+    html+='<div class="rcard" style="animation-delay:'+i*.04+'s"><div class="rcard-top" onclick="tog('+i+')"><div><div class="rname">'+name+'</div><div class="rmeta">'+sub+'</div>'+ptags+'</div><div class="rtop-r">'+srcs+'<span class="rarr" id="arr'+i+'">▼</span></div></div><div class="rcard-body" id="rb'+i+'"><div class="rfields">'+fh+'</div>'+(allSrcs?'<div class="rsources">'+allSrcs+'</div>':'')+famHtml+'<div class="action-row"><button class="raw-btn" onclick="toggleRaw('+i+')">Approfondir</button><button class="raw-btn" onclick="copyResult('+i+')">Copier</button><button class="raw-btn" onclick="addResultToFiche('+i+')">+ Fiche</button><button class="raw-btn" onclick="showPersonGraph('+i+')">Graphe</button><button class="raw-btn" onclick="addResultToMainGraph('+i+')">+ Graphe</button></div><div class="raw-data" id="raw'+i+'">'+rawStr+'</div></div></div>';
   });
   el.innerHTML=html;
 }
@@ -1002,7 +1002,7 @@ async function doSearch(){
     const r=await fetch(API+'/api/search',{method:'POST',headers:hdr(),credentials:'include',body:JSON.stringify(payload)});
     const d=await r.json();
     if(r.status===402){showNoCredits();return}
-    if(d.protected){g('state-empty').style.display='none';g('results').innerHTML='<div class="state"><div class="state-ico">😏</div><div class="state-title">'+d.message+'</div></div>';return}
+    if(d.protected){g('state-empty').style.display='none';g('results').innerHTML='<div class="state"><div class="state-ico"></div><div class="state-title">'+d.message+'</div></div>';return}
     if(!r.ok){showErr(d.detail||'Erreur API');return}
     renderResults(d.results,d.total,d.took_ms,d.free_left,d.credits);
   }catch(e){showErr('Erreur reseau : '+e.message)}
@@ -1051,7 +1051,7 @@ async function doPlaqueLookup(){
     }
     g('state-empty').style.display='none';
     if(!d.results||!d.results.length){
-      g('results').innerHTML='<div class="state"><div class="state-ico">🚗</div><div class="state-title">Aucun véhicule trouvé</div><div class="state-sub">Vérifiez la plaque et réessayez.</div></div>';
+      g('results').innerHTML='<div class="state"><div class="state-ico"></div><div class="state-title">Aucun véhicule trouvé</div><div class="state-sub">Vérifiez la plaque et réessayez.</div></div>';
       return;
     }
     renderResults(d.raw,d.total,0,d.free_left,d.credits);
@@ -1177,13 +1177,13 @@ async function checkOrderStatus(orderId){
     var bar=document.getElementById('crypto-track-bar');
     if(d.paid){
       if(trackInterval)clearInterval(trackInterval);
-      if(msg)msg.innerHTML='<span style="color:#22c55e">✅ Paiement confirmé ! Crédits ajoutés.</span>';
+      if(msg)msg.innerHTML='<span style="color:#22c55e"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Paiement confirmé ! Crédits ajoutés.</span>';
       if(bar){bar.style.width='100%';bar.style.background='#22c55e';}
       localStorage.removeItem('pending_order');
       setTimeout(function(){g('crypto-modal').style.display='none';init();},2000);
     } else if(d.expired){
       if(trackInterval)clearInterval(trackInterval);
-      if(msg)msg.innerHTML='<span style="color:#ef4444">❌ Session expirée. Recommence.</span>';
+      if(msg)msg.innerHTML='<span style="color:#ef4444"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Session expirée. Recommence.</span>';
     } else {
       if(msg)msg.textContent='En attente de paiement... Vérification toutes les 30s';
     }
@@ -1343,7 +1343,7 @@ async function replayById(id){
 
   goTo('search', document.getElementById('nav-search'));
   g('state-empty').style.display='none';
-  g('results').innerHTML='<div class="state"><div class="state-ico">🔍</div><div class="state-title">Rechargement...</div></div>';
+  g('results').innerHTML='<div class="state"><div class="state-ico"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div><div class="state-title">Rechargement...</div></div>';
   try{
     const r=await fetch(API+'/api/history/'+id+'/replay',{method:'POST',headers:hdr(),credentials:'include'});
     const d=await r.json();
@@ -1357,7 +1357,7 @@ async function loadHistory(){
     const r=await fetch(API+'/api/history',{headers:hdr(),credentials:'include'});
     const d=await r.json();
     const el=g('history-list');
-    if(!d.length){el.innerHTML='<div class="state"><div class="state-ico">📋</div><div class="state-title">Aucun historique</div></div>';return}
+    if(!d.length){el.innerHTML='<div class="state"><div class="state-ico"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="4" rx="1"/><rect x="3" y="6" width="18" height="16" rx="2"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="16" y2="16"/></svg></div><div class="state-title">Aucun historique</div></div>';return}
     el.innerHTML=d.map(function(s){
       const q=JSON.parse(s.query_data||'{}');
       const label=Object.entries(q).filter(function(e){return !['flexible','per_page'].includes(e[0])}).map(function(e){return e[1]}).join(', ')||'—';
@@ -1527,7 +1527,7 @@ function copyReferral(){
 
 async function loadTheme(){
   // Appliquer depuis localStorage d'abord (instantané)
-  var saved=localStorage.getItem('xtheme');
+  var saved=localStorage.getItem('xtheme')||'dark';
   if(saved&&THEMES[saved]){
     applyTheme(saved,document.querySelector('[data-theme="'+saved+'"]'));
   }
@@ -1575,7 +1575,7 @@ async function checkCryptoStatus(){
     const d=await r.json();
     if(d.paid){
       if(cryptoCheckInterval)clearInterval(cryptoCheckInterval);
-      g('crypto-icon').textContent='✅';
+      g('crypto-icon').textContent='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
       g('crypto-title').textContent='Paiement confirme !';
       g('crypto-msg').textContent='Vos credits ont ete ajoutes a votre compte.';
       g('crypto-bar').style.width='100%';
@@ -1584,7 +1584,7 @@ async function checkCryptoStatus(){
       setTimeout(function(){closeCryptoOverlay();init();},2000);
     } else if(d.expired){
       if(cryptoCheckInterval)clearInterval(cryptoCheckInterval);
-      g('crypto-icon').textContent='❌';
+      g('crypto-icon').textContent='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
       g('crypto-title').textContent='Paiement expire';
       g('crypto-msg').textContent='La session de paiement a expire. Reessayez.';
       localStorage.removeItem('pending_order');
@@ -1824,7 +1824,7 @@ async function loadTickets(){
   const tickets=await r.json();
   const el=g('ticket-list');
   g('ticket-detail').style.display='none';
-  if(!tickets.length){el.innerHTML='<div class="state"><div class="state-ico">🎫</div><div class="state-title">Aucun ticket</div><div class="state-sub">Ouvrez un ticket pour contacter le support.</div></div>';return}
+  if(!tickets.length){el.innerHTML='<div class="state"><div class="state-ico"></div><div class="state-title">Aucun ticket</div><div class="state-sub">Ouvrez un ticket pour contacter le support.</div></div>';return}
   el.innerHTML=tickets.map(t=>'<div class="history-item" style="cursor:pointer" onclick="openTicket('+t.id+')"><div><div class="history-q">'+t.subject+'</div><div style="font-size:11px;color:var(--muted2);margin-top:2px">'+new Date(t.created_at).toLocaleDateString('fr-FR')+'</div></div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;background:'+(t.status==='open'?'rgba(34,197,94,0.1)':'rgba(100,116,139,0.1)')+';color:'+(t.status==='open'?'var(--green)':'var(--muted2)')+'">'+t.status+'</span>'+(t.unread>0?'<span style="background:#ef4444;color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px">'+t.unread+'</span>':'')+'</div></div>').join('');
 }
 
@@ -2172,7 +2172,7 @@ function drawGraph(){
     graphCtx.font = n.type==='fiche' ? 'bold 14px Inter' : '12px Inter';
     graphCtx.textAlign = 'center';
     graphCtx.textBaseline = 'middle';
-    graphCtx.fillText(n.type==='fiche' ? '📁' : '👤', n.x, n.y);
+    graphCtx.fillText(n.type==='fiche' ? '' : '', n.x, n.y);
 
     // Label
     graphCtx.fillStyle = 'rgba(238,240,255,0.9)';
@@ -2328,7 +2328,7 @@ function showPersonGraph(idx){
       ctx.font=(n.main?'16':'13')+'px sans-serif';
       ctx.textAlign='center';
       ctx.textBaseline='middle';
-      ctx.fillText(n.main?'👤':'👥', n.x, n.y);
+      ctx.fillText(n.main?'':'', n.x, n.y);
       // Label
       ctx.fillStyle='rgba(238,240,255,0.9)';
       ctx.font='bold 11px Inter';
@@ -2397,6 +2397,26 @@ try{
   mainGraphNodes = saved.nodes || [];
   mainGraphEdges = saved.edges || [];
 }catch(e){}
+
+
+function drawPersonIcon(ctx, x, y, r, isGroup){
+  var s = r * 0.42;
+  ctx.fillStyle = 'rgba(238,240,255,0.75)';
+  // Tête
+  ctx.beginPath();
+  ctx.arc(x, y - s*0.28, s*0.38, 0, Math.PI*2);
+  ctx.fill();
+  // Corps
+  ctx.beginPath();
+  ctx.ellipse(x, y + s*0.52, s*0.58, s*0.48, 0, Math.PI, 0, false);
+  ctx.fill();
+  // Deuxième personne si groupe
+  if(isGroup){
+    ctx.fillStyle='rgba(238,240,255,0.45)';
+    ctx.beginPath();ctx.arc(x+s*0.5,y-s*0.28,s*0.3,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(x+s*0.5,y+s*0.52,s*0.42,s*0.36,0,Math.PI,0,false);ctx.fill();
+  }
+}
 
 function saveGraphState(){
   try{localStorage.setItem('xtracker_graph_current', JSON.stringify({nodes:mainGraphNodes,edges:mainGraphEdges}));}catch(e){}
@@ -2554,10 +2574,7 @@ function drawMainGraph(){
     mainGraphCtx.strokeStyle=n.color||'#6366f1';
     mainGraphCtx.lineWidth=2/graphScale;
     mainGraphCtx.fill();mainGraphCtx.stroke();
-    mainGraphCtx.fillStyle='#eef0ff';
-    mainGraphCtx.font=(n.collapsed?'16':'13')+'px sans-serif';
-    mainGraphCtx.textAlign='center';mainGraphCtx.textBaseline='middle';
-    mainGraphCtx.fillText(n.collapsed?'👥':'👤',n.x,n.y);
+        drawPersonIcon(mainGraphCtx, n.x, n.y, n.r/graphScale, n.collapsed);
     if(n.collapsed){
       mainGraphCtx.beginPath();mainGraphCtx.arc(n.x+n.r*0.5,n.y-n.r*0.5,10/graphScale,0,Math.PI*2);
       mainGraphCtx.fillStyle=n.color||'#6366f1';mainGraphCtx.fill();
@@ -2594,7 +2611,7 @@ function showCtxMenu(n, rx, ry){
       var div=document.createElement('div');
       div.className='ctx-item';
       div.setAttribute('onclick','ctxExpand()');
-      div.textContent='🔓 Développer le groupe';
+      div.textContent='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg> Développer le groupe';
       collapseBtn && collapseBtn.parentNode.insertBefore(div, collapseBtn);
     } else { expandBtn.style.display='block'; }
   } else {
@@ -2969,7 +2986,7 @@ function buildFamilyTree(p){
   var gens={0:[],1:[],2:[],3:[]};
   allMembers.forEach(function(m){gens[getGen(m)].push(m);});
 
-  var genLabels=['👴 Grands-parents / Ancêtres','👨 Parents / Oncles','👤 Même génération','👶 Enfants / Neveux'];
+  var genLabels=['Génération 1 — Ancêtres','Génération 2 — Parents',' Même génération','Génération 4 — Enfants'];
 
     var wrap=document.createElement('div');
   wrap.className='tree-wrap';
@@ -2989,7 +3006,7 @@ function buildFamilyTree(p){
       var yearStr=m.date_naissance?'('+m.date_naissance.split('-')[0]+')':'';
       var card=document.createElement('div');
       card.className='tree-card'+(m._main?' tree-main':'');
-      card.innerHTML='<button class="tree-card-edit" title="Modifier">✏️</button>'
+      card.innerHTML='<button class="tree-card-edit" title="Modifier"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>'
         +'<div class="tree-card-name">'+name+'</div>'
         +(ageStr?'<div class="tree-card-age">'+ageStr+' '+yearStr+'</div>':'')
         +(m.lien?'<div class="tree-card-lien">'+m.lien+'</div>':'')
@@ -3026,15 +3043,28 @@ function editTreeMember(memberId){
 function addFamilyToMainGraph(){
   if(!_currentGraphPerson)return;
   var p=_currentGraphPerson;
+  var famille=p.famille||[];
   var added=0;
+  var mainId='node_'+Date.now();
+  var mainName=((p.prenom||'')+(p.nom_famille?' '+p.nom_famille:'')).trim()||'Inconnu';
   // Ajouter la personne principale
-  addToMainGraph(p,'Sujet');added++;
-  // Ajouter toute la famille
-  (p.famille||[]).forEach(function(m){
-    addToMainGraph(m,m.lien||'Famille');added++;
+  mainGraphNodes.push({id:mainId,label:mainName,x:300,y:260,r:24,color:'#6366f1',bg:'rgba(99,102,241,0.2)',data:p,lien:'Sujet'});
+  added++;
+  // Ajouter la famille et relier chaque membre au sujet principal
+  var cx=300,cy=260;
+  famille.forEach(function(m,i){
+    var angle=(i/Math.max(famille.length,1))*Math.PI*2-Math.PI/2;
+    var radius=160;
+    var fid='node_'+(Date.now()+i+1);
+    var fname=((m.prenom||'')+(m.nom_famille?' '+m.nom_famille:'')).trim()||'Famille';
+    mainGraphNodes.push({id:fid,label:fname,x:cx+Math.cos(angle)*radius,y:cy+Math.sin(angle)*radius,r:22,color:'#818cf8',bg:'rgba(129,140,248,0.12)',data:m,lien:m.lien||'Famille'});
+    // Créer le lien avec le sujet principal
+    mainGraphEdges.push({a:mainId,b:fid,label:m.lien||''});
+    added++;
   });
+  saveGraphState();
   closePersonGraph();
-  notif(added+' personnes ajoutées au graphe !');
+  notif(added+' personnes ajoutées et reliées !');
   if(document.getElementById('page-graphe').classList.contains('active'))initMainGraph();
 }
 
@@ -3139,8 +3169,8 @@ if(typeof renderResults==='function'){
       <div>
         <div style="display:flex;align-items:center;gap:10px">
           <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700">Graphe de connexions</div>
-          <button id="btn-tree-view" class="btn" onclick="toggleTreeView()" style="font-size:11px;padding:4px 10px">🌳 Arbre</button>
-          <button id="btn-graph-view" class="btn" onclick="toggleGraphView()" style="font-size:11px;padding:4px 10px;display:none">◎ Graphe</button>
+          <button id="btn-tree-view" class="btn" onclick="toggleTreeView()" style="font-size:11px;padding:4px 10px">Arbre</button>
+          <button id="btn-graph-view" class="btn" onclick="toggleGraphView()" style="font-size:11px;padding:4px 10px;display:none">Graphe</button>
         </div>
         <div id="person-graph-info" style="font-size:12px;color:var(--muted2);margin-top:2px"></div>
       </div>
