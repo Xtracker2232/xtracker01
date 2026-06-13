@@ -1277,7 +1277,7 @@ function openPaymentChoice(packId){
   }
 }
 
-async async function proceedCard(packId){
+async function proceedCard(packId){
   g('payment-choice-modal').style.display='none';
   try{
     const r=await fetch(API+'/api/credits/checkout/'+packId,{method:'POST',headers:hdr(),credentials:'include'});
