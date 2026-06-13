@@ -2247,6 +2247,12 @@ function graphClick(e){
 function showPersonGraph(idx){
   const p = window['_r'+idx];
   if(!p) return;
+  _currentGraphPerson = p;
+  // Reset vue graphe
+  document.getElementById('person-graph-canvas').style.display='block';
+  document.getElementById('person-tree-container').style.display='none';
+  document.getElementById('btn-tree-view').style.display='inline-block';
+  document.getElementById('btn-graph-view').style.display='none';
   const modal = document.getElementById('person-graph-modal');
   modal.style.display = 'flex';
   
@@ -2882,6 +2888,144 @@ function customConfirm(title, msg, cb){
   };
 }
 
+
+// ── ARBRE GÉNÉALOGIQUE ────────────────────────────────────────────────────────
+var _currentGraphPerson = null;
+
+function toggleTreeView(){
+  _currentGraphPerson && buildFamilyTree(_currentGraphPerson);
+  document.getElementById('person-graph-canvas').style.display='none';
+  document.getElementById('person-tree-container').style.display='block';
+  document.getElementById('btn-tree-view').style.display='none';
+  document.getElementById('btn-graph-view').style.display='inline-block';
+  document.getElementById('person-graph-info').textContent='Arbre généalogique';
+}
+
+function toggleGraphView(){
+  document.getElementById('person-graph-canvas').style.display='block';
+  document.getElementById('person-tree-container').style.display='none';
+  document.getElementById('btn-tree-view').style.display='inline-block';
+  document.getElementById('btn-graph-view').style.display='none';
+  document.getElementById('person-graph-info').textContent=(_currentGraphPerson&&_currentGraphPerson.famille)?_currentGraphPerson.famille.length+' lien(s) familial(aux)':'';
+}
+
+function getAge(dateStr){
+  if(!dateStr)return null;
+  var parts=dateStr.split('-');
+  if(parts.length<1)return null;
+  var year=parseInt(parts[0]);
+  if(isNaN(year))return null;
+  return new Date().getFullYear()-year;
+}
+
+function buildFamilyTree(p){
+  var famille=p.famille||[];
+  var el=document.getElementById('person-tree-content');
+  if(!el)return;
+
+  // Trier par âge décroissant (plus vieux = plus haut dans l'arbre)
+  var allMembers=[{
+    prenom:p.prenom||'',nom_famille:p.nom_famille||'',
+    date_naissance:p.date_naissance||p.annee_naissance||'',
+    email:p.email||'',telephone:p.telephone||'',
+    lien:'Sujet principal',_main:true,id:'main'
+  }];
+  famille.forEach(function(m,i){allMembers.push(Object.assign({},m,{id:'f'+i}));});
+  allMembers.sort(function(a,b){
+    var ya=parseInt((a.date_naissance||'').split('-')[0])||9999;
+    var yb=parseInt((b.date_naissance||'').split('-')[0])||9999;
+    return ya-yb; // plus vieux en premier
+  });
+
+  // CSS arbre
+  var css=`<style>
+  .tree-wrap{display:flex;flex-direction:column;align-items:center;gap:0;padding:10px;}
+  .tree-gen{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;padding:8px 0;position:relative;}
+  .tree-gen::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:2px;height:8px;background:rgba(99,102,241,0.3);}
+  .tree-card{background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.25);border-radius:10px;padding:10px 14px;min-width:140px;max-width:180px;position:relative;cursor:pointer;transition:all .2s;}
+  .tree-card:hover{border-color:rgba(99,102,241,0.5);background:rgba(99,102,241,0.15);}
+  .tree-card.tree-main{border-color:#6366f1;background:rgba(99,102,241,0.18);}
+  .tree-card-name{font-weight:700;font-size:13px;margin-bottom:3px;}
+  .tree-card-age{font-size:11px;color:var(--muted2);}
+  .tree-card-lien{font-size:10px;color:#818cf8;margin-top:3px;font-weight:600;}
+  .tree-card-edit{position:absolute;top:4px;right:4px;background:none;border:none;color:rgba(129,140,248,0.5);cursor:pointer;font-size:12px;padding:2px 4px;border-radius:4px;}
+  .tree-card-edit:hover{color:#818cf8;background:rgba(99,102,241,0.2);}
+  .tree-connector{width:100%;display:flex;justify-content:center;padding:2px 0;}
+  .tree-connector-line{width:2px;height:16px;background:rgba(99,102,241,0.25);}
+  </style>`;
+
+  // Regrouper par génération approximative
+  function getGen(m){
+    var year=parseInt((m.date_naissance||'').split('-')[0]);
+    if(isNaN(year)) return 1;
+    var mainYear=parseInt((p.date_naissance||p.annee_naissance||'2000').split('-')[0])||2000;
+    var diff=mainYear-year;
+    if(diff>40)return 0; // grands-parents
+    if(diff>15)return 1; // parents
+    if(diff>-15)return 2; // même gen
+    return 3; // enfants
+  }
+
+  var gens={0:[],1:[],2:[],3:[]};
+  allMembers.forEach(function(m){gens[getGen(m)].push(m);});
+
+  var genLabels=['👴 Grands-parents / Ancêtres','👨 Parents / Oncles','👤 Même génération','👶 Enfants / Neveux'];
+
+  var html=css+'<div class="tree-wrap">';
+  [0,1,2,3].forEach(function(g){
+    if(!gens[g].length)return;
+    html+='<div style="font-size:10px;color:var(--muted2);text-align:center;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">'+genLabels[g]+'</div>';
+    html+='<div class="tree-gen">';
+    gens[g].forEach(function(m){
+      var name=((m.prenom||'')+(m.nom_famille?' '+m.nom_famille:'')).trim()||'Inconnu';
+      var age=getAge(m.date_naissance);
+      var ageStr=age?age+' ans':'';
+      var yearStr=m.date_naissance?'('+m.date_naissance.split('-')[0]+')':'';
+      html+='<div class="tree-card'+(m._main?' tree-main':'')+'" onclick="editTreeMember(''+m.id+'')">'
+        +'<button class="tree-card-edit" onclick="event.stopPropagation();editTreeMember(''+m.id+'')">✏️</button>'
+        +'<div class="tree-card-name">'+name+'</div>'
+        +(ageStr?'<div class="tree-card-age">'+ageStr+' '+yearStr+'</div>':'')
+        +(m.lien?'<div class="tree-card-lien">'+m.lien+'</div>':'')
+        +(m.email?'<div style="font-size:10px;color:var(--muted2);margin-top:2px">'+m.email+'</div>':'')
+        +(m.telephone?'<div style="font-size:10px;color:var(--muted2)">'+m.telephone+'</div>':'')
+        +'</div>';
+    });
+    html+='</div>';
+    if(g<3 && gens[g].length) html+='<div class="tree-connector"><div class="tree-connector-line"></div></div>';
+  });
+  html+='</div>';
+  el.innerHTML=html;
+  el._members=allMembers;
+}
+
+function editTreeMember(memberId){
+  var el=document.getElementById('person-tree-content');
+  if(!el||!el._members)return;
+  var m=el._members.find(function(x){return x.id===memberId;});
+  if(!m)return;
+  var name=((m.prenom||'')+(m.nom_famille?' '+m.nom_famille:'')).trim();
+  customPrompt('Modifier le lien','Rôle de '+name+' (ex: Père, Mère, Frère, Enfant...)',m.lien||'',function(val){
+    if(val===null)return;
+    m.lien=val;
+    buildFamilyTree(_currentGraphPerson);
+  });
+}
+
+function addFamilyToMainGraph(){
+  if(!_currentGraphPerson)return;
+  var p=_currentGraphPerson;
+  var added=0;
+  // Ajouter la personne principale
+  addToMainGraph(p,'Sujet');added++;
+  // Ajouter toute la famille
+  (p.famille||[]).forEach(function(m){
+    addToMainGraph(m,m.lien||'Famille');added++;
+  });
+  closePersonGraph();
+  notif(added+' personnes ajoutées au graphe !');
+  if(document.getElementById('page-graphe').classList.contains('active'))initMainGraph();
+}
+
 let _pendingFicheData=null;
 async function addToFiche(personData){
   const r=await fetch(API+'/api/fiches',{headers:hdr()});
@@ -2981,13 +3125,23 @@ if(typeof renderResults==='function'){
   <div style="background:var(--bg2);border:1px solid rgba(99,102,241,0.25);border-radius:16px;width:100%;max-width:740px;overflow:hidden">
     <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
       <div>
-        <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700">Graphe de connexions</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700">Graphe de connexions</div>
+          <button id="btn-tree-view" class="btn" onclick="toggleTreeView()" style="font-size:11px;padding:4px 10px">🌳 Arbre</button>
+          <button id="btn-graph-view" class="btn" onclick="toggleGraphView()" style="font-size:11px;padding:4px 10px;display:none">◎ Graphe</button>
+        </div>
         <div id="person-graph-info" style="font-size:12px;color:var(--muted2);margin-top:2px"></div>
       </div>
-      <button onclick="closePersonGraph()" style="background:none;border:none;color:var(--muted2);cursor:pointer;font-size:22px;line-height:1">×</button>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button id="btn-add-all-graph" onclick="addFamilyToMainGraph()" class="btn" style="font-size:11px;padding:4px 10px;background:rgba(99,102,241,0.15);border-color:rgba(99,102,241,0.4)">+ Tout au graphe</button>
+        <button onclick="closePersonGraph()" style="background:none;border:none;color:var(--muted2);cursor:pointer;font-size:22px;line-height:1">×</button>
+      </div>
     </div>
     <div style="padding:16px;overflow:auto">
       <canvas id="person-graph-canvas" style="display:block;border-radius:8px;background:rgba(7,10,20,0.6)"></canvas>
+      <div id="person-tree-container" style="display:none;overflow:auto;border-radius:8px;background:rgba(7,10,20,0.6);padding:16px;min-height:300px">
+        <div id="person-tree-content"></div>
+      </div>
     </div>
     <div style="padding:12px 20px;border-top:1px solid var(--border);font-size:11px;color:var(--muted2);text-align:center">
       Glisse les noeuds pour réorganiser le graphe
