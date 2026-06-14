@@ -2434,17 +2434,19 @@ function setActiveBottom(btn){
 checkMobile();
 window.addEventListener('resize', checkMobile);
 
-// ── DRAG & DROP NAVBAR AVEC ANIMATIONS ───────────────────────────────────────
+// ── DRAG & DROP NAVBAR — SUIT LA SOURIS ──────────────────────────────────────
 (function(){
   const nav = document.querySelector('.navbar-nav');
   if(!nav) return;
 
   let dragEl = null;
+  let ghost = null;
   let longPressTimer = null;
   let isDragging = false;
-  let insertBeforeEl = null; // élément devant lequel on va insérer
+  let insertBeforeEl = null;
+  let offsetX = 0, offsetY = 0;
 
-  // ── Sauvegarder / restaurer l'ordre ────────────────────────────────────────
+  // ── Ordre ──────────────────────────────────────────────────────────────────
   function saveOrder(){
     const order = Array.from(nav.children)
       .filter(el => el.id && el.id.startsWith('nav-'))
@@ -2463,65 +2465,100 @@ window.addEventListener('resize', checkMobile);
     }catch(e){}
   }
 
-  // ── Obtenir les boutons dans l'ordre visuel ─────────────────────────────────
+  // ── Ghost (clone qui suit la souris) ───────────────────────────────────────
+  function createGhost(el, clientX, clientY){
+    const r = el.getBoundingClientRect();
+    ghost = el.cloneNode(true);
+    ghost.removeAttribute('id');
+    ghost.style.cssText = `
+      position:fixed;
+      left:${r.left}px;
+      top:${r.top}px;
+      width:${r.width}px;
+      pointer-events:none;
+      z-index:9999;
+      margin:0;
+      opacity:1;
+      background:rgba(255,255,255,0.14);
+      color:#fff;
+      border-radius:6px;
+      box-shadow:0 12px 32px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.18);
+      transform:translateY(-6px) scale(1.06);
+      transition:box-shadow .15s;
+      font-family:inherit;
+      font-size:12px;
+      font-weight:600;
+      display:flex;
+      align-items:center;
+      gap:5px;
+      padding:5px 10px;
+      white-space:nowrap;
+    `;
+    offsetX = clientX - r.left;
+    offsetY = clientY - r.top;
+    document.body.appendChild(ghost);
+  }
+
+  function moveGhost(clientX, clientY){
+    if(!ghost) return;
+    ghost.style.left = (clientX - offsetX) + 'px';
+    ghost.style.top  = (clientY - offsetY) + 'px';
+  }
+
+  function removeGhost(){
+    if(ghost){ ghost.remove(); ghost = null; }
+  }
+
+  // ── Écartement des autres boutons ──────────────────────────────────────────
   function getBtns(){
     return Array.from(nav.children).filter(el => el !== dragEl);
   }
 
-  // ── Appliquer l'animation d'écartement ─────────────────────────────────────
   function applyPush(clientX){
     const btns = getBtns();
-
-    // Trouver la position d'insertion
     insertBeforeEl = null;
-    let insertIdx = btns.length; // par défaut: à la fin
+    let insertIdx = btns.length;
 
     for(let i = 0; i < btns.length; i++){
       const r = btns[i].getBoundingClientRect();
-      const mid = r.left + r.width / 2;
-      if(clientX < mid){
+      if(clientX < r.left + r.width / 2){
         insertBeforeEl = btns[i];
         insertIdx = i;
         break;
       }
     }
 
-    // Appliquer push-left/push-right autour du point d'insertion
     btns.forEach((btn, i) => {
       btn.classList.remove('nav-push-left', 'nav-push-right');
       if(i === insertIdx - 1) btn.classList.add('nav-push-left');
-      else if(i === insertIdx)  btn.classList.add('nav-push-right');
+      else if(i === insertIdx) btn.classList.add('nav-push-right');
     });
   }
 
-  // ── Réinitialiser toutes les animations ────────────────────────────────────
   function resetPush(){
-    getBtns().forEach(btn => {
-      btn.classList.remove('nav-push-left', 'nav-push-right');
-    });
+    getBtns().forEach(btn => btn.classList.remove('nav-push-left','nav-push-right'));
     insertBeforeEl = null;
   }
 
-  // ── Démarrer le drag ───────────────────────────────────────────────────────
-  function startDrag(el){
+  // ── Start / End ────────────────────────────────────────────────────────────
+  function startDrag(el, clientX, clientY){
     isDragging = true;
     dragEl = el;
-    el.classList.add('nav-lifted');
+    el.style.opacity = '0'; // cacher l'original
+    createGhost(el, clientX, clientY);
     if(navigator.vibrate) navigator.vibrate(25);
   }
 
-  // ── Terminer le drag ───────────────────────────────────────────────────────
   function endDrag(){
     if(!isDragging || !dragEl) return;
     isDragging = false;
 
-    // Insérer au bon endroit
     if(insertBeforeEl) nav.insertBefore(dragEl, insertBeforeEl);
     else nav.appendChild(dragEl);
 
-    // Nettoyer les classes
-    dragEl.classList.remove('nav-lifted');
+    dragEl.style.opacity = '';
     dragEl = null;
+    removeGhost();
     resetPush();
     saveOrder();
   }
@@ -2531,15 +2568,17 @@ window.addEventListener('resize', checkMobile);
     const btn = e.target.closest('.nav-btn');
     if(!btn) return;
     e.preventDefault();
-    longPressTimer = setTimeout(() => startDrag(btn), 380);
+    const cx = e.clientX, cy = e.clientY;
+    longPressTimer = setTimeout(() => startDrag(btn, cx, cy), 350);
   });
 
   document.addEventListener('mousemove', function(e){
     if(!isDragging) return;
+    moveGhost(e.clientX, e.clientY);
     applyPush(e.clientX);
   });
 
-  document.addEventListener('mouseup', function(e){
+  document.addEventListener('mouseup', function(){
     clearTimeout(longPressTimer);
     if(isDragging) endDrag();
   });
@@ -2548,13 +2587,16 @@ window.addEventListener('resize', checkMobile);
   nav.addEventListener('touchstart', function(e){
     const btn = e.target.closest('.nav-btn');
     if(!btn) return;
-    longPressTimer = setTimeout(() => startDrag(btn), 380);
+    const t = e.touches[0];
+    longPressTimer = setTimeout(() => startDrag(btn, t.clientX, t.clientY), 350);
   }, {passive:true});
 
   document.addEventListener('touchmove', function(e){
     if(!isDragging){ clearTimeout(longPressTimer); return; }
     e.preventDefault();
-    applyPush(e.touches[0].clientX);
+    const t = e.touches[0];
+    moveGhost(t.clientX, t.clientY);
+    applyPush(t.clientX);
   }, {passive:false});
 
   document.addEventListener('touchend', function(){
@@ -2562,7 +2604,6 @@ window.addEventListener('resize', checkMobile);
     if(isDragging) endDrag();
   });
 
-  // Restaurer l'ordre au chargement
   restoreOrder();
 })();
 // Vider tous les champs au chargement (anti-autofill)
