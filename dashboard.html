@@ -339,7 +339,23 @@ select option{background:var(--bg2)}
 .search-layout{display:grid;grid-template-columns:370px 1fr;gap:20px;align-items:start;width:100%}
 @media(max-width:800px){.search-layout{grid-template-columns:1fr}}
 
-.search-col{position:sticky;top:64px}
+.search-col{position:sticky;top:64px;min-width:220px;max-width:600px}
+
+/* Poignée de resize */
+.resize-handle{
+  position:absolute;right:-6px;top:0;bottom:0;width:12px;
+  cursor:col-resize;z-index:10;
+  display:flex;align-items:center;justify-content:center;
+}
+.resize-handle::after{
+  content:'';width:3px;height:40px;
+  background:rgba(255,255,255,0.12);border-radius:2px;
+  transition:background .2s,height .2s;
+}
+.resize-handle:hover::after,.resize-handle.dragging::after{
+  background:rgba(255,255,255,0.5);height:60px;
+}
+.search-col{position:relative}
 
 .search-panel{
   background:var(--bg2);
@@ -634,7 +650,8 @@ label{
   <!-- PAGE RECHERCHE -->
   <div class="page active" id="page-search">
     <div class="search-layout">
-      <div class="search-col">
+      <div class="search-col" id="search-col">
+        <div class="resize-handle" id="resize-handle"></div>
         <div class="search-panel">
           <div class="panel-tabs">
             <button class="ptab active" id="ptab-fr" onclick="switchPTab('fr',this)">Recherche FR</button>
@@ -3697,5 +3714,50 @@ if(typeof renderResults==='function'){
   </div>
 </div>
 
+<!-- RESIZE PANEL -->
+<script>
+(function(){
+  var col = document.getElementById('search-col');
+  var handle = document.getElementById('resize-handle');
+  var layout = col ? col.closest('.search-layout') : null;
+  if(!col || !handle || !layout) return;
+
+  var dragging = false;
+  var startX = 0;
+  var startW = 0;
+
+  handle.addEventListener('mousedown', function(e){
+    e.preventDefault();
+    dragging = true;
+    startX = e.clientX;
+    startW = col.offsetWidth;
+    handle.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  });
+
+  document.addEventListener('mousemove', function(e){
+    if(!dragging) return;
+    var delta = e.clientX - startX;
+    var newW = Math.min(600, Math.max(220, startW + delta));
+    layout.style.gridTemplateColumns = newW + 'px 1fr';
+    localStorage.setItem('xtracker_panel_w', newW);
+  });
+
+  document.addEventListener('mouseup', function(){
+    if(!dragging) return;
+    dragging = false;
+    handle.classList.remove('dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  });
+
+  // Restaurer la largeur sauvegardée
+  var saved = parseInt(localStorage.getItem('xtracker_panel_w'));
+  if(saved && saved >= 220 && saved <= 600){
+    layout.style.gridTemplateColumns = saved + 'px 1fr';
+  }
+})();
+</script>
 </body>
 </html>
