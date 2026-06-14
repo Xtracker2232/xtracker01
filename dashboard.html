@@ -81,26 +81,35 @@ body::after{
   font-size:12px;font-weight:500;
   color:var(--muted2);cursor:pointer;border:none;
   background:transparent;font-family:inherit;
-  transition:color .15s,background .15s;
+  transition:color .15s, background .15s, transform .2s cubic-bezier(.34,1.56,.64,1), opacity .15s, box-shadow .2s;
   white-space:nowrap;letter-spacing:-.1px;
   position:relative;
+  will-change:transform;
 }
 .nav-btn:hover{background:rgba(255,255,255,0.06);color:var(--text2)}
 .nav-btn.active{background:rgba(255,255,255,0.10);color:#fff;font-weight:600}
-.nav-btn.dragging-nav{
-  opacity:0.4;
-  background:rgba(255,255,255,0.08) !important;
+
+/* Bouton soulevé pendant le drag */
+.nav-btn.nav-lifted{
+  opacity:1 !important;
+  transform:translateY(-8px) scale(1.08) !important;
+  background:rgba(255,255,255,0.14) !important;
+  color:#fff !important;
+  box-shadow:0 8px 24px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.15) !important;
+  z-index:200;
+  cursor:grabbing !important;
+  transition:transform .18s cubic-bezier(.34,1.56,.64,1), box-shadow .18s !important;
 }
-.nav-btn.drag-over-nav{
-  background:rgba(255,255,255,0.12) !important;
+
+/* Boutons qui s'écartent */
+.nav-btn.nav-push-left{
+  transform:translateX(-14px) !important;
+  transition:transform .2s cubic-bezier(.25,.46,.45,.94) !important;
 }
-.nav-insert-indicator{
-  width:2px;height:22px;
-  background:#fff;border-radius:2px;
-  pointer-events:none;flex-shrink:0;
-  animation:indPulse .6s ease infinite alternate;
+.nav-btn.nav-push-right{
+  transform:translateX(14px) !important;
+  transition:transform .2s cubic-bezier(.25,.46,.45,.94) !important;
 }
-@keyframes indPulse{from{opacity:.5}to{opacity:1}}
 .navbar-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
 .credits-badge{
   font-size:12px;font-weight:600;color:var(--text2);
@@ -2425,28 +2434,17 @@ function setActiveBottom(btn){
 checkMobile();
 window.addEventListener('resize', checkMobile);
 
-// ── DRAG & DROP NAVBAR ────────────────────────────────────────────────────────
+// ── DRAG & DROP NAVBAR AVEC ANIMATIONS ───────────────────────────────────────
 (function(){
   const nav = document.querySelector('.navbar-nav');
   if(!nav) return;
 
   let dragEl = null;
-  let indicator = null;
   let longPressTimer = null;
   let isDragging = false;
-  let startX = 0, startY = 0;
+  let insertBeforeEl = null; // élément devant lequel on va insérer
 
-  function createIndicator(){
-    indicator = document.createElement('div');
-    indicator.className = 'nav-insert-indicator';
-    return indicator;
-  }
-
-  function removeIndicator(){
-    if(indicator && indicator.parentNode) indicator.parentNode.removeChild(indicator);
-    indicator = null;
-  }
-
+  // ── Sauvegarder / restaurer l'ordre ────────────────────────────────────────
   function saveOrder(){
     const order = Array.from(nav.children)
       .filter(el => el.id && el.id.startsWith('nav-'))
@@ -2460,125 +2458,111 @@ window.addEventListener('resize', checkMobile);
       if(!saved || !saved.length) return;
       saved.forEach(id => {
         const el = document.getElementById(id);
-        if(el) nav.appendChild(el);
+        if(el && el.parentNode === nav) nav.appendChild(el);
       });
     }catch(e){}
   }
 
-  function getNavBtns(){
-    return Array.from(nav.children).filter(el => !el.classList.contains('nav-insert-indicator'));
+  // ── Obtenir les boutons dans l'ordre visuel ─────────────────────────────────
+  function getBtns(){
+    return Array.from(nav.children).filter(el => el !== dragEl);
   }
 
-  function getNearestBtn(clientX){
-    const btns = getNavBtns().filter(b => b !== dragEl);
-    let best = null, bestDist = Infinity;
-    let insertBefore = null;
+  // ── Appliquer l'animation d'écartement ─────────────────────────────────────
+  function applyPush(clientX){
+    const btns = getBtns();
 
-    for(let btn of btns){
-      const r = btn.getBoundingClientRect();
+    // Trouver la position d'insertion
+    insertBeforeEl = null;
+    let insertIdx = btns.length; // par défaut: à la fin
+
+    for(let i = 0; i < btns.length; i++){
+      const r = btns[i].getBoundingClientRect();
       const mid = r.left + r.width / 2;
-      const dist = Math.abs(clientX - mid);
-      if(dist < bestDist){
-        bestDist = dist;
-        best = btn;
-        insertBefore = clientX < mid;
+      if(clientX < mid){
+        insertBeforeEl = btns[i];
+        insertIdx = i;
+        break;
       }
     }
-    return {btn: best, before: insertBefore};
+
+    // Appliquer push-left/push-right autour du point d'insertion
+    btns.forEach((btn, i) => {
+      btn.classList.remove('nav-push-left', 'nav-push-right');
+      if(i === insertIdx - 1) btn.classList.add('nav-push-left');
+      else if(i === insertIdx)  btn.classList.add('nav-push-right');
+    });
   }
 
-  function onDragMove(clientX, clientY){
-    if(!isDragging || !dragEl) return;
-    removeIndicator();
-    const {btn, before} = getNearestBtn(clientX);
-    if(!btn) return;
-    const ind = createIndicator();
-    if(before) nav.insertBefore(ind, btn);
-    else btn.after(ind);
+  // ── Réinitialiser toutes les animations ────────────────────────────────────
+  function resetPush(){
+    getBtns().forEach(btn => {
+      btn.classList.remove('nav-push-left', 'nav-push-right');
+    });
+    insertBeforeEl = null;
   }
 
-  function onDragEnd(clientX){
+  // ── Démarrer le drag ───────────────────────────────────────────────────────
+  function startDrag(el){
+    isDragging = true;
+    dragEl = el;
+    el.classList.add('nav-lifted');
+    if(navigator.vibrate) navigator.vibrate(25);
+  }
+
+  // ── Terminer le drag ───────────────────────────────────────────────────────
+  function endDrag(){
     if(!isDragging || !dragEl) return;
     isDragging = false;
 
-    const {btn, before} = getNearestBtn(clientX);
-    removeIndicator();
+    // Insérer au bon endroit
+    if(insertBeforeEl) nav.insertBefore(dragEl, insertBeforeEl);
+    else nav.appendChild(dragEl);
 
-    if(btn){
-      if(before) nav.insertBefore(dragEl, btn);
-      else btn.after(dragEl);
-    }
-
-    dragEl.classList.remove('dragging-nav');
-    dragEl.style.opacity = '';
+    // Nettoyer les classes
+    dragEl.classList.remove('nav-lifted');
     dragEl = null;
+    resetPush();
     saveOrder();
   }
 
-  function startLongPress(el, e){
-    const touch = e.touches ? e.touches[0] : e;
-    startX = touch.clientX;
-    startY = touch.clientY;
-
-    longPressTimer = setTimeout(function(){
-      isDragging = true;
-      dragEl = el;
-      el.classList.add('dragging-nav');
-      // Vibration si dispo
-      if(navigator.vibrate) navigator.vibrate(30);
-    }, 400);
-  }
-
-  function cancelLongPress(){
-    clearTimeout(longPressTimer);
-    longPressTimer = null;
-    if(!isDragging) dragEl = null;
-  }
-
-  // Mouse events (desktop)
+  // ── MOUSE ──────────────────────────────────────────────────────────────────
   nav.addEventListener('mousedown', function(e){
     const btn = e.target.closest('.nav-btn');
     if(!btn) return;
-    startX = e.clientX;
-    startY = e.clientY;
-    longPressTimer = setTimeout(function(){
-      isDragging = true;
-      dragEl = btn;
-      btn.classList.add('dragging-nav');
-    }, 400);
+    e.preventDefault();
+    longPressTimer = setTimeout(() => startDrag(btn), 380);
   });
 
   document.addEventListener('mousemove', function(e){
     if(!isDragging) return;
-    onDragMove(e.clientX, e.clientY);
+    applyPush(e.clientX);
   });
 
   document.addEventListener('mouseup', function(e){
     clearTimeout(longPressTimer);
-    if(isDragging) onDragEnd(e.clientX);
-    isDragging = false;
+    if(isDragging) endDrag();
   });
 
-  // Touch events (mobile)
+  // ── TOUCH ──────────────────────────────────────────────────────────────────
   nav.addEventListener('touchstart', function(e){
     const btn = e.target.closest('.nav-btn');
     if(!btn) return;
-    startLongPress(btn, e);
+    longPressTimer = setTimeout(() => startDrag(btn), 380);
   }, {passive:true});
 
   document.addEventListener('touchmove', function(e){
-    if(!isDragging){ cancelLongPress(); return; }
+    if(!isDragging){ clearTimeout(longPressTimer); return; }
     e.preventDefault();
-    onDragMove(e.touches[0].clientX, e.touches[0].clientY);
+    applyPush(e.touches[0].clientX);
   }, {passive:false});
 
-  document.addEventListener('touchend', function(e){
+  document.addEventListener('touchend', function(){
     clearTimeout(longPressTimer);
-    if(isDragging) onDragEnd(e.changedTouches[0].clientX);
-    isDragging = false;
+    if(isDragging) endDrag();
   });
 
-  // Restaurer l'ordre sauvegardé au chargement
+  // Restaurer l'ordre au chargement
   restoreOrder();
 })();
 // Vider tous les champs au chargement (anti-autofill)
