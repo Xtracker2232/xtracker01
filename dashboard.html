@@ -342,13 +342,133 @@ select option{background:var(--bg2)}
 .loading-shimmer{background:linear-gradient(90deg,rgba(255,255,255,0.03) 25%,rgba(255,255,255,0.07) 50%,rgba(255,255,255,0.03) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite}
 
 /* ── RESPONSIVE ──────────────────────────────────────────────────────────── */
-@media(max-width:640px){
-  .navbar{padding:0 16px}
-  .content{padding:16px}
-  .navbar-nav{gap:0}
-  .nav-btn{padding:6px 8px;font-size:11px}
-  .fg,.rfields{grid-template-columns:1fr}
-  .packs-grid{grid-template-columns:1fr 1fr}
+/* ══════════════════════════════════════════════════════
+   RESPONSIVE MOBILE — COMPLET
+══════════════════════════════════════════════════════ */
+
+/* ── NAVBAR MOBILE ─────────────────────────────────── */
+@media(max-width:768px){
+  .navbar{padding:0 14px;height:50px}
+  .navbar-logo{font-size:15px}
+  .navbar-nav{display:none !important}
+  .desktop-only{display:none !important}
+  .hamburger{display:flex !important}
+  .credits-pill{display:none !important}
+
+  /* ── MAIN ───────────────────────────────────────── */
+  .main{padding:0 10px 80px}
+
+  /* ── SEARCH LAYOUT : empilé ─────────────────────── */
+  .search-layout{
+    grid-template-columns:1fr !important;
+    gap:12px;
+    padding-top:10px;
+  }
+  .search-col{
+    position:static !important;
+    min-width:unset !important;
+    max-width:100% !important;
+  }
+  .resize-handle{display:none}
+
+  /* Panel tabs plus petits */
+  .ptab{font-size:10px;padding:8px 4px;letter-spacing:0}
+  .panel-body{padding:10px}
+
+  /* Accordéons */
+  .acc-head{padding:10px 12px !important}
+  .acc-body{padding:10px 12px 14px !important}
+  .fg{grid-template-columns:1fr !important;gap:8px !important}
+
+  /* Champs */
+  input,select{height:42px;font-size:14px !important;padding:10px 12px !important}
+  label{font-size:10px !important}
+
+  /* Barre recherche */
+  .search-bar{flex-direction:column;gap:10px;align-items:stretch !important}
+  .search-bar .btns{display:flex;gap:8px}
+  .search-bar .btn{flex:1;justify-content:center;padding:12px !important;font-size:13px !important}
+
+  /* ── RÉSULTATS ───────────────────────────────────── */
+  .results-header{flex-direction:column;gap:4px;align-items:flex-start}
+  .results-count{font-size:16px !important}
+  .rcard{border-radius:10px !important;margin-bottom:8px !important}
+  .rcard-top{padding:12px 14px !important}
+  .rname{font-size:14px !important}
+  .rmeta{font-size:11px !important}
+  .rcard-body{padding:12px 14px !important}
+  .rfields{grid-template-columns:1fr !important}
+  .rf{padding:8px 10px !important}
+  .action-row{flex-wrap:wrap;gap:6px !important}
+  .raw-btn{font-size:11px !important;padding:7px 10px !important}
+
+  /* ── STATS GRID ─────────────────────────────────── */
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .stat-val{font-size:20px}
+
+  /* ── CREDITS / PACKS ─────────────────────────────── */
+  .packs-grid{grid-template-columns:1fr 1fr !important}
+
+  /* ── PROFIL ──────────────────────────────────────── */
+  #profile-grid{grid-template-columns:1fr !important}
+  .profile-box{padding:14px !important}
+  .profile-row{font-size:12px}
+
+  /* ── HISTORIQUE ──────────────────────────────────── */
+  .history-item{flex-direction:column;align-items:flex-start;gap:6px}
+  .history-meta{flex-wrap:wrap;gap:6px}
+
+  /* ── GRAPHE ──────────────────────────────────────── */
+  #main-graph-wrap{border-radius:8px}
+  #main-graph-canvas{height:320px !important}
+
+  /* ── ASSISTANT IA ────────────────────────────────── */
+  #page-assistant > div{height:calc(100vh - 130px)}
+
+  /* ── MODALS ──────────────────────────────────────── */
+  .modal-box{max-width:100% !important;margin:0 10px;border-radius:12px}
+}
+
+/* ── BARRE DE NAV MOBILE EN BAS ────────────────────── */
+@media(max-width:768px){
+  .mobile-bottom-nav{
+    display:flex !important;
+    position:fixed;bottom:0;left:0;right:0;z-index:150;
+    background:rgba(10,10,10,0.98);
+    border-top:1px solid var(--border);
+    backdrop-filter:blur(20px);
+    -webkit-backdrop-filter:blur(20px);
+    padding:6px 0 calc(6px + env(safe-area-inset-bottom));
+    justify-content:space-around;
+  }
+  .mobile-bottom-nav .bn-item{
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+    padding:6px 10px;border-radius:8px;cursor:pointer;
+    background:none;border:none;font-family:inherit;
+    color:var(--muted2);font-size:9px;font-weight:600;
+    letter-spacing:.3px;text-transform:uppercase;
+    transition:color .15s;min-width:44px;
+    text-decoration:none;
+  }
+  .mobile-bottom-nav .bn-item svg{width:20px;height:20px}
+  .mobile-bottom-nav .bn-item.active{color:#fff}
+  .mobile-bottom-nav .bn-item:active{opacity:.7}
+}
+
+/* Masquer barre du bas sur desktop */
+.mobile-bottom-nav{display:none}
+
+/* ── DRAWER MOBILE ──────────────────────────────────── */
+@media(max-width:768px){
+  .mobile-drawer{border-radius:20px 20px 0 0;padding-bottom:calc(16px + env(safe-area-inset-bottom))}
+  .drawer-item{font-size:15px;padding:14px 20px}
+}
+
+/* ── PETITS AJUSTEMENTS 480px ───────────────────────── */
+@media(max-width:480px){
+  .packs-grid{grid-template-columns:1fr !important}
+  .rfields{grid-template-columns:1fr !important}
+  .navbar-logo{font-size:14px}
 }
 
 /* ── SEARCH LAYOUT ───────────────────────────────────────────────────────── */
@@ -654,7 +774,7 @@ label{
 
 /* Main content area */
 .main{flex:1;padding:0 20px 20px;width:100%;max-width:100%}
-@media(max-width:640px){.main{padding:0 12px 12px}}
+/* mobile géré dans le bloc responsive ci-dessus */
 
 /* Eye loader */
 .eye-loader{display:flex;align-items:center;justify-content:center}
@@ -769,7 +889,7 @@ label{
                   <div class="fgroup"><label>Prenom</label><input id="f-prenom" placeholder="Jordan" autocomplete="off" oninput="cnt('id')"></div>
                   <div class="fgroup"><label>Nom naissance</label><input id="f-nom_naissance" placeholder="Martin" oninput="cnt('id')"></div>
                   <div class="fgroup"><label>Nom affiche</label><input id="f-nom_affichage" placeholder="Jordan D." oninput="cnt('id')"></div>
-                  <div class="fgroup"><label>Utilisateur</label><input id="f-nom_utilisateur" placeholder="jean_d" oninput="cnt('id')"></div>
+                  <div class="fgroup"><label>Utilisateur</label><input id="f-nom_utilisateur" placeholder="jean_d" oninput="cnt('id')" autocomplete="off" name="search-username"></div>
                   <div class="fgroup"><label>Genre</label><select id="f-genre" onchange="cnt('id')"><option value="">Tous</option><option value="M">M</option><option value="F">F</option></select></div>
                 </div></div>
               </div>
@@ -1204,6 +1324,30 @@ label{
 </div>
 
 
+
+<!-- BARRE NAV MOBILE EN BAS -->
+<nav class="mobile-bottom-nav" id="mobile-bottom-nav">
+  <button class="bn-item active" id="bn-search" onclick="goTo('search',document.getElementById('nav-search'));setActiveBottom(this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    Recherche
+  </button>
+  <button class="bn-item" id="bn-history" onclick="goTo('history',document.getElementById('nav-history'));setActiveBottom(this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+    Historique
+  </button>
+  <button class="bn-item" id="bn-credits" onclick="goTo('credits',document.getElementById('nav-credits'));setActiveBottom(this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></svg>
+    Crédits
+  </button>
+  <button class="bn-item" id="bn-assistant" onclick="goTo('assistant',document.getElementById('nav-assistant'));setActiveBottom(this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+    IA
+  </button>
+  <button class="bn-item" id="bn-more" onclick="openDrawer()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/></svg>
+    Plus
+  </button>
+</nav>
 
 <!-- MOBILE DRAWER -->
 <div class="mobile-drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
@@ -2250,7 +2394,7 @@ setTimeout(() => {
 
 // Détection mobile forcée
 function checkMobile(){
-  const isMobile = window.innerWidth <= 1024 || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
   const hamburger = document.querySelector('.hamburger');
   const navNav = document.querySelector('.navbar-nav');
   const desktopOnly = document.querySelectorAll('.desktop-only');
@@ -2258,8 +2402,15 @@ function checkMobile(){
   if(navNav) navNav.style.display = isMobile ? 'none' : 'flex';
   desktopOnly.forEach(el => el.style.display = isMobile ? 'none' : 'flex');
 }
+
+function setActiveBottom(btn){
+  document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+}
 checkMobile();
 window.addEventListener('resize', checkMobile);
+// Empêcher l'autofill du champ utilisateur
+setTimeout(function(){var f=document.getElementById('f-nom_utilisateur');if(f)f.value='';},100);
 
 // ── TICKETS ──────────────────────────────────────────────────────────────────
 function showNewTicket(){g('new-ticket-form').style.display='block'}
