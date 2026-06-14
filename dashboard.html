@@ -339,23 +339,25 @@ select option{background:var(--bg2)}
 .search-layout{display:grid;grid-template-columns:370px 1fr;gap:20px;align-items:start;width:100%}
 @media(max-width:800px){.search-layout{grid-template-columns:1fr}}
 
-.search-col{position:sticky;top:64px;min-width:220px;max-width:600px}
+.search-col{position:sticky;top:54px;min-width:220px;max-width:600px;position:relative}
 
-/* Poignée de resize */
+/* Poignée resize coin bas-droit */
 .resize-handle{
-  position:absolute;right:-6px;top:0;bottom:0;width:12px;
-  cursor:col-resize;z-index:10;
-  display:flex;align-items:center;justify-content:center;
+  position:absolute;right:0;bottom:0;width:18px;height:18px;
+  cursor:se-resize;z-index:20;
+  background:transparent;
 }
-.resize-handle::after{
-  content:'';width:3px;height:40px;
-  background:rgba(255,255,255,0.12);border-radius:2px;
-  transition:background .2s,height .2s;
+.resize-handle::before{
+  content:'';position:absolute;right:3px;bottom:3px;
+  width:10px;height:10px;
+  border-right:2px solid rgba(255,255,255,0.25);
+  border-bottom:2px solid rgba(255,255,255,0.25);
+  border-radius:0 0 3px 0;
+  transition:border-color .2s;
 }
-.resize-handle:hover::after,.resize-handle.dragging::after{
-  background:rgba(255,255,255,0.5);height:60px;
+.resize-handle:hover::before,.resize-handle.dragging::before{
+  border-color:rgba(255,255,255,0.7);
 }
-.search-col{position:relative}
 
 .search-panel{
   background:var(--bg2);
@@ -589,8 +591,8 @@ label{
 }
 
 /* Main content area */
-.main{flex:1;padding:20px 28px;width:100%;max-width:100%}
-@media(max-width:640px){.main{padding:14px 16px}}
+.main{flex:1;padding:14px 24px;width:100%;max-width:100%}
+@media(max-width:640px){.main{padding:10px 12px}}
 
 /* Eye loader */
 .eye-loader{display:flex;align-items:center;justify-content:center}
@@ -598,6 +600,43 @@ label{
 .eye-iris{animation:pulse-iris 2s infinite}
 @keyframes blink{0%,90%,100%{opacity:1}95%{opacity:0}}
 @keyframes pulse-iris{0%,100%{r:5}50%{r:4}}
+
+/* ── OVERLAY RECHERCHE ───────────────────────────────────────────────────── */
+#search-overlay{
+  display:none;
+  position:fixed;inset:0;z-index:500;
+  background:rgba(0,0,0,0.85);
+  backdrop-filter:blur(8px);
+  align-items:center;justify-content:center;
+  flex-direction:column;gap:24px;
+}
+#search-overlay.visible{display:flex}
+.search-overlay-logo{
+  font-family:'Syne',sans-serif;font-size:32px;font-weight:800;
+  color:#fff;letter-spacing:-1px;
+  animation:overlayPulse 1.4s ease-in-out infinite;
+}
+.search-overlay-logo span{color:rgba(255,255,255,0.35)}
+.search-overlay-text{
+  font-size:13px;color:rgba(255,255,255,0.45);
+  letter-spacing:.5px;font-weight:500;
+  animation:overlayFade 1.4s ease-in-out infinite;
+}
+.search-overlay-bar{
+  width:180px;height:2px;
+  background:rgba(255,255,255,0.08);
+  border-radius:2px;overflow:hidden;
+  position:relative;
+}
+.search-overlay-bar::after{
+  content:'';position:absolute;
+  top:0;left:-60%;width:60%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.7),transparent);
+  animation:overlayBar 1.2s ease-in-out infinite;
+}
+@keyframes overlayPulse{0%,100%{opacity:1}50%{opacity:.5}}
+@keyframes overlayFade{0%,100%{opacity:.45}50%{opacity:.2}}
+@keyframes overlayBar{0%{left:-60%}100%{left:110%}}
 
 /* Chat result */
 .chat-result{background:rgba(255,255,255,0.03);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;margin-bottom:8px}
@@ -1345,6 +1384,9 @@ async function doSearch(){
   const map={nom_famille:'f-nom',prenom:'f-prenom',nom_naissance:'f-nom_naissance',nom_affichage:'f-nom_affichage',nom_utilisateur:'f-nom_utilisateur',genre:'f-genre',annee_naissance:'f-annee_naissance',date_naissance:'f-date_naissance',ville_naissance:'f-ville_naissance',email:'f-email',telephone:'f-telephone',mobile:'f-mobile',adresse_ip:'f-adresse_ip',adresse:'f-adresse',code_postal:'f-code_postal',ville:'f-ville',departement:'f-departement',region:'f-region',pays:'f-pays',nir:'f-nir',iban:'f-iban',siret:'f-siret',societe:'f-societe',profession:'f-profession',vin_plaque:'f-vin_plaque',steam_id:'f-steam_id',fivem_license:'f-fivem_license',fivem_license2:'f-fivem_license2',fivem_id:'f-fivem_id',discord_id:'f-discord_id_search',xbox_live_id:'f-xbox_live_id',live_id:'f-live_id'};
   Object.entries(map).forEach(([k,id])=>{const v=g(id)&&g(id).value.trim();if(v)payload[k]=v});
   if(Object.keys(payload).length<=2){showErr('Remplissez au moins un champ.');return}
+  // Overlay
+  var ov=document.getElementById('search-overlay');
+  if(ov)ov.classList.add('visible');
   setLoad('btn-search',true,'Rechercher');
   try{
     const r=await fetch(API+'/api/search',{method:'POST',headers:hdr(),credentials:'include',body:JSON.stringify(payload)});
@@ -1354,7 +1396,10 @@ async function doSearch(){
     if(!r.ok){showErr(d.detail||'Erreur API');return}
     renderResults(d.results,d.total,d.took_ms,d.free_left,d.credits);
   }catch(e){showErr('Erreur reseau : '+e.message)}
-  finally{setLoad('btn-search',false,'Rechercher')}
+  finally{
+    setLoad('btn-search',false,'Rechercher');
+    if(ov)ov.classList.remove('visible');
+  }
 }
 
 async function doEmailSearch(){
@@ -3714,6 +3759,13 @@ if(typeof renderResults==='function'){
   </div>
 </div>
 
+<!-- SEARCH OVERLAY -->
+<div id="search-overlay">
+  <div class="search-overlay-logo">X<span>tracker</span></div>
+  <div class="search-overlay-bar"></div>
+  <div class="search-overlay-text">Recherche en cours...</div>
+</div>
+
 <!-- RESIZE PANEL -->
 <script>
 (function(){
@@ -3723,25 +3775,34 @@ if(typeof renderResults==='function'){
   if(!col || !handle || !layout) return;
 
   var dragging = false;
-  var startX = 0;
-  var startW = 0;
+  var startX = 0, startY = 0;
+  var startW = 0, startH = 0;
 
   handle.addEventListener('mousedown', function(e){
     e.preventDefault();
     dragging = true;
     startX = e.clientX;
+    startY = e.clientY;
     startW = col.offsetWidth;
+    startH = col.querySelector('.search-panel').offsetHeight;
     handle.classList.add('dragging');
-    document.body.style.cursor = 'col-resize';
+    document.body.style.cursor = 'se-resize';
     document.body.style.userSelect = 'none';
   });
 
   document.addEventListener('mousemove', function(e){
     if(!dragging) return;
-    var delta = e.clientX - startX;
-    var newW = Math.min(600, Math.max(220, startW + delta));
+    var dX = e.clientX - startX;
+    var dY = e.clientY - startY;
+    var newW = Math.min(600, Math.max(220, startW + dX));
     layout.style.gridTemplateColumns = newW + 'px 1fr';
     localStorage.setItem('xtracker_panel_w', newW);
+    // Hauteur optionnelle
+    var panel = col.querySelector('.search-panel');
+    if(panel && startH + dY > 300){
+      panel.style.maxHeight = (startH + dY) + 'px';
+      panel.style.overflowY = 'auto';
+    }
   });
 
   document.addEventListener('mouseup', function(){
@@ -3758,6 +3819,30 @@ if(typeof renderResults==='function'){
     layout.style.gridTemplateColumns = saved + 'px 1fr';
   }
 })();
+
+// Overlay recherche
+function showSearchOverlay(){
+  var ov = document.getElementById('search-overlay');
+  if(ov) ov.classList.add('visible');
+}
+function hideSearchOverlay(){
+  var ov = document.getElementById('search-overlay');
+  if(ov) ov.classList.remove('visible');
+}
+// Patch doSearch pour afficher l'overlay
+var _origDoSearch = window.doSearch;
+if(typeof doSearch === 'function'){
+  var _orig = doSearch;
+  window.doSearch = async function(){
+    showSearchOverlay();
+    try{ await _orig.apply(this, arguments); }
+    finally{ hideSearchOverlay(); }
+  };
+}
+// Fallback si doSearch pas encore défini : on patche après
+document.getElementById('btn-search') && document.getElementById('btn-search').addEventListener('click', function(){
+  // L'overlay sera géré par le patch ci-dessus
+}, true);
 </script>
 </body>
 </html>
