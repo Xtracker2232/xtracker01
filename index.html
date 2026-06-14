@@ -17,7 +17,7 @@
   --bg:#04050d;--bg2:#080a15;--bg3:#0b0e1c;
   --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.1);
   --text:#eef0ff;--muted:#3d4270;--muted2:#7880b0;
-  --accent:#6366f1;--accent2:#818cf8;--violet:#a78bfa;
+  --accent:#ffffff;--accent2:#ffffff;--violet:#d0d0d0;
   --green:#22c55e;--red:#ef4444;
 }
 html{scroll-behavior:smooth}
@@ -31,24 +31,24 @@ nav{position:sticky;top:0;z-index:100;height:56px;padding:0 32px;display:flex;al
 .nav-right{display:flex;align-items:center;gap:10px}
 .btn-ghost{padding:7px 16px;border-radius:8px;font-size:13px;font-weight:500;border:1px solid var(--border);background:transparent;color:var(--muted2);cursor:pointer;font-family:inherit;transition:all .2s}
 .btn-ghost:hover{border-color:var(--border2);color:var(--text)}
-.btn-accent{padding:7px 16px;border-radius:8px;font-size:13px;font-weight:600;border:none;background:linear-gradient(135deg,var(--accent),var(--violet));color:#fff;cursor:pointer;font-family:inherit;transition:all .2s}
-.btn-accent:hover{box-shadow:0 4px 16px rgba(99,102,241,0.35)}
+.btn-accent{padding:7px 16px;border-radius:8px;font-size:13px;font-weight:600;border:none;background:#fff;color:#fff;cursor:pointer;font-family:inherit;transition:all .2s}
+.btn-accent:hover{box-shadow:0 4px 16px rgba(255,255,255,0.28)}
 
 /* HERO */
 .hero{display:flex;flex-direction:column;align-items:center;text-align:center;padding:60px 24px 48px;position:relative}
-.hero::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:600px;height:400px;background:radial-gradient(ellipse,rgba(99,102,241,0.08) 0%,transparent 70%);pointer-events:none}
+.hero::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:600px;height:400px;background:radial-gradient(ellipse,rgba(255,255,255,0.06) 0%,transparent 70%);pointer-events:none}
 
 /* BADGES */
 .badge-row{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-bottom:28px}
 .badge{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid var(--border)}
 .badge-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.badge-ai{background:linear-gradient(135deg,rgba(99,102,241,0.12),rgba(167,139,250,0.12));border-color:rgba(99,102,241,0.25);color:var(--accent2)}
+.badge-ai{background:linear-gradient(135deg,rgba(255,255,255,0.08),rgba(167,139,250,0.12));border-color:rgba(255,255,255,0.18);color:var(--accent2)}
 .badge-new{font-size:9px;font-weight:700;background:rgba(34,197,94,0.15);color:var(--green);border:1px solid rgba(34,197,94,0.25);padding:1px 6px;border-radius:8px}
 
 /* LOGO OEIL */
 .eye-wrap{width:min(480px,90vw);height:min(320px,60vw);margin:0 auto 12px;position:relative}
-.eye-svg{width:100%;height:100%;filter:drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 18px rgba(255,255,255,0.3)) drop-shadow(0 0 40px rgba(99,102,241,0.25))}
+.eye-svg{width:100%;height:100%;filter:drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 18px rgba(255,255,255,0.3)) drop-shadow(0 0 40px rgba(255,255,255,0.18))}
 
 /* TITRE */
 .hero-title{font-family:'Syne',sans-serif;font-size:clamp(32px,6vw,64px);font-weight:800;line-height:1.05;letter-spacing:-1px;margin-bottom:18px;max-width:700px}
@@ -57,8 +57,8 @@ nav{position:sticky;top:0;z-index:100;height:56px;padding:0 32px;display:flex;al
 
 /* BTNS HERO */
 .hero-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:48px}
-.btn-cta{padding:12px 28px;border-radius:10px;font-size:14px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--violet));color:#fff;border:none;cursor:pointer;font-family:'Syne',sans-serif;transition:all .2s;box-shadow:0 4px 20px rgba(99,102,241,0.3)}
-.btn-cta:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(99,102,241,0.45)}
+.btn-cta{padding:12px 28px;border-radius:10px;font-size:14px;font-weight:700;background:#fff;color:#fff;border:none;cursor:pointer;font-family:'Syne',sans-serif;transition:all .2s;box-shadow:0 4px 20px rgba(255,255,255,0.22)}
+.btn-cta:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(255,255,255,0.38)}
 .btn-disc{padding:12px 24px;border-radius:10px;font-size:14px;font-weight:600;background:transparent;color:var(--muted2);border:1px solid var(--border);cursor:pointer;font-family:inherit;transition:all .2s}
 .btn-disc:hover{border-color:var(--border2);color:var(--text)}
 
@@ -79,14 +79,14 @@ nav{position:sticky;top:0;z-index:100;height:56px;padding:0 32px;display:flex;al
 /* FEAT GRID */
 .feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .feat-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;transition:border-color .2s}
-.feat-card:hover{border-color:rgba(99,102,241,0.2)}
+.feat-card:hover{border-color:rgba(255,255,255,0.14)}
 .feat-ico{font-size:22px;margin-bottom:10px}
 .feat-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:6px}
 .feat-desc{font-size:12px;color:var(--muted2);line-height:1.6}
 
 /* IA CARD */
-.ia-card{background:linear-gradient(135deg,rgba(99,102,241,0.06),rgba(167,139,250,0.06));border:1px solid rgba(99,102,241,0.2);border-radius:16px;padding:32px;margin-bottom:16px;display:flex;gap:24px;align-items:center}
-.ia-icon{width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--violet));display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0}
+.ia-card{background:linear-gradient(135deg,rgba(255,255,255,0.04),rgba(167,139,250,0.06));border:1px solid rgba(255,255,255,0.14);border-radius:16px;padding:32px;margin-bottom:16px;display:flex;gap:24px;align-items:center}
+.ia-icon{width:56px;height:56px;border-radius:14px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0}
 .ia-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:6px}
 .ia-sub{font-size:13px;color:var(--muted2);line-height:1.6;margin-bottom:14px}
 .ia-examples{display:flex;flex-direction:column;gap:6px}
@@ -99,14 +99,14 @@ nav{position:sticky;top:0;z-index:100;height:56px;padding:0 32px;display:flex;al
 .free-badge{background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);color:var(--green);font-size:12px;font-weight:700;padding:4px 12px;border-radius:10px}
 .packs{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .pack{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:22px}
-.pack.feat{border-color:rgba(99,102,241,0.3)}
+.pack.feat{border-color:rgba(255,255,255,0.22)}
 .pack-tag{font-size:11px;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
 .pack-credits{font-size:14px;font-weight:600;margin-bottom:4px}
 .pack-price{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;margin-bottom:2px}
 .pack-price sup{font-size:14px;font-weight:500}
 .pack-per{font-size:11px;color:var(--muted2);margin-bottom:18px}
-.pack-btn{display:block;width:100%;padding:10px;border-radius:8px;font-size:13px;font-weight:600;text-align:center;background:linear-gradient(135deg,var(--accent),var(--violet));color:#fff;text-decoration:none;transition:all .2s}
-.pack-btn:hover{box-shadow:0 4px 14px rgba(99,102,241,0.35)}
+.pack-btn{display:block;width:100%;padding:10px;border-radius:8px;font-size:13px;font-weight:600;text-align:center;background:#fff;color:#fff;text-decoration:none;transition:all .2s}
+.pack-btn:hover{box-shadow:0 4px 14px rgba(255,255,255,0.28)}
 
 /* FOOTER */
 footer{border-top:1px solid var(--border);padding:24px 32px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
@@ -132,7 +132,7 @@ footer{border-top:1px solid var(--border);padding:24px 32px;display:flex;align-i
 }
 </style>
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#6366f1">
+  <meta name="theme-color" content="#ffffff">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Xtracker">
