@@ -5,67 +5,103 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Connexion — Xtracker</title>
 <link rel="icon" href="https://cdn.discordapp.com/attachments/1477415267452719208/1507796087233056948/image.png?ex=6a133408&is=6a11e288&hm=b4af399bdf49133320a238a67867ab111b04cacbd81ab1cd0875641645c10600&">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Xtracker">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#04050d;--bg2:#080b18;
-  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
-  --text:#eef0ff;--muted:#3a3f6e;--muted2:#6b75a8;
-  --accent:#6366f1;--accent2:#818cf8;--violet:#a78bfa;
+  --bg:#000;--bg2:#0d0d0d;
+  --border:rgba(255,255,255,0.12);--border2:rgba(255,255,255,0.22);
+  --text:#f0f0f0;--muted:#3a3a3a;--muted2:#787878;
 }
-html,body{min-height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text)}
-body{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:100vh}
-.bg-dots{position:fixed;inset:0;background-image:radial-gradient(rgba(99,102,241,0.12) 1px,transparent 1px);background-size:28px 28px;pointer-events:none;z-index:0}
-.bg-glow{position:fixed;top:-200px;right:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(99,102,241,0.06) 0%,transparent 65%);pointer-events:none;z-index:0}
-.bg-glow2{position:fixed;bottom:-200px;left:-200px;width:500px;height:500px;background:radial-gradient(circle,rgba(167,139,250,0.05) 0%,transparent 65%);pointer-events:none;z-index:0}
-.card{position:relative;z-index:1;width:100%;max-width:400px;padding:32px 28px;background:rgba(8,11,24,0.85);border:1px solid var(--border);border-radius:20px;backdrop-filter:blur(20px);box-shadow:0 24px 80px rgba(0,0,0,0.6);animation:fadeUp .4s ease both}
-@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
-.logo-wrap{text-align:center;margin-bottom:24px}
-.logo-img{width:56px;height:56px;border-radius:50%;margin:0 auto 12px;display:block}
-.logo-title{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;letter-spacing:-.5px}
-.logo-title span{color:var(--accent2)}
-.logo-sub{font-size:13px;color:var(--muted2);margin-top:4px}
-.tabs{display:flex;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:3px;margin-bottom:22px}
-.tab{flex:1;padding:8px;text-align:center;font-size:13px;font-weight:500;color:var(--muted2);cursor:pointer;border-radius:7px;border:none;background:transparent;font-family:inherit;transition:all .2s}
-.tab.active{background:rgba(99,102,241,0.15);color:var(--accent2);border:1px solid rgba(99,102,241,0.2)}
-.fgroup{margin-bottom:12px}
-label{display:block;font-size:11px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
-input{width:100%;padding:11px 14px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:9px;font-size:13px;color:var(--text);font-family:inherit;outline:none;transition:all .2s}
-input:focus{border-color:rgba(99,102,241,0.5);background:rgba(99,102,241,0.04);box-shadow:0 0 0 3px rgba(99,102,241,0.08)}
-input::placeholder{color:var(--muted)}
-.btn-submit{width:100%;padding:13px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;border:none;font-family:'Syne',sans-serif;background:linear-gradient(135deg,var(--accent),var(--violet));color:#fff;transition:all .2s;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:8px}
-.btn-submit:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(99,102,241,0.35)}
-.btn-submit:disabled{opacity:.6;cursor:not-allowed;transform:none}
-.err{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:#fca5a5;border-radius:8px;padding:9px 12px;font-size:12px;margin-bottom:12px;display:none}
-.ok{background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);color:#86efac;border-radius:8px;padding:9px 12px;font-size:12px;margin-bottom:12px;display:none}
-.cgu-line{text-align:center;font-size:11px;color:var(--muted2);margin-top:16px}
-.cgu-line a{color:var(--accent2)}
-.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-@media(max-width:480px){.card{margin:16px;padding:24px 20px}}
-</style>
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#6366f1">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Xtracker">
-  <link rel="apple-touch-icon" href="https://cdn.discordapp.com/attachments/1496954063328252046/1509267836986462379/814A93DD-C6C4-42D0-96EE-47FE964ED9D6.jpg?ex=6a188eb5&is=6a173d35&hm=dccfe16c5eac4f1b2e42f332fbaf92ab59cd31c7a94488cfa8fd802e893a7e93&">
+html,body{min-height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
+body{position:relative;display:flex;align-items:center;justify-content:center;min-height:100vh;overflow:hidden}
 
-<style>
+/* Grille de points */
+.bg-dots{position:fixed;inset:0;background-image:radial-gradient(rgba(255,255,255,0.06) 1px,transparent 1px);background-size:28px 28px;pointer-events:none;z-index:0}
+
+/* Étoiles filantes */
 .star{position:fixed;top:0;left:0;width:2px;height:2px;background:#fff;border-radius:50%;opacity:0;pointer-events:none;z-index:0}
 .star::after{content:'';position:absolute;top:0;right:0;width:80px;height:1px;background:linear-gradient(to left,rgba(255,255,255,0.8),transparent);transform-origin:right center}
 @keyframes shoot{0%{transform:translate(0,0) rotate(215deg);opacity:1}100%{transform:translate(400px,400px) rotate(215deg);opacity:0}}
+
+/* Card */
+.card{
+  position:relative;z-index:1;
+  width:100%;max-width:400px;
+  padding:36px 32px;
+  background:rgba(12,12,12,0.96);
+  border:1px solid var(--border);
+  border-radius:18px;
+  backdrop-filter:blur(20px);
+  box-shadow:0 24px 80px rgba(0,0,0,0.8);
+  animation:fadeUp .4s ease both;
+  margin:20px;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+
+/* Logo */
+.logo-wrap{text-align:center;margin-bottom:28px}
+.logo-title{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;letter-spacing:-.5px;color:#fff}
+.logo-title span{color:var(--muted2)}
+.logo-sub{font-size:13px;color:var(--muted2);margin-top:6px}
+
+/* Tabs */
+.tabs{display:flex;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:3px;margin-bottom:24px}
+.tab{flex:1;padding:8px;text-align:center;font-size:13px;font-weight:600;color:var(--muted2);cursor:pointer;border-radius:7px;border:none;background:transparent;font-family:inherit;transition:all .2s}
+.tab.active{background:rgba(255,255,255,0.10);color:#fff;border:1px solid var(--border2)}
+
+/* Formulaire */
+.fgroup{margin-bottom:14px}
+label{display:block;font-size:10px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+input{
+  width:100%;padding:11px 14px;
+  background:#151515;
+  border:1px solid rgba(255,255,255,0.14);
+  border-radius:9px;
+  font-size:13px;color:var(--text);font-family:inherit;
+  outline:none;transition:all .2s;
+}
+input:focus{border-color:rgba(255,255,255,0.45);background:#1d1d1d;box-shadow:0 0 0 3px rgba(255,255,255,0.05)}
+input::placeholder{color:rgba(255,255,255,0.22)}
+
+/* Bouton */
+.btn-submit{
+  width:100%;padding:13px;border-radius:10px;
+  font-size:14px;font-weight:700;cursor:pointer;
+  border:1px solid rgba(255,255,255,0.3);
+  font-family:'Syne',sans-serif;
+  background:#fff;color:#0a0a0a;
+  transition:all .2s;margin-top:4px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn-submit:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(255,255,255,0.15)}
+.btn-submit:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+/* Messages */
+.err{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);color:#fca5a5;border-radius:8px;padding:9px 12px;font-size:12px;margin-bottom:12px;display:none}
+.ok{background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);color:#86efac;border-radius:8px;padding:9px 12px;font-size:12px;margin-bottom:12px;display:none}
+
+/* CGU */
+.cgu-line{text-align:center;font-size:11px;color:var(--muted2);margin-top:16px}
+.cgu-line a{color:rgba(255,255,255,0.6);text-decoration:underline}
+
+/* Spinner */
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,0,0,0.3);border-top-color:#0a0a0a;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:480px){.card{padding:24px 20px}}
 </style>
 </head>
 <body>
 <div class="bg-dots"></div>
-<div class="bg-glow"></div>
-<div class="bg-glow2"></div>
 
 <div class="card">
   <div class="logo-wrap">
-    
     <div class="logo-title">X<span>tracker</span></div>
     <div class="logo-sub" id="ref-msg">Connectez-vous pour accéder à la plateforme</div>
   </div>
@@ -143,203 +179,39 @@ async function doRegister(){
     const r=await fetch(API+'/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,password:pass,ref_code:refCode})});
     const d=await r.json();
     if(!r.ok){showErr(d.detail||'Erreur inscription.');return}
-    const tok = d.token || (d.data && d.data.token);
-    const usr = d.user || d.data;
-    if(!tok){showErr('Erreur: token manquant');return;}
-    localStorage.setItem('token', tok);
-    sessionStorage.setItem('token', tok);
-    localStorage.setItem('user', JSON.stringify(usr||{}));
-    sessionStorage.setItem('user', JSON.stringify(usr||{}));
+    const tok=d.token||(d.data&&d.data.token);
+    const usr=d.user||d.data;
+    if(!tok){showErr('Erreur: token manquant');return}
+    localStorage.setItem('token',tok);
+    sessionStorage.setItem('token',tok);
+    localStorage.setItem('user',JSON.stringify(usr||{}));
+    sessionStorage.setItem('user',JSON.stringify(usr||{}));
     window.location.replace('dashboard.html');
   }catch(e){showErr('Erreur réseau.')}
   finally{setLoad('btn-register',false,'Créer mon compte')}
 }
-</script>
-  <script>
-    if('serviceWorker' in navigator){
-      navigator.serviceWorker.register('/sw.js').catch(function(){});
-    }
-  </script>
 
-<script>
+// Étoiles filantes
 (function(){
   function makeStar(){
-    var s=document.createElement('div');
-    s.className='star';
-    var x=Math.random()*window.innerWidth;
-    var y=Math.random()*window.innerHeight*0.5;
-    s.style.left=x+'px';
-    s.style.top=y+'px';
+    var s=document.createElement('div');s.className='star';
+    s.style.left=Math.random()*window.innerWidth+'px';
+    s.style.top=Math.random()*window.innerHeight*0.5+'px';
     s.style.opacity='1';
     s.style.animation='shoot '+(0.6+Math.random()*0.8)+'s linear forwards';
     document.body.appendChild(s);
     setTimeout(function(){s.remove()},1500);
   }
-  function loop(){
-    makeStar();
-    setTimeout(loop,400+Math.random()*1200);
-  }
+  function loop(){makeStar();setTimeout(loop,400+Math.random()*1200)}
   loop();
 })();
-</script>
 
-</body>
-</html><!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Connexion — Xtracker</title>
-<link rel="icon" href="https://cdn.discordapp.com/attachments/1477415267452719208/1507796087233056948/image.png?ex=6a133408&is=6a11e288&hm=b4af399bdf49133320a238a67867ab111b04cacbd81ab1cd0875641645c10600&">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#04050d;--bg2:#080b18;
-  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
-  --text:#eef0ff;--muted:#3a3f6e;--muted2:#6b75a8;
-  --accent:#6366f1;--accent2:#818cf8;--violet:#a78bfa;
-}
-html,body{min-height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text)}
-body{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:100vh}
-.bg-dots{position:fixed;inset:0;background-image:radial-gradient(rgba(99,102,241,0.12) 1px,transparent 1px);background-size:28px 28px;pointer-events:none;z-index:0}
-.bg-glow{position:fixed;top:-200px;right:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(99,102,241,0.06) 0%,transparent 65%);pointer-events:none;z-index:0}
-.bg-glow2{position:fixed;bottom:-200px;left:-200px;width:500px;height:500px;background:radial-gradient(circle,rgba(167,139,250,0.05) 0%,transparent 65%);pointer-events:none;z-index:0}
-.card{position:relative;z-index:1;width:100%;max-width:400px;padding:32px 28px;background:rgba(8,11,24,0.85);border:1px solid var(--border);border-radius:20px;backdrop-filter:blur(20px);box-shadow:0 24px 80px rgba(0,0,0,0.6);animation:fadeUp .4s ease both}
-@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
-.logo-wrap{text-align:center;margin-bottom:24px}
-.logo-img{width:56px;height:56px;border-radius:50%;margin:0 auto 12px;display:block}
-.logo-title{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;letter-spacing:-.5px}
-.logo-title span{color:var(--accent2)}
-.logo-sub{font-size:13px;color:var(--muted2);margin-top:4px}
-.tabs{display:flex;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:3px;margin-bottom:22px}
-.tab{flex:1;padding:8px;text-align:center;font-size:13px;font-weight:500;color:var(--muted2);cursor:pointer;border-radius:7px;border:none;background:transparent;font-family:inherit;transition:all .2s}
-.tab.active{background:rgba(99,102,241,0.15);color:var(--accent2);border:1px solid rgba(99,102,241,0.2)}
-.fgroup{margin-bottom:12px}
-label{display:block;font-size:11px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
-input{width:100%;padding:11px 14px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:9px;font-size:13px;color:var(--text);font-family:inherit;outline:none;transition:all .2s}
-input:focus{border-color:rgba(99,102,241,0.5);background:rgba(99,102,241,0.04);box-shadow:0 0 0 3px rgba(99,102,241,0.08)}
-input::placeholder{color:var(--muted)}
-.btn-submit{width:100%;padding:13px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;border:none;font-family:'Syne',sans-serif;background:linear-gradient(135deg,var(--accent),var(--violet));color:#fff;transition:all .2s;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:8px}
-.btn-submit:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(99,102,241,0.35)}
-.btn-submit:disabled{opacity:.6;cursor:not-allowed;transform:none}
-.err{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:#fca5a5;border-radius:8px;padding:9px 12px;font-size:12px;margin-bottom:12px;display:none}
-.ok{background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);color:#86efac;border-radius:8px;padding:9px 12px;font-size:12px;margin-bottom:12px;display:none}
-.cgu-line{text-align:center;font-size:11px;color:var(--muted2);margin-top:16px}
-.cgu-line a{color:var(--accent2)}
-.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-@media(max-width:480px){.card{margin:16px;padding:24px 20px}}
-</style>
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#6366f1">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Xtracker">
-  <link rel="apple-touch-icon" href="https://cdn.discordapp.com/attachments/1496954063328252046/1509267836986462379/814A93DD-C6C4-42D0-96EE-47FE964ED9D6.jpg?ex=6a188eb5&is=6a173d35&hm=dccfe16c5eac4f1b2e42f332fbaf92ab59cd31c7a94488cfa8fd802e893a7e93&">
-
-<style>
-.star{position:fixed;top:0;left:0;width:2px;height:2px;background:#fff;border-radius:50%;opacity:0;pointer-events:none;z-index:0}
-.star::after{content:'';position:absolute;top:0;right:0;width:80px;height:1px;background:linear-gradient(to left,rgba(255,255,255,0.8),transparent);transform-origin:right center}
-@keyframes shoot{0%{transform:translate(0,0) rotate(215deg);opacity:1}100%{transform:translate(400px,400px) rotate(215deg);opacity:0}}
-</style>
-</head>
-<body>
-<div class="bg-dots"></div>
-<div class="bg-glow"></div>
-<div class="bg-glow2"></div>
-
-
-
-<script>
-const API='';
-function g(id){return document.getElementById(id)}
-function showErr(msg){const e=g('msg-err');e.textContent=msg;e.style.display='block';g('msg-ok').style.display='none'}
-function showOk(msg){const e=g('msg-ok');e.textContent=msg;e.style.display='block';g('msg-err').style.display='none'}
-function clearMsg(){g('msg-err').style.display='none';g('msg-ok').style.display='none'}
-
-function switchTab(t){
-  g('pane-login').style.display=t==='login'?'block':'none';
-  g('pane-register').style.display=t==='register'?'block':'none';
-  g('tab-login').classList.toggle('active',t==='login');
-  g('tab-register').classList.toggle('active',t==='register');
-  clearMsg();
-}
-
-function setLoad(id,on,label){
-  const b=g(id);if(!b)return;
-  b.disabled=on;
-  b.innerHTML=on?'<span class="spin"></span>':label;
-}
-
-async function doLogin(){
-  const user=g('l-user').value.trim();
-  const pass=g('l-pass').value;
-  if(!user||!pass){showErr('Remplissez tous les champs.');return}
-  setLoad('btn-login',true,'');
-  try{
-    const r=await fetch(API+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,password:pass})});
-    const d=await r.json();
-    if(!r.ok){showErr(d.detail||'Identifiants incorrects.');return}
-    localStorage.clear();
-    localStorage.setItem('token',d.token);
-    localStorage.setItem('user',JSON.stringify(d.user));
-    showOk('Connexion réussie...');
-    setTimeout(()=>{window.location.href=d.user.role==='admin'?'admin.html':'dashboard.html'},600);
-  }catch(e){showErr('Erreur réseau.')}
-  finally{setLoad('btn-login',false,'Se connecter')}
-}
-
-async function doRegister(){
-  const user=g('r-user').value.trim();
-  const pass=g('r-pass').value;
-  if(!user||!pass){showErr('Remplissez tous les champs.');return}
-  if(pass.length<8){showErr('Mot de passe trop court (8 caractères min).');return}
-  setLoad('btn-register',true,'');
-  const refCode=new URLSearchParams(window.location.search).get('ref')||'';
-  try{
-    const r=await fetch(API+'/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,password:pass,ref_code:refCode})});
-    const d=await r.json();
-    if(!r.ok){showErr(d.detail||'Erreur inscription.');return}
-    const tok = d.token || (d.data && d.data.token);
-    const usr = d.user || d.data;
-    if(!tok){showErr('Erreur: token manquant');return;}
-    localStorage.setItem('token', tok);
-    sessionStorage.setItem('token', tok);
-    localStorage.setItem('user', JSON.stringify(usr||{}));
-    sessionStorage.setItem('user', JSON.stringify(usr||{}));
-    window.location.replace('dashboard.html');
-  }catch(e){showErr('Erreur réseau.')}
-  finally{setLoad('btn-register',false,'Créer mon compte')}
-}
-</script>
-  <script>
-    if('serviceWorker' in navigator){
-      navigator.serviceWorker.register('/sw.js').catch(function(){});
-    }
-  </script>
-
-<script>
+// Referral
 (function(){
-  function makeStar(){
-    var s=document.createElement('div');
-    s.className='star';
-    var x=Math.random()*window.innerWidth;
-    var y=Math.random()*window.innerHeight*0.5;
-    s.style.left=x+'px';
-    s.style.top=y+'px';
-    s.style.opacity='1';
-    s.style.animation='shoot '+(0.6+Math.random()*0.8)+'s linear forwards';
-    document.body.appendChild(s);
-    setTimeout(function(){s.remove()},1500);
-  }
-  function loop(){
-    makeStar();
-    setTimeout(loop,400+Math.random()*1200);
-  }
-  loop();
+  var ref=new URLSearchParams(window.location.search).get('ref');
+  if(ref){var el=g('ref-msg');if(el)el.textContent='Vous avez été invité — créez votre compte gratuitement';}
 })();
 </script>
-
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){})}</script>
 </body>
 </html>

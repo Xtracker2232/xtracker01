@@ -363,7 +363,53 @@ select option{background:var(--bg2)}
   background:var(--bg2);
   border:1px solid var(--border);
   border-radius:14px;
-  overflow:hidden;
+  overflow:visible;
+  position:relative;
+}
+
+/* Néon blanc tournant */
+.search-panel::before{
+  content:'';
+  position:absolute;
+  inset:-1px;
+  border-radius:15px;
+  background:conic-gradient(
+    from var(--neon-angle, 0deg),
+    transparent 0deg,
+    transparent 60deg,
+    rgba(255,255,255,0.9) 90deg,
+    rgba(255,255,255,0.4) 110deg,
+    transparent 140deg,
+    transparent 360deg
+  );
+  z-index:-1;
+  animation:neonSpin 3s linear infinite;
+  filter:blur(1px);
+}
+.search-panel::after{
+  content:'';
+  position:absolute;
+  inset:-3px;
+  border-radius:17px;
+  background:conic-gradient(
+    from var(--neon-angle, 0deg),
+    transparent 0deg,
+    transparent 60deg,
+    rgba(255,255,255,0.25) 90deg,
+    rgba(255,255,255,0.08) 110deg,
+    transparent 140deg,
+    transparent 360deg
+  );
+  z-index:-2;
+  animation:neonSpin 3s linear infinite;
+  filter:blur(6px);
+}
+@property --neon-angle{
+  syntax:'<angle>';initial-value:0deg;inherits:false;
+}
+@keyframes neonSpin{
+  from{--neon-angle:0deg}
+  to{--neon-angle:360deg}
 }
 
 /* Onglets */
