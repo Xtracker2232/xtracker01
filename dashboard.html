@@ -74,7 +74,7 @@ body::after{
   color:#fff;letter-spacing:-.3px;cursor:pointer;flex-shrink:0;
 }
 .navbar-logo span{color:var(--muted2)}
-.navbar-nav{display:flex;align-items:center;gap:1px;flex:1;justify-content:center}
+.navbar-nav{display:flex;align-items:center;gap:1px;flex:1;justify-content:center;user-select:none}
 .nav-btn{
   display:flex;align-items:center;gap:5px;
   padding:5px 10px;border-radius:6px;
@@ -83,9 +83,24 @@ body::after{
   background:transparent;font-family:inherit;
   transition:color .15s,background .15s;
   white-space:nowrap;letter-spacing:-.1px;
+  position:relative;
 }
 .nav-btn:hover{background:rgba(255,255,255,0.06);color:var(--text2)}
 .nav-btn.active{background:rgba(255,255,255,0.10);color:#fff;font-weight:600}
+.nav-btn.dragging-nav{
+  opacity:0.4;
+  background:rgba(255,255,255,0.08) !important;
+}
+.nav-btn.drag-over-nav{
+  background:rgba(255,255,255,0.12) !important;
+}
+.nav-insert-indicator{
+  width:2px;height:22px;
+  background:#fff;border-radius:2px;
+  pointer-events:none;flex-shrink:0;
+  animation:indPulse .6s ease infinite alternate;
+}
+@keyframes indPulse{from{opacity:.5}to{opacity:1}}
 .navbar-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
 .credits-badge{
   font-size:12px;font-weight:600;color:var(--text2);
@@ -2409,8 +2424,172 @@ function setActiveBottom(btn){
 }
 checkMobile();
 window.addEventListener('resize', checkMobile);
-// Empêcher l'autofill du champ utilisateur
-setTimeout(function(){var f=document.getElementById('f-nom_utilisateur');if(f)f.value='';},100);
+
+// ── DRAG & DROP NAVBAR ────────────────────────────────────────────────────────
+(function(){
+  const nav = document.querySelector('.navbar-nav');
+  if(!nav) return;
+
+  let dragEl = null;
+  let indicator = null;
+  let longPressTimer = null;
+  let isDragging = false;
+  let startX = 0, startY = 0;
+
+  function createIndicator(){
+    indicator = document.createElement('div');
+    indicator.className = 'nav-insert-indicator';
+    return indicator;
+  }
+
+  function removeIndicator(){
+    if(indicator && indicator.parentNode) indicator.parentNode.removeChild(indicator);
+    indicator = null;
+  }
+
+  function saveOrder(){
+    const order = Array.from(nav.children)
+      .filter(el => el.id && el.id.startsWith('nav-'))
+      .map(el => el.id);
+    localStorage.setItem('xtracker_nav_order', JSON.stringify(order));
+  }
+
+  function restoreOrder(){
+    try{
+      const saved = JSON.parse(localStorage.getItem('xtracker_nav_order'));
+      if(!saved || !saved.length) return;
+      saved.forEach(id => {
+        const el = document.getElementById(id);
+        if(el) nav.appendChild(el);
+      });
+    }catch(e){}
+  }
+
+  function getNavBtns(){
+    return Array.from(nav.children).filter(el => !el.classList.contains('nav-insert-indicator'));
+  }
+
+  function getNearestBtn(clientX){
+    const btns = getNavBtns().filter(b => b !== dragEl);
+    let best = null, bestDist = Infinity;
+    let insertBefore = null;
+
+    for(let btn of btns){
+      const r = btn.getBoundingClientRect();
+      const mid = r.left + r.width / 2;
+      const dist = Math.abs(clientX - mid);
+      if(dist < bestDist){
+        bestDist = dist;
+        best = btn;
+        insertBefore = clientX < mid;
+      }
+    }
+    return {btn: best, before: insertBefore};
+  }
+
+  function onDragMove(clientX, clientY){
+    if(!isDragging || !dragEl) return;
+    removeIndicator();
+    const {btn, before} = getNearestBtn(clientX);
+    if(!btn) return;
+    const ind = createIndicator();
+    if(before) nav.insertBefore(ind, btn);
+    else btn.after(ind);
+  }
+
+  function onDragEnd(clientX){
+    if(!isDragging || !dragEl) return;
+    isDragging = false;
+
+    const {btn, before} = getNearestBtn(clientX);
+    removeIndicator();
+
+    if(btn){
+      if(before) nav.insertBefore(dragEl, btn);
+      else btn.after(dragEl);
+    }
+
+    dragEl.classList.remove('dragging-nav');
+    dragEl.style.opacity = '';
+    dragEl = null;
+    saveOrder();
+  }
+
+  function startLongPress(el, e){
+    const touch = e.touches ? e.touches[0] : e;
+    startX = touch.clientX;
+    startY = touch.clientY;
+
+    longPressTimer = setTimeout(function(){
+      isDragging = true;
+      dragEl = el;
+      el.classList.add('dragging-nav');
+      // Vibration si dispo
+      if(navigator.vibrate) navigator.vibrate(30);
+    }, 400);
+  }
+
+  function cancelLongPress(){
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+    if(!isDragging) dragEl = null;
+  }
+
+  // Mouse events (desktop)
+  nav.addEventListener('mousedown', function(e){
+    const btn = e.target.closest('.nav-btn');
+    if(!btn) return;
+    startX = e.clientX;
+    startY = e.clientY;
+    longPressTimer = setTimeout(function(){
+      isDragging = true;
+      dragEl = btn;
+      btn.classList.add('dragging-nav');
+    }, 400);
+  });
+
+  document.addEventListener('mousemove', function(e){
+    if(!isDragging) return;
+    onDragMove(e.clientX, e.clientY);
+  });
+
+  document.addEventListener('mouseup', function(e){
+    clearTimeout(longPressTimer);
+    if(isDragging) onDragEnd(e.clientX);
+    isDragging = false;
+  });
+
+  // Touch events (mobile)
+  nav.addEventListener('touchstart', function(e){
+    const btn = e.target.closest('.nav-btn');
+    if(!btn) return;
+    startLongPress(btn, e);
+  }, {passive:true});
+
+  document.addEventListener('touchmove', function(e){
+    if(!isDragging){ cancelLongPress(); return; }
+    e.preventDefault();
+    onDragMove(e.touches[0].clientX, e.touches[0].clientY);
+  }, {passive:false});
+
+  document.addEventListener('touchend', function(e){
+    clearTimeout(longPressTimer);
+    if(isDragging) onDragEnd(e.changedTouches[0].clientX);
+    isDragging = false;
+  });
+
+  // Restaurer l'ordre sauvegardé au chargement
+  restoreOrder();
+})();
+// Vider tous les champs au chargement (anti-autofill)
+setTimeout(function(){
+  document.querySelectorAll('input:not([type="password"]):not([type="checkbox"])').forEach(function(el){
+    el.value='';
+  });
+  document.querySelectorAll('select').forEach(function(el){
+    el.selectedIndex=0;
+  });
+},150);
 
 // ── TICKETS ──────────────────────────────────────────────────────────────────
 function showNewTicket(){g('new-ticket-form').style.display='block'}
