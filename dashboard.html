@@ -566,7 +566,7 @@ label{
   background:var(--bg2);
   border:1px solid var(--border);
   border-radius:12px;
-  padding:18px;
+  padding:14px;
 }
 .profile-row{
   display:flex;align-items:center;justify-content:space-between;
@@ -837,7 +837,7 @@ label{
         </div>
       </div>
       <div class="results-col">
-        <div class="results-col" class="state" id="state-empty">
+        <div id="state-empty" style="text-align:center;padding:60px 20px">
           <div class="state-ico"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
           <div class="state-title">Pret a rechercher</div>
           <div class="state-sub">Remplissez au moins un champ et lancez la recherche.</div>
@@ -1035,7 +1035,7 @@ label{
 
 <!-- PAGE PROFIL -->
   <div class="page" id="page-profile">
-    <div style="display:grid;grid-template-columns:1fr;gap:12px" id="profile-grid">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px" id="profile-grid">
 
     <!-- COLONNE GAUCHE -->
     <div>
@@ -1050,7 +1050,7 @@ label{
       </div>
     </div>
 
-    <div class="profile-box" style="margin-top:12px">
+    <div class="profile-box">
       <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:14px">Changer le mot de passe</div>
       <div class="fgroup" style="margin-bottom:10px"><label>Mot de passe actuel</label><input id="pw-current" type="password" placeholder="••••••••"></div>
       <div class="fgroup" style="margin-bottom:10px"><label>Nouveau mot de passe</label><input id="pw-new" type="password" placeholder="8 caracteres minimum"></div>
@@ -1058,7 +1058,7 @@ label{
       <button class="btn btn-a" style="width:100%" onclick="changePassword()">Modifier le mot de passe</button>
     </div>
 
-    <div class="profile-box" style="margin-top:12px">
+    <div class="profile-box">
       <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:14px">Personnaliser le theme</div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px" id="theme-grid">
         <button class="theme-btn" data-theme="default" onclick="applyTheme('default',this)"><div style="width:100%;height:28px;border-radius:6px;background:linear-gradient(135deg,#ffffff,#d0d0d0)"></div><div style="font-size:10px;margin-top:4px;color:var(--muted2)">Defaut</div></button>
@@ -1123,7 +1123,7 @@ label{
     </div>
 
     <!-- PARRAINAGE -->
-    <div class="profile-box" style="margin-top:12px">
+    <div class="profile-box">
       <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:4px">Lien de parrainage</div>
       <div style="font-size:12px;color:var(--muted2);margin-bottom:14px">Gagnez 5 credits pour chaque compte cree grace a votre lien</div>
       <div id="referral-loading" style="color:var(--muted2);font-size:13px">Chargement...</div>
@@ -3728,29 +3728,7 @@ function renderTags(p){
     return '<span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600;letter-spacing:.3px;background:'+t.c+';border:1px solid '+t.b+';color:'+t.t+';backdrop-filter:blur(4px)">'+t.l+'</span>';
   }).join('')+'</div>';
 }
-// Patch renderResults pour injecter les tags
-var _origRender=window.renderResults;
-if(typeof renderResults==='function'){
-  var _orig=renderResults;
-  window.renderResults=function(results,total,took,free_left,credits){
-    _orig(results,total,took,free_left,credits);
-    // Injecter les tags dans chaque card
-    if(results&&results.length){
-      results.forEach(function(p,i){
-        var meta=document.querySelector('#rb'+i+' .rmeta')||document.querySelectorAll('.rmeta')[i];
-        if(meta&&!meta.querySelector('.person-tags')){
-          var tagsHtml=renderTags(p);
-          if(tagsHtml){
-            var div=document.createElement('div');
-            div.className='person-tags';
-            div.innerHTML=tagsHtml;
-            meta.parentNode.insertBefore(div,meta.nextSibling);
-          }
-        }
-      });
-    }
-  };
-}
+// tags injectés directement dans renderResults
 </script>
 
 <div id="fiche-picker-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:2000;align-items:center;justify-content:center">
