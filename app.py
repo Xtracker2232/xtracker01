@@ -601,11 +601,39 @@ async def me(user=Depends(get_current_user)):
 # ── SEARCH ────────────────────────────────────────────────────────────────────
 async def call_brix(method: str, path: str, body: dict = None):
     headers = {
-        "X-API-Key":    BRIX_KEY,
+        "X-API-Key": BRIX_KEY,
         "Content-Type": "application/json",
-        "Accept":       "application/json",
-        "User-Agent":   "Xtracker/1.0",
+        "Accept": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",  # ⚠️ CHANGEMENT ICI
     }
+    try:
+        async with httpx.AsyncClient(timeout=25, follow_redirects=True, http2=False) as client:
+            if method == "POST":
+                r = await client.post(f"{BRIX_BASE}{path}", json=body, headers=headers)
+            else:
+                r = await client.get(f"{BRIX_BASE}{path}", headers=headers)
+        if r.status_code == 200:
+            try:
+                return r.json()
+            except Exception:
+                raise HTTPException(500, "Reponse invalide de l API")
+        elif r.status_code == 500:
+            raise HTTPException(500, "Aucun resultat pour cette recherche")
+        elif r.status_code == 403:
+            print(f"[BRIX 403] Key: {BRIX_KEY[:10]}... Response: {r.text[:200]}")
+            # ⚠️ CHANGEMENT ICI : message plus clair
+            raise HTTPException(403, "Erreur API 403 - verifiez votre clé ou votre quota")
+        elif r.status_code == 429:
+            raise HTTPException(429, "Trop de requetes, reessayez dans quelques secondes")
+        elif r.status_code == 401:
+            raise HTTPException(401, "Cle API invalide")
+        else:
+            raise HTTPException(r.status_code, f"Erreur API {r.status_code}")
+    except httpx.TimeoutException:
+        raise HTTPException(504, "Timeout - reessayez dans quelques secondes")
+    except httpx.NetworkError:
+        raise HTTPException(503, "Erreur reseau - service temporairement indisponible")
+    
     try:
         async with httpx.AsyncClient(timeout=25, follow_redirects=True, http2=False) as client:
             if method == "POST":
