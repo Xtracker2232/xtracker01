@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from passlib.context import CryptContext
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
-import os, json, httpx, sqlite3, secrets as _secrets, asyncio, time, random
+import os, json, httpx, sqlite3, secrets as _secrets, asyncio, time, random, hashlib, re, string, unicodedata
 
 try:
     import psycopg2
@@ -36,7 +36,7 @@ ADMIN_EMAIL    = os.getenv("ADMIN_EMAIL", "")
 ALGORITHM      = "HS256"
 TOKEN_EXPIRE   = 60 * 24 * 365  # 1 an
 BRIX_KEY       = os.getenv("BRIX_API_KEY", "")
-BRIX_BASE      = "https://brixhub.top/api/v1/"  
+BRIX_BASE      = "https://brixhub.top/api/v1"  # ✅ Pas de slash final, on l'ajoute dans l'appel
 SUMUP_SK = os.getenv("SUMUP_SK", "")
 SUMUP_PK = os.getenv("SUMUP_PK", "")
 SUMUP_MERCHANT = "Shop2ToutMHN3Z5RX"
@@ -449,7 +449,6 @@ class ChangePasswordModel(BaseModel):
 
 @app.post("/api/auth/register")
 async def register(data: RegisterModel, request: Request):
-    import re, secrets, string
     ip = request.headers.get("CF-Connecting-IP") or request.headers.get("X-Forwarded-For","").split(",")[0].strip() or request.client.host
     if check_rate_limit(f"register:{ip}", max_requests=3, window=300):
         raise HTTPException(429, "Trop d'inscriptions depuis cette IP, réessayez dans 5 minutes")
@@ -598,6 +597,16 @@ async def me(user=Depends(get_current_user)):
     }
 
 # ── SEARCH ────────────────────────────────────────────────────────────────────
+# Cache pour éviter les doublons
+_search_cache = {}
+CACHE_TTL = 300  # 5 minutes
+
+def get_cache_key(method: str, path: str, body: dict = None) -> str:
+    key = f"{method}:{path}"
+    if body:
+        key += f":{json.dumps(body, sort_keys=True)}"
+    return hashlib.md5(key.encode()).hexdigest()
+
 async def call_brix(method: str, path: str, body: dict = None, use_cache: bool = True):
     """
     Appelle l'API BrixHub avec contournement Cloudflare
@@ -611,15 +620,15 @@ async def call_brix(method: str, path: str, body: dict = None, use_cache: bool =
             if time.time() - timestamp < CACHE_TTL:
                 return cached_data
     
-    # ⏱️ Petit délai pour éviter le rate limiting Cloudflare (0.5 à 1.5 secondes)
-    await asyncio.sleep(random.uniform(0.5, 1.5))
+    # ⏱️ Petit délai pour éviter le rate limiting Cloudflare
+    await asyncio.sleep(random.uniform(0.8, 1.8))
     
-    # ✅ HEADERS CORRIGÉS
+    # ✅ HEADERS COMPLETS POUR CONTOURNER CLOUDFLARE
     headers = {
         "X-API-Key": BRIX_KEY,
         "Content-Type": "application/json",
         "Accept": "application/json",
-        "Accept-Encoding": "identity",  # ⚠️ Désactive la compression GZIP
+        "Accept-Encoding": "identity",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7",
         "Cache-Control": "no-cache",
@@ -641,122 +650,66 @@ async def call_brix(method: str, path: str, body: dict = None, use_cache: bool =
             follow_redirects=True,
             http2=False
         ) as client:
+            # Construction de l'URL avec le slash final
+            url = f"{BRIX_BASE}{path}"
+            # Si BRIX_BASE se termine par / et path commence par /, on évite le double slash
+            if BRIX_BASE.endswith('/') and path.startswith('/'):
+                url = f"{BRIX_BASE}{path[1:]}"
+            
             if method == "POST":
-                r = await client.post(f"{BRIX_BASE}{path}", json=body, headers=headers)
+                r = await client.post(url, json=body, headers=headers)
             else:
-                r = await client.get(f"{BRIX_BASE}{path}", headers=headers)
+                r = await client.get(url, headers=headers)
             
             # Si 403 Cloudflare, réessayer avec un délai plus long
             if r.status_code == 403 and ('cf-ray' in r.headers or 'Just a moment' in r.text):
                 print(f"[BRIX] Cloudflare détecté, nouvelle tentative dans 2s...")
                 await asyncio.sleep(2 + random.random())
                 if method == "POST":
-                    r = await client.post(f"{BRIX_BASE}{path}", json=body, headers=headers)
+                    r = await client.post(url, json=body, headers=headers)
                 else:
-                    r = await client.get(f"{BRIX_BASE}{path}", headers=headers)
+                    r = await client.get(url, headers=headers)
             
-            if r.status_code == 200:
-                try:
-                    data = r.json()
-                    if use_cache and method == "POST" and body:
-                        cache_key = get_cache_key(method, path, body)
-                        _search_cache[cache_key] = (data, time.time())
-                    return data
-                except Exception:
-                    raise HTTPException(500, "Reponse invalide de l API")
-            elif r.status_code == 403:
-                print(f"[BRIX 403] Response: {r.text[:200]}")
-                if 'cf-ray' in r.headers or 'Just a moment' in r.text or r.text.startswith('<!DOCTYPE'):
-                    raise HTTPException(403, "Cloudflare bloque la requête. Veuillez réessayer dans quelques secondes.")
-                raise HTTPException(403, "Erreur API 403 - verifiez votre clé ou votre quota")
-            elif r.status_code == 500:
-                raise HTTPException(500, "Aucun resultat pour cette recherche")
-            elif r.status_code == 429:
-                raise HTTPException(429, "Trop de requetes, reessayez dans quelques secondes")
-            elif r.status_code == 401:
-                raise HTTPException(401, "Cle API invalide")
-            else:
-                raise HTTPException(r.status_code, f"Erreur API {r.status_code}")
-    except httpx.TimeoutException:
-        raise HTTPException(504, "Timeout - reessayez dans quelques secondes")
-    except httpx.NetworkError:
-        raise HTTPException(503, "Erreur reseau - service temporairement indisponible")
-    except Exception as e:
-        print(f"[BRIX] Erreur inattendue: {e}")
-        raise HTTPException(500, f"Erreur interne: {str(e)}")
-    
-    # Headers complets pour imiter un vrai navigateur
-    headers = {
-        "X-API-Key": BRIX_KEY,
-        "Content-Type": "application/json",
-        "Accept": "application/json, text/plain, */*",
-        "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Connection": "keep-alive",
-        "Cache-Control": "no-cache",
-        "Pragma": "no-cache",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Sec-Ch-Ua": '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-        "Sec-Ch-Ua-Mobile": "?0",
-        "Sec-Ch-Ua-Platform": '"Windows"',
-        "Sec-Fetch-Dest": "empty",
-        "Sec-Fetch-Mode": "cors",
-        "Sec-Fetch-Site": "same-origin",
-        "Referer": "https://brixhub.top/",
-        "Origin": "https://brixhub.top",
-        "X-Requested-With": "XMLHttpRequest",
-    }
-    
-    try:
-        async with httpx.AsyncClient(
-            timeout=30.0,
-            follow_redirects=True,
-            http2=False,
-            limits=httpx.Limits(max_connections=5, max_keepalive_connections=2)
-        ) as client:
-            if method == "POST":
-                r = await client.post(f"{BRIX_BASE}{path}", json=body, headers=headers)
-            else:
-                r = await client.get(f"{BRIX_BASE}{path}", headers=headers)
+            # Vérifier si le contenu est du JSON valide
+            content_type = r.headers.get('content-type', '')
+            is_json = 'application/json' in content_type
             
-            # Si 403 Cloudflare, réessayer avec un délai plus long
-            if r.status_code == 403 and ('cf-ray' in r.headers or 'Just a moment' in r.text):
-                print(f"[BRIX] Cloudflare détecté, nouvelle tentative dans 2s...")
-                await asyncio.sleep(2 + random.random())
-                # Nouveau user-agent pour la tentative
-                headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-                if method == "POST":
-                    r = await client.post(f"{BRIX_BASE}{path}", json=body, headers=headers)
-                else:
-                    r = await client.get(f"{BRIX_BASE}{path}", headers=headers)
-            
-            if r.status_code == 200:
-                try:
-                    data = r.json()
-                    # Mettre en cache
-                    if use_cache and method == "POST" and body:
-                        cache_key = get_cache_key(method, path, body)
-                        _search_cache[cache_key] = (data, time.time())
-                    return data
-                except Exception:
-                    raise HTTPException(500, "Reponse invalide de l API")
-            elif r.status_code == 403:
-                print(f"[BRIX 403] Key: {BRIX_KEY[:10]}... Response: {r.text[:200]}")
-                if 'cf-ray' in r.headers or 'Just a moment' in r.text:
+            # Si ce n'est pas du JSON et que le statut n'est pas 200, c'est une erreur
+            if not is_json and r.status_code != 200:
+                print(f"[BRIX] Réponse non-JSON: {r.text[:300]}")
+                if 'Internal Server Error' in r.text or '500' in r.text:
+                    raise HTTPException(500, "Erreur interne du serveur BrixHub. Réessayez plus tard.")
+                if 'Just a moment' in r.text or 'Cloudflare' in r.text:
                     raise HTTPException(403, "Cloudflare bloque la requête. Réessayez dans quelques secondes.")
-                raise HTTPException(403, "Erreur API 403 - verifiez votre clé ou votre quota")
-            elif r.status_code == 500:
-                raise HTTPException(500, "Aucun resultat pour cette recherche")
-            elif r.status_code == 429:
-                raise HTTPException(429, "Trop de requetes, reessayez dans quelques secondes")
-            elif r.status_code == 401:
-                raise HTTPException(401, "Cle API invalide")
-            else:
-                raise HTTPException(r.status_code, f"Erreur API {r.status_code}")
+                if '404' in r.text:
+                    raise HTTPException(404, "Endpoint BrixHub introuvable. Vérifiez l'URL.")
+                raise HTTPException(502, f"Réponse inattendue de BrixHub: {r.text[:100]}")
+            
+            # Si le statut n'est pas 200
+            if r.status_code != 200:
+                try:
+                    error_data = r.json()
+                    error_msg = error_data.get('message', error_data.get('error', 'Erreur inconnue'))
+                    raise HTTPException(r.status_code, f"BrixHub: {error_msg}")
+                except:
+                    raise HTTPException(r.status_code, f"Erreur BrixHub {r.status_code}: {r.text[:200]}")
+            
+            # Succès - parser le JSON
+            try:
+                data = r.json()
+                if use_cache and method == "POST" and body:
+                    cache_key = get_cache_key(method, path, body)
+                    _search_cache[cache_key] = (data, time.time())
+                return data
+            except Exception as e:
+                print(f"[BRIX] Erreur parsing JSON: {e}")
+                print(f"[BRIX] Contenu: {r.text[:500]}")
+                raise HTTPException(500, "Réponse invalide de l'API BrixHub")
+    
     except httpx.TimeoutException:
-        raise HTTPException(504, "Timeout - reessayez dans quelques secondes")
+        raise HTTPException(504, "Timeout - réessayez dans quelques secondes")
     except httpx.NetworkError:
-        raise HTTPException(503, "Erreur reseau - service temporairement indisponible")
+        raise HTTPException(503, "Erreur réseau - BrixHub inaccessible")
     except HTTPException:
         raise
     except Exception as e:
@@ -810,7 +763,6 @@ async def search(data: SearchModel, user=Depends(get_current_user)):
         raise HTTPException(400, "Remplissez au moins un champ (2 caractères minimum)")
 
     # Nettoyer les caractères problématiques pour BrixHub
-    import unicodedata
     def clean_field(val):
         if not isinstance(val, str): return val
         # Normaliser les accents
@@ -1464,7 +1416,7 @@ class BroadcastModel(BaseModel):
 async def send_broadcast(request: Request, admin=Depends(require_admin)):
     body = await request.json()
     message = body.get("message", "").strip()
-    target_raw = body.get("target_user_id")  # peut être int, string ID, ou string username
+    target_raw = body.get("target_user_id")
     if not message:
         raise HTTPException(400, "Message requis")
 
@@ -1473,7 +1425,6 @@ async def send_broadcast(request: Request, admin=Depends(require_admin)):
     if target_raw is not None and str(target_raw).strip() != "":
         target_str = str(target_raw).strip()
         db2 = get_db()
-        # Essayer par ID d'abord
         try:
             maybe_id = int(target_str)
             u = fetchone(db2, "SELECT id FROM users WHERE id=?", (maybe_id,))
@@ -1481,7 +1432,6 @@ async def send_broadcast(request: Request, admin=Depends(require_admin)):
                 resolved_id = u["id"]
         except ValueError:
             pass
-        # Si pas trouvé par ID, chercher par username
         if resolved_id is None:
             u = fetchone(db2, "SELECT id FROM users WHERE username=?", (target_str,))
             if u:
@@ -1523,7 +1473,7 @@ class AnnouncementModel(BaseModel):
 @app.post("/api/admin/announcements")
 async def create_announcement(data: AnnouncementModel, admin=Depends(require_admin)):
     db = get_db()
-    execute(db, "DELETE FROM announcements", ())  # Une seule annonce active
+    execute(db, "DELETE FROM announcements", ())
     execute(db, "INSERT INTO announcements (message) VALUES (?)", (data.message,))
     db.commit(); db.close()
     return {"ok": True}
@@ -1548,7 +1498,6 @@ async def lookup_plaque(plaque: str, user=Depends(get_current_user)):
     if not user.get("lifetime") and user["free_left"] <= 0 and user["credits"] <= 0:
         raise HTTPException(402, "Plus de crédits")
     plaque_clean = plaque.upper().replace("-","").replace(" ","")
-    # Recherche via BrixHub avec le champ vin_plaque
     try:
         result = await call_brix("POST", "/search", {
             "vin_plaque": plaque_clean,
@@ -1557,7 +1506,6 @@ async def lookup_plaque(plaque: str, user=Depends(get_current_user)):
         })
         results = result.get("data", {}).get("results", [])
         results = filter_results(results)
-        # Extraire les infos véhicule
         vehicles = []
         for r in results:
             if r.get("vin_plaque") or r.get("immatriculation") or r.get("marque"):
@@ -1596,7 +1544,6 @@ async def export_pdf(request: Request, user=Depends(get_current_user)):
     
     name = f"{profile.get('prenom','')} {profile.get('nom_famille','')}".strip() or "Profil inconnu"
     
-    # Générer HTML pour le PDF
     fields = []
     labels = {
         "prenom": "Prénom", "nom_famille": "Nom", "date_naissance": "Date de naissance",
@@ -1710,7 +1657,6 @@ async def get_referral_code(user=Depends(get_current_user)):
         code = secrets.token_urlsafe(8).upper()[:10]
         execute(db, "UPDATE users SET referral_code=? WHERE id=?", (code, user["id"]))
         db.commit()
-    # Stats parrainage
     refs = fetchall(db, "SELECT r.id, r.credits_earned, r.created_at, u.username FROM referrals r JOIN users u ON r.referred_id=u.id WHERE r.referrer_id=? ORDER BY r.created_at DESC", (user["id"],))
     total_credits = sum(r["credits_earned"] for r in refs)
     db.close()
@@ -1730,7 +1676,6 @@ async def referral_info(code: str):
         raise HTTPException(404, "Code invalide")
     return {"username": u["username"], "valid": True}
 
-# Route admin parrainage
 @app.get("/api/admin/referrals")
 async def admin_referrals(admin=Depends(require_admin)):
     db = get_db()
@@ -1753,26 +1698,23 @@ async def admin_referrals(admin=Depends(require_admin)):
 async def generate_link_code(user=Depends(get_current_user)):
     import secrets
     db = get_db()
-    # Supprimer anciens codes non utilisés
     execute(db, "DELETE FROM discord_link_codes WHERE user_id=? AND used=FALSE", (user["id"],))
-    code = secrets.token_hex(4).upper()  # Code 8 caractères ex: A1B2C3D4
+    code = secrets.token_hex(4).upper()
     if is_pg():
         execute(db, "INSERT INTO discord_link_codes (user_id, code) VALUES (?,?) RETURNING id", (user["id"], code))
     else:
         execute(db, "INSERT INTO discord_link_codes (user_id, code) VALUES (?,?)", (user["id"], code))
     db.commit(); db.close()
-    return {"code": code, "expires_in": 3600}  # 1 heure
+    return {"code": code, "expires_in": 3600}
 
 @app.post("/api/discord/link")
 async def link_discord(request: Request):
-    """Appelé par le bot Discord pour lier un compte"""
     body = await request.json()
     code = body.get("code", "").upper().strip()
     discord_id = str(body.get("discord_id", ""))
     discord_username = body.get("discord_username", "")
     bot_secret = body.get("bot_secret", "")
     
-    # Vérifier le secret du bot
     if bot_secret != os.getenv("BOT_SECRET", "xtracker_bot_secret_2024"):
         raise HTTPException(403, "Acces refuse")
     
@@ -1780,13 +1722,11 @@ async def link_discord(request: Request):
         raise HTTPException(400, "Code et discord_id requis")
     
     db = get_db()
-    # Vérifier le code
     link_row = fetchone(db, "SELECT * FROM discord_link_codes WHERE code=? AND used=FALSE", (code,))
     if not link_row:
         db.close()
         raise HTTPException(404, "Code invalide ou expiré")
     
-    # Vérifier expiration
     if is_pg():
         expired = fetchone(db, "SELECT id FROM discord_link_codes WHERE code=? AND expires_at < NOW()", (code,))
         if expired:
@@ -1794,14 +1734,11 @@ async def link_discord(request: Request):
             raise HTTPException(410, "Code expiré, génère-en un nouveau sur Xtracker")
     
     user_id = link_row["user_id"]
-    
-    # Vérifier que ce Discord n'est pas déjà lié à un autre compte
     existing = fetchone(db, "SELECT id, username FROM users WHERE discord_id=?", (discord_id,))
     if existing and existing["id"] != user_id:
         db.close()
         raise HTTPException(409, f"Ce Discord est déjà lié au compte {existing['username']}")
     
-    # Lier le compte
     execute(db, "UPDATE users SET discord_id=?, discord_username=? WHERE id=?", (discord_id, discord_username, user_id))
     execute(db, "UPDATE discord_link_codes SET used=TRUE WHERE code=?", (code,))
     db.commit()
@@ -1841,13 +1778,12 @@ async def discord_status(user=Depends(get_current_user)):
 
 @app.get("/api/discord/my-stats")
 async def my_discord_stats(user=Depends(get_current_user)):
-    """Stats Discord de l'utilisateur connecté"""
     db = get_db()
     total_searches = fetchone(db, "SELECT COUNT(*) as c FROM searches WHERE user_id=?", (user["id"],))
     db.close()
     return {
         "total_searches": total_searches["c"] if total_searches else 0,
-        "credits_today_left": 5  # Le vrai compteur est dans la mémoire du bot
+        "credits_today_left": 5
     }
 
 # ── ROUTES BOT DISCORD ────────────────────────────────────────────────────────
@@ -1873,7 +1809,6 @@ async def rename_user_bot(request: Request):
     new_username = body.get("new_username","").strip()
     if not username or not new_username:
         raise HTTPException(400, "username et new_username requis")
-    import re
     if not re.match(r"^[a-zA-Z0-9_\-\.]{2,32}$", new_username):
         raise HTTPException(400, "Nouveau pseudo invalide")
     db = get_db()
@@ -1888,8 +1823,6 @@ async def rename_user_bot(request: Request):
     execute(db, "UPDATE users SET username=? WHERE username=?", (new_username, username))
     db.commit(); db.close()
     return {"ok": True}
-
-
 
 @app.get("/api/discord/lookup-user")
 async def lookup_user_bot(username: str = None, discord_id: str = None, request: Request = None):
@@ -1911,7 +1844,6 @@ async def lookup_user_bot(username: str = None, discord_id: str = None, request:
     total_refs = refs["c"] if refs else 0
     searches_count = fetchone(db, "SELECT COUNT(*) as c FROM searches WHERE user_id=?", (u["id"],))
     total_searches = searches_count["c"] if searches_count else 0
-    # 20 dernières recherches
     last_searches = fetchall(db, "SELECT query_data, result_count, created_at FROM searches WHERE user_id=? ORDER BY created_at DESC LIMIT 20", (u["id"],))
     db.close()
     return {
@@ -1964,7 +1896,6 @@ async def checkout_crypto(pack_id: str, user=Depends(get_current_user), request:
     import time
     order_id = f"xtracker-{user['id']}-{pack_id}-{int(time.time())}"
     origin = str(request.base_url).rstrip("/")
-    # URL PayGate API
     paygate_url = (
         f"https://paygate.to/charge.php"
         f"?amount={amount}"
@@ -1978,13 +1909,11 @@ async def checkout_crypto(pack_id: str, user=Depends(get_current_user), request:
 
 @app.get("/api/paygate/check")
 async def paygate_check(order_id: str, user=Depends(get_current_user)):
-    """Vérifie si une commande crypto a été payée"""
     db = get_db()
     tx = fetchone(db, "SELECT id, status FROM transactions WHERE stripe_id=?", (order_id,))
     db.close()
     if tx and tx.get("status") == "completed":
         return {"paid": True}
-    # Vérifier si expiré (>30 min)
     import time
     parts = order_id.split("-")
     if len(parts) >= 4:
@@ -2024,13 +1953,11 @@ async def paygate_success(request: Request):
 
 @app.post("/api/paygate/webhook")
 async def paygate_webhook(request: Request):
-    """Webhook PayGate pour confirmer le paiement"""
     body = await request.json()
     order_id = body.get("orderId", "")
     status = body.get("status", "")
     if status != "paid" or not order_id:
         return {"ok": False}
-    # Extraire uid et pack depuis order_id: xtracker-{uid}-{pack}-{timestamp}
     parts = order_id.split("-")
     if len(parts) < 3:
         return {"ok": False}
@@ -2059,15 +1986,12 @@ async def paygate_webhook(request: Request):
 
 @app.get("/api/crypto/wallets/{pack_id}")
 async def get_crypto_wallets(pack_id: str, user=Depends(get_current_user)):
-    """Retourne les adresses crypto et le montant converti"""
     if pack_id not in CREDIT_PACKS:
         raise HTTPException(400, "Pack invalide")
     pack = CREDIT_PACKS[pack_id]
     amount_eur = pack["price_eur"]
-    # Taux approximatifs (à mettre à jour)
     import time
     order_id = f"xtracker-{user['id']}-{pack_id}-{int(time.time())}"
-    # Récupérer taux BTC/EUR et LTC/EUR et ETH/EUR depuis CoinGecko
     try:
         async with httpx.AsyncClient(timeout=5) as client:
             r = await client.get("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,litecoin,ethereum&vs_currencies=eur")
@@ -2082,7 +2006,6 @@ async def get_crypto_wallets(pack_id: str, user=Depends(get_current_user)):
     btc_amount = round(amount_eur / btc_rate, 8)
     ltc_amount = round(amount_eur / ltc_rate, 6)
     eth_amount = round(amount_eur / eth_rate, 6)
-    # Sauvegarder l'order en BDD pour tracking
     db = get_db()
     execute(db, "INSERT INTO transactions (user_id, type, credits, amount_eur, stripe_id, status) VALUES (?,?,?,?,?,'pending')",
             (user["id"], "purchase_crypto", pack["credits"], amount_eur, order_id))
@@ -2100,7 +2023,6 @@ async def get_crypto_wallets(pack_id: str, user=Depends(get_current_user)):
 
 @app.post("/api/crypto/confirm/{order_id}")
 async def confirm_crypto_manual(order_id: str, request: Request, user=Depends(get_current_user)):
-    """L'utilisateur confirme avoir envoyé le paiement"""
     body = await request.json()
     tx_hash = body.get("tx_hash", "").strip()
     db = get_db()
@@ -2175,7 +2097,6 @@ async def admin_crypto_pending(admin=Depends(require_admin)):
 # ── API EXTERNE / SSO ─────────────────────────────────────────────────────────
 @app.get("/api/auth/verify")
 async def verify_token(user=Depends(get_current_user)):
-    """Vérifie un token JWT et retourne les infos utilisateur - pour extensions/apps tierces"""
     db = get_db()
     u = fetchone(db, "SELECT id, username, email, role, credits, lifetime, banned, discord_id, discord_username FROM users WHERE id=?", (user["id"],))
     db.close()
@@ -2199,7 +2120,6 @@ async def verify_token(user=Depends(get_current_user)):
 
 @app.post("/api/auth/token-login")
 async def token_login(request: Request):
-    """Permet à une extension de se connecter avec email/password et récupérer un token"""
     body = await request.json()
     email = body.get("email","").strip().lower()
     password = body.get("password","")
@@ -2240,7 +2160,6 @@ async def restore_admin(username: str):
 
 @app.get("/api/admin/fix-maintenance-off")
 async def fix_maintenance_off():
-    """Route d urgence pour desactiver la maintenance"""
     try:
         db = get_db()
         execute(db, "UPDATE settings SET value='false' WHERE key='maintenance_enabled'", ())
@@ -2251,7 +2170,6 @@ async def fix_maintenance_off():
 
 @app.get("/api/test/register-debug")
 async def test_register():
-    """Route de debug temporaire"""
     db = get_db()
     u = fetchone(db, "SELECT id, username FROM users ORDER BY id DESC LIMIT 1", ())
     db.close()
