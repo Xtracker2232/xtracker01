@@ -12,7 +12,8 @@ from pydantic import BaseModel
 from passlib.context import CryptContext
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
-import os, json, httpx, sqlite3, secrets as _secrets
+import os, json, httpx, sqlite3, secrets as _secrets, asyncio, time, random
+
 try:
     import psycopg2
     import psycopg2.extras
@@ -31,11 +32,11 @@ else:
 
 # ── CONFIG ────────────────────────────────────────────────────────────────────
 SECRET_KEY     = os.getenv("SECRET_KEY", "")
-ADMIN_EMAIL    = os.getenv("ADMIN_EMAIL", "")  # Plus de credentials en dur
+ADMIN_EMAIL    = os.getenv("ADMIN_EMAIL", "")
 ALGORITHM      = "HS256"
 TOKEN_EXPIRE   = 60 * 24 * 365  # 1 an
 BRIX_KEY       = os.getenv("BRIX_API_KEY", "")
-BRIX_BASE      = "https://brixhub.top/api/v1"
+BRIX_BASE      = "https://brixhub.top/api/v1"  # ✅ BONNE URL
 SUMUP_SK = os.getenv("SUMUP_SK", "")
 SUMUP_PK = os.getenv("SUMUP_PK", "")
 SUMUP_MERCHANT = "Shop2ToutMHN3Z5RX"
@@ -51,7 +52,6 @@ pwd_ctx  = CryptContext(schemes=["bcrypt"])
 security = HTTPBearer(auto_error=False)
 
 # Rate limiting simple en mémoire
-import time
 from collections import defaultdict
 
 def create_token(data, role=None) -> str:
@@ -212,7 +212,6 @@ async def require_admin(request: Request):
     if user.get("role") != "admin":
         raise HTTPException(403, "Acces refuse")
     return user
-
 
 _rate_limit = defaultdict(list)
 
@@ -599,67 +598,110 @@ async def me(user=Depends(get_current_user)):
     }
 
 # ── SEARCH ────────────────────────────────────────────────────────────────────
-async def call_brix(method: str, path: str, body: dict = None):
+# Cache pour éviter les doublons
+_search_cache = {}
+CACHE_TTL = 300  # 5 minutes
+
+def get_cache_key(method: str, path: str, body: dict = None) -> str:
+    import hashlib
+    key = f"{method}:{path}"
+    if body:
+        key += f":{json.dumps(body, sort_keys=True)}"
+    return hashlib.md5(key.encode()).hexdigest()
+
+async def call_brix(method: str, path: str, body: dict = None, use_cache: bool = True):
+    """
+    Appelle l'API BrixHub avec contournement Cloudflare
+    URL correcte: https://brixhub.top/api/v1
+    """
+    # Vérifier le cache
+    if use_cache and method == "POST" and body:
+        cache_key = get_cache_key(method, path, body)
+        if cache_key in _search_cache:
+            cached_data, timestamp = _search_cache[cache_key]
+            if time.time() - timestamp < CACHE_TTL:
+                return cached_data
+    
+    # ⏱️ Petit délai pour éviter le rate limiting Cloudflare (0.5 à 1.5 secondes)
+    await asyncio.sleep(random.uniform(0.5, 1.5))
+    
+    # Headers complets pour imiter un vrai navigateur
     headers = {
         "X-API-Key": BRIX_KEY,
         "Content-Type": "application/json",
-        "Accept": "application/json",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",  # ⚠️ CHANGEMENT ICI
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Connection": "keep-alive",
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Sec-Ch-Ua": '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+        "Sec-Ch-Ua-Mobile": "?0",
+        "Sec-Ch-Ua-Platform": '"Windows"',
+        "Sec-Fetch-Dest": "empty",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Site": "same-origin",
+        "Referer": "https://brixhub.top/",
+        "Origin": "https://brixhub.top",
+        "X-Requested-With": "XMLHttpRequest",
     }
-    try:
-        async with httpx.AsyncClient(timeout=25, follow_redirects=True, http2=False) as client:
-            if method == "POST":
-                r = await client.post(f"{BRIX_BASE}{path}", json=body, headers=headers)
-            else:
-                r = await client.get(f"{BRIX_BASE}{path}", headers=headers)
-        if r.status_code == 200:
-            try:
-                return r.json()
-            except Exception:
-                raise HTTPException(500, "Reponse invalide de l API")
-        elif r.status_code == 500:
-            raise HTTPException(500, "Aucun resultat pour cette recherche")
-        elif r.status_code == 403:
-            print(f"[BRIX 403] Key: {BRIX_KEY[:10]}... Response: {r.text[:200]}")
-            # ⚠️ CHANGEMENT ICI : message plus clair
-            raise HTTPException(403, "Erreur API 403 - verifiez votre clé ou votre quota")
-        elif r.status_code == 429:
-            raise HTTPException(429, "Trop de requetes, reessayez dans quelques secondes")
-        elif r.status_code == 401:
-            raise HTTPException(401, "Cle API invalide")
-        else:
-            raise HTTPException(r.status_code, f"Erreur API {r.status_code}")
-    except httpx.TimeoutException:
-        raise HTTPException(504, "Timeout - reessayez dans quelques secondes")
-    except httpx.NetworkError:
-        raise HTTPException(503, "Erreur reseau - service temporairement indisponible")
     
     try:
-        async with httpx.AsyncClient(timeout=25, follow_redirects=True, http2=False) as client:
+        async with httpx.AsyncClient(
+            timeout=30.0,
+            follow_redirects=True,
+            http2=False,
+            limits=httpx.Limits(max_connections=5, max_keepalive_connections=2)
+        ) as client:
             if method == "POST":
                 r = await client.post(f"{BRIX_BASE}{path}", json=body, headers=headers)
             else:
                 r = await client.get(f"{BRIX_BASE}{path}", headers=headers)
-        if r.status_code == 200:
-            try:
-                return r.json()
-            except Exception:
-                raise HTTPException(500, "Reponse invalide de l API")
-        elif r.status_code == 500:
-            raise HTTPException(500, "Aucun resultat pour cette recherche")
-        elif r.status_code == 403:
-            print(f"[BRIX 403] Key: {BRIX_KEY[:10]}... Response: {r.text[:200]}")
-            raise HTTPException(403, "Erreur API 403 - cle invalide ou expiree")
-        elif r.status_code == 429:
-            raise HTTPException(429, "Trop de requetes, reessayez dans quelques secondes")
-        elif r.status_code == 401:
-            raise HTTPException(401, "Cle API invalide")
-        else:
-            raise HTTPException(r.status_code, f"Erreur API {r.status_code}")
+            
+            # Si 403 Cloudflare, réessayer avec un délai plus long
+            if r.status_code == 403 and ('cf-ray' in r.headers or 'Just a moment' in r.text):
+                print(f"[BRIX] Cloudflare détecté, nouvelle tentative dans 2s...")
+                await asyncio.sleep(2 + random.random())
+                # Nouveau user-agent pour la tentative
+                headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                if method == "POST":
+                    r = await client.post(f"{BRIX_BASE}{path}", json=body, headers=headers)
+                else:
+                    r = await client.get(f"{BRIX_BASE}{path}", headers=headers)
+            
+            if r.status_code == 200:
+                try:
+                    data = r.json()
+                    # Mettre en cache
+                    if use_cache and method == "POST" and body:
+                        cache_key = get_cache_key(method, path, body)
+                        _search_cache[cache_key] = (data, time.time())
+                    return data
+                except Exception:
+                    raise HTTPException(500, "Reponse invalide de l API")
+            elif r.status_code == 403:
+                print(f"[BRIX 403] Key: {BRIX_KEY[:10]}... Response: {r.text[:200]}")
+                if 'cf-ray' in r.headers or 'Just a moment' in r.text:
+                    raise HTTPException(403, "Cloudflare bloque la requête. Réessayez dans quelques secondes.")
+                raise HTTPException(403, "Erreur API 403 - verifiez votre clé ou votre quota")
+            elif r.status_code == 500:
+                raise HTTPException(500, "Aucun resultat pour cette recherche")
+            elif r.status_code == 429:
+                raise HTTPException(429, "Trop de requetes, reessayez dans quelques secondes")
+            elif r.status_code == 401:
+                raise HTTPException(401, "Cle API invalide")
+            else:
+                raise HTTPException(r.status_code, f"Erreur API {r.status_code}")
     except httpx.TimeoutException:
         raise HTTPException(504, "Timeout - reessayez dans quelques secondes")
     except httpx.NetworkError:
         raise HTTPException(503, "Erreur reseau - service temporairement indisponible")
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[BRIX] Erreur inattendue: {e}")
+        raise HTTPException(500, f"Erreur interne: {str(e)}")
 
 def deduct_and_log(user_id: int, query_data: dict, result_count: int):
     db = get_db()
@@ -821,7 +863,7 @@ async def search(data: SearchModel, user=Depends(get_current_user)):
 async def lookup(data: LookupModel, user=Depends(get_current_user)):
     if not user.get("lifetime") and user["free_left"] <= 0 and user["credits"] <= 0:
         raise HTTPException(402, "Plus de crédits")
-    val = data.value.strip()
+    val = data.lookup.strip()
     if "@" in val:
         path = f"/lookup/email/{val}"
     elif val.upper().startswith("FR") and len(val) > 20:
@@ -898,12 +940,12 @@ async def confirm_paygate(request: Request, user=Depends(get_current_user)):
     amount = pack.get("price_eur", 0)
     db = get_db()
     # Vérifier si déjà traité
-    existing = db.execute("SELECT id FROM transactions WHERE stripe_id=?", (order_id,)).fetchone()
+    existing = fetchone(db, "SELECT id FROM transactions WHERE stripe_id=?", (order_id,))
     if existing:
         db.close()
         return {"message": "Déjà traité"}
-    db.execute("UPDATE users SET credits=credits+? WHERE id=?", (credits, user["id"]))
-    db.execute("""
+    execute(db, "UPDATE users SET credits=credits+? WHERE id=?", (credits, user["id"]))
+    execute(db, """
         INSERT INTO transactions (user_id, type, credits, amount_eur, stripe_id, status)
         VALUES (?,?,?,?,?,'completed')
     """, (user["id"], "purchase", credits, amount, order_id))
@@ -1856,7 +1898,7 @@ async def checkout_crypto(pack_id: str, user=Depends(get_current_user), request:
     pack = CREDIT_PACKS[pack_id]
     amount = pack["price_eur"]
     credits = pack["credits"]
-    wallet = PAYGATE_WALLET
+    wallet = PAYGATE_WALLET_BTC
     if not wallet:
         raise HTTPException(500, "Wallet non configure")
     import time
