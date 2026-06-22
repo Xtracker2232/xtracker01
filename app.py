@@ -598,17 +598,6 @@ async def me(user=Depends(get_current_user)):
     }
 
 # ── SEARCH ────────────────────────────────────────────────────────────────────
-# Cache pour éviter les doublons
-_search_cache = {}
-CACHE_TTL = 300  # 5 minutes
-
-def get_cache_key(method: str, path: str, body: dict = None) -> str:
-    import hashlib
-    key = f"{method}:{path}"
-    if body:
-        key += f":{json.dumps(body, sort_keys=True)}"
-    return hashlib.md5(key.encode()).hexdigest()
-
 async def call_brix(method: str, path: str, body: dict = None, use_cache: bool = True):
     """
     Appelle l'API BrixHub avec contournement Cloudflare
@@ -624,6 +613,77 @@ async def call_brix(method: str, path: str, body: dict = None, use_cache: bool =
     
     # ⏱️ Petit délai pour éviter le rate limiting Cloudflare (0.5 à 1.5 secondes)
     await asyncio.sleep(random.uniform(0.5, 1.5))
+    
+    # ✅ HEADERS CORRIGÉS
+    headers = {
+        "X-API-Key": BRIX_KEY,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Accept-Encoding": "identity",  # ⚠️ Désactive la compression GZIP
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7",
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache",
+        "Referer": "https://brixhub.top/",
+        "Origin": "https://brixhub.top",
+        "Sec-Ch-Ua": '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+        "Sec-Ch-Ua-Mobile": "?0",
+        "Sec-Ch-Ua-Platform": '"Windows"',
+        "Sec-Fetch-Dest": "empty",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Site": "same-origin",
+        "X-Requested-With": "XMLHttpRequest",
+    }
+    
+    try:
+        async with httpx.AsyncClient(
+            timeout=30.0,
+            follow_redirects=True,
+            http2=False
+        ) as client:
+            if method == "POST":
+                r = await client.post(f"{BRIX_BASE}{path}", json=body, headers=headers)
+            else:
+                r = await client.get(f"{BRIX_BASE}{path}", headers=headers)
+            
+            # Si 403 Cloudflare, réessayer avec un délai plus long
+            if r.status_code == 403 and ('cf-ray' in r.headers or 'Just a moment' in r.text):
+                print(f"[BRIX] Cloudflare détecté, nouvelle tentative dans 2s...")
+                await asyncio.sleep(2 + random.random())
+                if method == "POST":
+                    r = await client.post(f"{BRIX_BASE}{path}", json=body, headers=headers)
+                else:
+                    r = await client.get(f"{BRIX_BASE}{path}", headers=headers)
+            
+            if r.status_code == 200:
+                try:
+                    data = r.json()
+                    if use_cache and method == "POST" and body:
+                        cache_key = get_cache_key(method, path, body)
+                        _search_cache[cache_key] = (data, time.time())
+                    return data
+                except Exception:
+                    raise HTTPException(500, "Reponse invalide de l API")
+            elif r.status_code == 403:
+                print(f"[BRIX 403] Response: {r.text[:200]}")
+                if 'cf-ray' in r.headers or 'Just a moment' in r.text or r.text.startswith('<!DOCTYPE'):
+                    raise HTTPException(403, "Cloudflare bloque la requête. Veuillez réessayer dans quelques secondes.")
+                raise HTTPException(403, "Erreur API 403 - verifiez votre clé ou votre quota")
+            elif r.status_code == 500:
+                raise HTTPException(500, "Aucun resultat pour cette recherche")
+            elif r.status_code == 429:
+                raise HTTPException(429, "Trop de requetes, reessayez dans quelques secondes")
+            elif r.status_code == 401:
+                raise HTTPException(401, "Cle API invalide")
+            else:
+                raise HTTPException(r.status_code, f"Erreur API {r.status_code}")
+    except httpx.TimeoutException:
+        raise HTTPException(504, "Timeout - reessayez dans quelques secondes")
+    except httpx.NetworkError:
+        raise HTTPException(503, "Erreur reseau - service temporairement indisponible")
+    except Exception as e:
+        print(f"[BRIX] Erreur inattendue: {e}")
+        raise HTTPException(500, f"Erreur interne: {str(e)}")
     
     # Headers complets pour imiter un vrai navigateur
     headers = {
