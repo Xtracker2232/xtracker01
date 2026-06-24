@@ -1,6 +1,7 @@
 """
-Xtracker — Backend FastAPI avec recherche locale PostgreSQL
-NE MODIFIER QUE CETTE VERSION
+Xtracker — Backend FastAPI + SQLite (test local)
+pip install fastapi uvicorn python-jose passlib bcrypt httpx python-multipart
+python app.py
 """
 from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.responses import JSONResponse
@@ -20,29 +21,22 @@ try:
 except ImportError:
     USE_PG = False
 
-# ── CONFIGURATION BASE DE DONNÉES LOCALE ────────────────────────────────────
-DB_HOST = "localhost"
-DB_PORT = "5432"
-DB_NAME = "mon_osint"
-DB_USER = "postgres"
-DB_PASS = "Salto06530"
+# Force PostgreSQL
+_DB_URL = os.environ.get("DATABASE_URL", "") or os.environ.get("POSTGRES_URL", "")
+if _DB_URL and "postgresql" in _DB_URL:
+    USE_PG = True
+    print(f"[DB] PostgreSQL: {_DB_URL[:40]}...")
+else:
+    USE_PG = False
+    print("[DB] SQLite fallback")
 
-def get_local_db():
-    """Connexion à ta base PostgreSQL locale (187 millions de lignes)"""
-    return psycopg2.connect(
-        host=DB_HOST,
-        port=DB_PORT,
-        database=DB_NAME,
-        user=DB_USER,
-        password=DB_PASS,
-        cursor_factory=psycopg2.extras.RealDictCursor
-    )
-
-# ── CONFIGURATION EXISTANTE (inchangée) ─────────────────────────────────────
+# ── CONFIG ────────────────────────────────────────────────────────────────────
 SECRET_KEY     = os.getenv("SECRET_KEY", "")
 ADMIN_EMAIL    = os.getenv("ADMIN_EMAIL", "")
 ALGORITHM      = "HS256"
 TOKEN_EXPIRE   = 60 * 24 * 365  # 1 an
+BRIX_KEY       = os.getenv("BRIX_API_KEY", "")
+BRIX_BASE      = "https://brixhub.top/api/v1"  # ✅ Pas de slash final, on l'ajoute dans l'appel
 SUMUP_SK = os.getenv("SUMUP_SK", "")
 SUMUP_PK = os.getenv("SUMUP_PK", "")
 SUMUP_MERCHANT = "Shop2ToutMHN3Z5RX"
@@ -52,11 +46,12 @@ PAYGATE_WALLET_ETH = os.getenv("PAYGATE_WALLET_ETH", "")
 
 DB_PATH        = "xtracker.db"
 MAINTENANCE    = os.getenv("MAINTENANCE", "false").lower() == "true"
-DATABASE_URL   = os.getenv("DATABASE_URL", "") or os.getenv("POSTGRES_URL", "")
+DATABASE_URL   = _DB_URL
 
 pwd_ctx  = CryptContext(schemes=["bcrypt"])
 security = HTTPBearer(auto_error=False)
 
+# Rate limiting simple en mémoire
 from collections import defaultdict
 
 def create_token(data, role=None) -> str:
@@ -194,16 +189,6 @@ def init_db():
 
 init_db()
 
-_rate_limit = defaultdict(list)
-
-def check_rate_limit(key: str, max_requests: int = 5, window: int = 60) -> bool:
-    now = time.time()
-    _rate_limit[key] = [t for t in _rate_limit[key] if now - t < window]
-    if len(_rate_limit[key]) >= max_requests:
-        return True
-    _rate_limit[key].append(now)
-    return False
-
 async def get_current_user(request: Request):
     auth = request.headers.get("authorization", "")
     if not auth.startswith("Bearer "):
@@ -228,116 +213,191 @@ async def require_admin(request: Request):
         raise HTTPException(403, "Acces refuse")
     return user
 
-# ── NOUVELLE FONCTION DE RECHERCHE LOCALE ────────────────────────────────────
-async def search_local_db(payload: dict) -> dict:
-    """
-    Recherche dans la table search_index de ta base PostgreSQL locale.
-    """
-    results = []
-    total = 0
-    took_ms = 0
-    start_time = time.time()
-    
-    try:
-        conn = get_local_db()
-        cur = conn.cursor()
-        
-        # Construction dynamique de la requête
-        conditions = []
-        params = []
-        
-        # Mapping des champs
-        field_mapping = {
-            "nom_famille": "nom",
-            "prenom": "prenom",
-            "email": "email",
-            "telephone": "telephone",
-            "mobile": "telephone",
-            "adresse": "adresse",
-            "code_postal": "code_postal",
-            "ville": "ville",
-            "pays": "pays",
-            "annee_naissance": "date_naissance",
-            "date_naissance": "date_naissance",
-            "societe": "societe",
-            "profession": "profession",
-            "nom_naissance": "nom",
-            "nom_affichage": "nom",
-            "nom_utilisateur": "nom",
-            "vin_plaque": "vin_plaque",
-            "immatriculation": "immatriculation",
-            "marque": "marque",
-            "modele": "modele",
-            "siren": "siren",
-            "siret": "siret",
-            "nir": "nir",
-            "iban": "iban"
-        }
-        
-        for field, value in payload.items():
-            if field in ["flexible", "per_page", "page"]:
-                continue
-            if not value or len(str(value).strip()) < 2:
-                continue
-            
-            db_field = field_mapping.get(field, field)
-            
-            # Vérifier que la colonne existe dans search_index
-            if payload.get("flexible", True):
-                conditions.append(f"{db_field} ILIKE %s")
-                params.append(f"%{value}%")
-            else:
-                conditions.append(f"{db_field} = %s")
-                params.append(value)
-        
-        if not conditions:
-            cur.close()
-            conn.close()
-            return {"data": {"results": [], "total": 0}, "meta": {"total": 0, "took_ms": 0}}
-        
-        limit = min(payload.get("per_page", 100), 1000)
-        
-        sql = f"""
-            SELECT 
-                nom, prenom, email, telephone, adresse, code_postal, ville, pays,
-                date_naissance, source_fichier, donnees_brutes
-            FROM search_index
-            WHERE {' OR '.join(conditions)}
-            LIMIT {limit}
-        """
-        
-        cur.execute(sql, params)
-        rows = cur.fetchall()
-        
-        for row in rows:
-            result = {
-                "nom_famille": row.get("nom", ""),
-                "prenom": row.get("prenom", ""),
-                "email": row.get("email", ""),
-                "telephone": row.get("telephone", ""),
-                "adresse": row.get("adresse", ""),
-                "code_postal": row.get("code_postal", ""),
-                "ville": row.get("ville", ""),
-                "pays": row.get("pays", ""),
-                "date_naissance": str(row.get("date_naissance", "")),
-                "_sources": [row.get("source_fichier", "")],
-                "source_fichier": row.get("source_fichier", "")
-            }
-            results.append(result)
-        
-        total = len(results)
-        took_ms = int((time.time() - start_time) * 1000)
-        
-        cur.close()
-        conn.close()
-        
-    except Exception as e:
-        print(f"[LOCAL DB] Erreur: {e}")
-        return {"data": {"results": [], "total": 0}, "meta": {"total": 0, "took_ms": 0}}
-    
-    return {"data": {"results": results, "total": total}, "meta": {"total": total, "took_ms": took_ms}}
+_rate_limit = defaultdict(list)
 
-# ── CLASSES PYDANTIC ─────────────────────────────────────────────────────────
+def check_rate_limit(key: str, max_requests: int = 5, window: int = 60) -> bool:
+    """Retourne True si la limite est dépassée"""
+    now = time.time()
+    _rate_limit[key] = [t for t in _rate_limit[key] if now - t < window]
+    if len(_rate_limit[key]) >= max_requests:
+        return True
+    _rate_limit[key].append(now)
+    return False
+
+# Termes protégés - retourne un message spécial
+# Noms de famille et numéros protégés statiques
+PROTECTED_LASTNAMES = ["kocahal", "lauzet", "pacchioni"]
+PROTECTED_PHONES    = ["0699407112", "0663435736"]
+
+def get_all_blocked() -> list:
+    """Récupère tous les termes bloqués (statiques + BDD)"""
+    blocked = []
+    # Statiques noms
+    for n in PROTECTED_LASTNAMES:
+        blocked.append({"type": "nom_famille", "value": n})
+    # Statiques téléphones
+    for p in PROTECTED_PHONES:
+        blocked.append({"type": "telephone", "value": p})
+    # BDD
+    try:
+        db = get_db()
+        rows = fetchall(db, "SELECT type, value FROM blocklist", ())
+        db.close()
+        blocked.extend([{"type": r["type"], "value": str(r["value"]).lower().strip()} for r in rows])
+    except:
+        pass
+    return blocked
+
+def normalize(val: str) -> str:
+    return str(val or "").lower().strip().replace(" ", "").replace(".", "").replace("-", "")
+
+def check_protected(payload: dict) -> bool:
+    """Vérifie les termes bloqués sur tous les champs de la requête"""
+    blocked = get_all_blocked()
+    for b in blocked:
+        btype = b["type"]
+        bval  = normalize(b["value"])
+        if not bval:
+            continue
+        # Champs à vérifier selon le type
+        if btype in ("nom_famille", "general", "général", ""):
+            # Vérifier dans tous les champs texte
+            for field in ["nom_famille", "prenom", "nom_naissance", "nom_affichage", "nom_utilisateur",
+                          "email", "adresse", "ville", "societe", "profession"]:
+                if bval in normalize(payload.get(field, "")):
+                    return True
+        elif btype in ("telephone", "mobile"):
+            for field in ["telephone", "mobile"]:
+                if bval in normalize(payload.get(field, "")):
+                    return True
+        elif btype == "email":
+            if bval in normalize(payload.get("email", "")):
+                return True
+        elif btype == "adresse":
+            if bval in normalize(payload.get("adresse", "")):
+                return True
+        elif btype == "nir":
+            if bval in normalize(payload.get("nir", "")):
+                return True
+        elif btype == "iban":
+            if bval in normalize(payload.get("iban", "")):
+                return True
+        elif btype == "plaque":
+            if bval in normalize(payload.get("vin_plaque", "") + payload.get("immatriculation", "")):
+                return True
+        elif btype == "prenom":
+            if bval == normalize(payload.get("prenom", "")):
+                return True
+        else:
+            # Type inconnu : chercher partout
+            for v in payload.values():
+                if isinstance(v, str) and bval in normalize(v):
+                    return True
+    return False
+
+def filter_results(results: list) -> list:
+    """Filtre les résultats BrixHub pour supprimer les fiches protégées"""
+    blocked = get_all_blocked()
+    clean = []
+    for p in results:
+        is_blocked = False
+        for b in blocked:
+            bval = normalize(b["value"])
+            if not bval:
+                continue
+            # Vérifier dans tous les champs du profil
+            for field in ["nom_famille", "prenom", "email", "telephone", "mobile",
+                          "adresse", "nir", "iban", "vin_plaque", "immatriculation",
+                          "nom_naissance", "nom_affichage", "societe"]:
+                if bval in normalize(p.get(field, "")):
+                    is_blocked = True
+                    break
+            if is_blocked:
+                break
+        if not is_blocked:
+            clean.append(p)
+    return clean
+
+CREDIT_PACKS = {
+    "decouverte":  {"credits": 10,   "price_eur": 0.99,  "old_price": 2.99,  "label": "Decouverte"},
+    "starter":     {"credits": 50,   "price_eur": 4.99,  "old_price": 9.99,  "label": "Starter"},
+    "pro":         {"credits": 200,  "price_eur": 14.99, "old_price": 29.99, "label": "Pro"},
+    "enterprise":  {"credits": 1000, "price_eur": 49.99, "old_price": 99.99, "label": "Enterprise"},
+    "lifetime":    {"credits": -1,   "price_eur": 149.00,"old_price": 299.00,"label": "Lifetime"},
+}
+
+app = FastAPI(title="Xtracker API")
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+@app.middleware("http")
+async def maintenance_middleware(request, call_next):
+    path = request.url.path
+    # Toujours laisser passer : admin, auth, assets statiques
+    if (path.startswith("/api/admin") or 
+        path.startswith("/api/auth") or 
+        path == "/maintenance.html" or
+        path.startswith("/static") or
+        path == "/favicon.ico" or
+        path.endswith(".js") or
+        path.endswith(".css") or
+        path.endswith(".png") or
+        path.endswith(".jpg") or
+        path == "/manifest.json" or
+        path == "/sw.js"):
+        return await call_next(request)
+    # Vérifier si maintenance active dans la BDD
+    maintenance = False
+    try:
+        db = get_db()
+        row = fetchone(db, "SELECT value FROM settings WHERE key='maintenance_enabled'", ())
+        db.close()
+        maintenance = bool(row and row.get("value") == "true")
+    except:
+        maintenance = False
+    if maintenance:
+        # Laisser toujours passer login et admin
+        if path in ["/admin.html", "/login.html", "/"]:
+            return await call_next(request)
+        # Laisser passer les admins via token
+        try:
+            auth = request.headers.get("authorization","")
+            if auth.startswith("Bearer "):
+                token = auth[7:]
+                payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+                if payload.get("role") == "admin":
+                    return await call_next(request)
+        except:
+            pass
+        # Récupérer le message et le temps estimé
+        try:
+            db = get_db()
+            msg_row = fetchone(db, "SELECT value FROM settings WHERE key='maintenance_message'", ())
+            eta_row = fetchone(db, "SELECT value FROM settings WHERE key='maintenance_eta'", ())
+            db.close()
+            msg = msg_row.get("value","") if msg_row else ""
+            eta = eta_row.get("value","") if eta_row else ""
+        except:
+            msg = ""
+            eta = ""
+        if path.startswith("/api/"):
+            from fastapi.responses import JSONResponse
+            return JSONResponse({"detail": "Maintenance en cours", "message": msg}, status_code=503)
+        from fastapi.responses import RedirectResponse
+        try:
+            db2 = get_db()
+            sat_row = fetchone(db2, "SELECT value FROM settings WHERE key='maintenance_started_at'", ())
+            db2.close()
+            started_at = sat_row.get("value","") if sat_row else ""
+        except:
+            started_at = ""
+        params = ""
+        if msg: params += f"?msg={msg}"
+        if eta: params += ("&" if params else "?") + f"eta={eta}"
+        if started_at: params += ("&" if params else "?") + f"started={started_at}"
+        return RedirectResponse(url=f"/maintenance.html{params}")
+    return await call_next(request)
+
+
 class SearchModel(BaseModel):
     nom_famille: str = ""
     prenom: str = ""
@@ -384,106 +444,9 @@ class LoginModel(BaseModel):
     password: str
 
 class ChangePasswordModel(BaseModel):
-    current_password: str
+    old_password: str
     new_password: str
 
-CREDIT_PACKS = {
-    "decouverte":  {"credits": 10,   "price_eur": 0.99,  "old_price": 2.99,  "label": "Decouverte"},
-    "starter":     {"credits": 50,   "price_eur": 4.99,  "old_price": 9.99,  "label": "Starter"},
-    "pro":         {"credits": 200,  "price_eur": 14.99, "old_price": 29.99, "label": "Pro"},
-    "enterprise":  {"credits": 1000, "price_eur": 49.99, "old_price": 99.99, "label": "Enterprise"},
-    "lifetime":    {"credits": -1,   "price_eur": 149.00,"old_price": 299.00,"label": "Lifetime"},
-}
-
-def deduct_and_log(user_id: int, query_data: dict, result_count: int):
-    db = get_db()
-    user = fetchone(db, "SELECT free_left, credits, lifetime FROM users WHERE id=?", (user_id,))
-    if user.get("lifetime"):
-        cost = 0
-    elif user["free_left"] > 0:
-        execute(db, "UPDATE users SET free_left=free_left-1 WHERE id=?", (user_id,))
-        cost = 0
-    elif user["credits"] > 0:
-        execute(db, "UPDATE users SET credits=credits-1 WHERE id=?", (user_id,))
-        cost = 1
-    else:
-        db.close()
-        raise HTTPException(402, "Plus de crédits")
-    execute(db, "INSERT INTO searches (user_id, query_data, result_count, cost) VALUES (?,?,?,?)",
-            (user_id, json.dumps(query_data), result_count, cost))
-    db.commit()
-    updated = fetchone(db, "SELECT free_left, credits FROM users WHERE id=?", (user_id,))
-    db.close()
-    return dict(updated)
-
-# ── MIDDLEWARE ────────────────────────────────────────────────────────────────
-app = FastAPI(title="Xtracker API")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
-
-@app.middleware("http")
-async def maintenance_middleware(request, call_next):
-    path = request.url.path
-    if (path.startswith("/api/admin") or 
-        path.startswith("/api/auth") or 
-        path == "/maintenance.html" or
-        path.startswith("/static") or
-        path == "/favicon.ico" or
-        path.endswith(".js") or
-        path.endswith(".css") or
-        path.endswith(".png") or
-        path.endswith(".jpg") or
-        path == "/manifest.json" or
-        path == "/sw.js"):
-        return await call_next(request)
-    maintenance = False
-    try:
-        db = get_db()
-        row = fetchone(db, "SELECT value FROM settings WHERE key='maintenance_enabled'", ())
-        db.close()
-        maintenance = bool(row and row.get("value") == "true")
-    except:
-        maintenance = False
-    if maintenance:
-        if path in ["/admin.html", "/login.html", "/"]:
-            return await call_next(request)
-        try:
-            auth = request.headers.get("authorization","")
-            if auth.startswith("Bearer "):
-                token = auth[7:]
-                payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-                if payload.get("role") == "admin":
-                    return await call_next(request)
-        except:
-            pass
-        try:
-            db = get_db()
-            msg_row = fetchone(db, "SELECT value FROM settings WHERE key='maintenance_message'", ())
-            eta_row = fetchone(db, "SELECT value FROM settings WHERE key='maintenance_eta'", ())
-            db.close()
-            msg = msg_row.get("value","") if msg_row else ""
-            eta = eta_row.get("value","") if eta_row else ""
-        except:
-            msg = ""
-            eta = ""
-        if path.startswith("/api/"):
-            from fastapi.responses import JSONResponse
-            return JSONResponse({"detail": "Maintenance en cours", "message": msg}, status_code=503)
-        from fastapi.responses import RedirectResponse
-        try:
-            db2 = get_db()
-            sat_row = fetchone(db2, "SELECT value FROM settings WHERE key='maintenance_started_at'", ())
-            db2.close()
-            started_at = sat_row.get("value","") if sat_row else ""
-        except:
-            started_at = ""
-        params = ""
-        if msg: params += f"?msg={msg}"
-        if eta: params += ("&" if params else "?") + f"eta={eta}"
-        if started_at: params += ("&" if params else "?") + f"started={started_at}"
-        return RedirectResponse(url=f"/maintenance.html{params}")
-    return await call_next(request)
-
-# ── AUTH ENDPOINTS ────────────────────────────────────────────────────────────
 @app.post("/api/auth/register")
 async def register(data: RegisterModel, request: Request):
     ip = request.headers.get("CF-Connecting-IP") or request.headers.get("X-Forwarded-For","").split(",")[0].strip() or request.client.host
@@ -495,15 +458,19 @@ async def register(data: RegisterModel, request: Request):
         raise HTTPException(400, "Mot de passe trop court (8 caractères min)")
     if not re.match(r"^[a-zA-Z0-9_\-\.]{2,32}$", data.username):
         raise HTTPException(400, "Nom d utilisateur invalide (lettres, chiffres, _ - . uniquement)")
+    # Générer un ID unique lisible
     uid_chars = string.ascii_uppercase + string.digits
     user_uid = "XT-" + "".join(secrets.choice(uid_chars) for _ in range(8))
+    # Email fictif basé sur username pour compatibilité DB
     fake_email = data.username.lower() + "@xtracker.local"
     ip = request.headers.get("CF-Connecting-IP") or request.headers.get("X-Forwarded-For","").split(",")[0].strip() or request.client.host
     db = get_db()
+    # Vérifier username unique
     existing = fetchone(db, "SELECT id FROM users WHERE username=?", (data.username,))
     if existing:
         db.close()
         raise HTTPException(400, "Nom d utilisateur déjà pris")
+    # Vérifier IP
     ip_used = fetchone(db, "SELECT id FROM ip_used WHERE ip=?", (ip,))
     free_left = 0 if ip_used else 5
     hashed = pwd_ctx.hash(data.password)
@@ -516,6 +483,7 @@ async def register(data: RegisterModel, request: Request):
             execute(db, "INSERT INTO ip_used (ip) VALUES (?)", (ip,))
         except:
             pass
+    # Marquer tous les broadcasts existants comme lus pour eviter le flood
     try:
         user_id_new = db_id if not is_pg() else (db_id[0] if db_id else None)
         if user_id_new:
@@ -527,14 +495,17 @@ async def register(data: RegisterModel, request: Request):
                     pass
     except:
         pass
+    # Gérer le parrainage
     ref_code = data.ref_code.strip().upper() if hasattr(data, 'ref_code') and data.ref_code else None
     if ref_code and db_id:
         referrer = fetchone(db, "SELECT id, reg_ip FROM users WHERE referral_code=?", (ref_code,))
         if referrer and referrer["id"] != db_id:
+            # Bloquer si même IP que le parrain (anti-triche)
             referrer_ip = referrer.get("reg_ip")
             if referrer_ip and referrer_ip == ip:
                 print(f"[REFERRAL] Blocage auto-parrainage: même IP {ip}")
             else:
+                # Vérifier que cette IP n'a pas déjà été utilisée pour parrainer ce code
                 already = fetchone(db, "SELECT id FROM referrals WHERE referrer_id=? AND id IN (SELECT id FROM referrals WHERE referred_id IN (SELECT id FROM users WHERE reg_ip=?))", (referrer["id"], ip))
                 if already:
                     print(f"[REFERRAL] Blocage: IP {ip} déjà utilisée pour ce parrain")
@@ -544,6 +515,7 @@ async def register(data: RegisterModel, request: Request):
                     execute(db, "UPDATE users SET credits=credits+5 WHERE id=?", (referrer["id"],))
     db.commit()
     db.close()
+    # Récupérer l'ID réel depuis la BDD après commit
     db2 = get_db()
     new_user = fetchone(db2, "SELECT id FROM users WHERE username=?", (data.username,))
     db2.close()
@@ -574,12 +546,16 @@ async def login(data: LoginModel, request: Request):
     if check_rate_limit(f"login:{ip}", max_requests=10, window=60):
         raise HTTPException(429, "Trop de tentatives, réessayez dans 1 minute")
     db = get_db()
+    # Si c'est un email, chercher UNIQUEMENT par email
+    # Si c'est un username, chercher UNIQUEMENT par username (jamais les comptes discord)
     login_val = data.username.strip()
     if "@" in login_val and "xtracker.local" not in login_val.lower():
+        # Login par email réel (pas @xtracker.local)
         user = fetchone(db, "SELECT * FROM users WHERE email=?", (login_val.lower(),))
         if user and (user.get("email") or "").startswith("discord_"):
             user = None
     else:
+        # Login par username - exclure seulement les comptes Discord (discord_XXXXX)
         user = fetchone(db, "SELECT * FROM users WHERE username=?", (login_val,))
         if user and (user.get("email") or "").startswith("discord_"):
             user = None
@@ -620,12 +596,152 @@ async def me(user=Depends(get_current_user)):
         "lifetime": bool(user.get("lifetime", False))
     }
 
-# ── SEARCH ENDPOINT (MODIFIÉ) ──────────────────────────────────────────────
+# ── SEARCH ────────────────────────────────────────────────────────────────────
+# Cache pour éviter les doublons
+_search_cache = {}
+CACHE_TTL = 300  # 5 minutes
+
+def get_cache_key(method: str, path: str, body: dict = None) -> str:
+    key = f"{method}:{path}"
+    if body:
+        key += f":{json.dumps(body, sort_keys=True)}"
+    return hashlib.md5(key.encode()).hexdigest()
+
+async def call_brix(method: str, path: str, body: dict = None, use_cache: bool = True):
+    """
+    Appelle l'API BrixHub avec contournement Cloudflare
+    URL correcte: https://brixhub.top/api/v1
+    """
+    # Vérifier le cache
+    if use_cache and method == "POST" and body:
+        cache_key = get_cache_key(method, path, body)
+        if cache_key in _search_cache:
+            cached_data, timestamp = _search_cache[cache_key]
+            if time.time() - timestamp < CACHE_TTL:
+                return cached_data
+    
+    # ⏱️ Petit délai pour éviter le rate limiting Cloudflare
+    await asyncio.sleep(random.uniform(0.8, 1.8))
+    
+    # ✅ HEADERS COMPLETS POUR CONTOURNER CLOUDFLARE
+    headers = {
+        "X-API-Key": BRIX_KEY,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Accept-Encoding": "identity",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7",
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache",
+        "Referer": "https://brixhub.top/",
+        "Origin": "https://brixhub.top",
+        "Sec-Ch-Ua": '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+        "Sec-Ch-Ua-Mobile": "?0",
+        "Sec-Ch-Ua-Platform": '"Windows"',
+        "Sec-Fetch-Dest": "empty",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Site": "same-origin",
+        "X-Requested-With": "XMLHttpRequest",
+    }
+    
+    try:
+        async with httpx.AsyncClient(
+            timeout=30.0,
+            follow_redirects=True,
+            http2=False
+        ) as client:
+            # Construction de l'URL avec le slash final
+            url = f"{BRIX_BASE}{path}"
+            # Si BRIX_BASE se termine par / et path commence par /, on évite le double slash
+            if BRIX_BASE.endswith('/') and path.startswith('/'):
+                url = f"{BRIX_BASE}{path[1:]}"
+            
+            if method == "POST":
+                r = await client.post(url, json=body, headers=headers)
+            else:
+                r = await client.get(url, headers=headers)
+            
+            # Si 403 Cloudflare, réessayer avec un délai plus long
+            if r.status_code == 403 and ('cf-ray' in r.headers or 'Just a moment' in r.text):
+                print(f"[BRIX] Cloudflare détecté, nouvelle tentative dans 2s...")
+                await asyncio.sleep(2 + random.random())
+                if method == "POST":
+                    r = await client.post(url, json=body, headers=headers)
+                else:
+                    r = await client.get(url, headers=headers)
+            
+            # Vérifier si le contenu est du JSON valide
+            content_type = r.headers.get('content-type', '')
+            is_json = 'application/json' in content_type
+            
+            # Si ce n'est pas du JSON et que le statut n'est pas 200, c'est une erreur
+            if not is_json and r.status_code != 200:
+                print(f"[BRIX] Réponse non-JSON: {r.text[:300]}")
+                if 'Internal Server Error' in r.text or '500' in r.text:
+                    raise HTTPException(500, "Erreur interne du serveur BrixHub. Réessayez plus tard.")
+                if 'Just a moment' in r.text or 'Cloudflare' in r.text:
+                    raise HTTPException(403, "Cloudflare bloque la requête. Réessayez dans quelques secondes.")
+                if '404' in r.text:
+                    raise HTTPException(404, "Endpoint BrixHub introuvable. Vérifiez l'URL.")
+                raise HTTPException(502, f"Réponse inattendue de BrixHub: {r.text[:100]}")
+            
+            # Si le statut n'est pas 200
+            if r.status_code != 200:
+                try:
+                    error_data = r.json()
+                    error_msg = error_data.get('message', error_data.get('error', 'Erreur inconnue'))
+                    raise HTTPException(r.status_code, f"BrixHub: {error_msg}")
+                except:
+                    raise HTTPException(r.status_code, f"Erreur BrixHub {r.status_code}: {r.text[:200]}")
+            
+            # Succès - parser le JSON
+            try:
+                data = r.json()
+                if use_cache and method == "POST" and body:
+                    cache_key = get_cache_key(method, path, body)
+                    _search_cache[cache_key] = (data, time.time())
+                return data
+            except Exception as e:
+                print(f"[BRIX] Erreur parsing JSON: {e}")
+                print(f"[BRIX] Contenu: {r.text[:500]}")
+                raise HTTPException(500, "Réponse invalide de l'API BrixHub")
+    
+    except httpx.TimeoutException:
+        raise HTTPException(504, "Timeout - réessayez dans quelques secondes")
+    except httpx.NetworkError:
+        raise HTTPException(503, "Erreur réseau - BrixHub inaccessible")
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[BRIX] Erreur inattendue: {e}")
+        raise HTTPException(500, f"Erreur interne: {str(e)}")
+
+def deduct_and_log(user_id: int, query_data: dict, result_count: int):
+    db = get_db()
+    user = fetchone(db, "SELECT free_left, credits, lifetime FROM users WHERE id=?", (user_id,))
+    # Lifetime = recherches illimitées, pas de déduction
+    if user.get("lifetime"):
+        cost = 0
+    elif user["free_left"] > 0:
+        execute(db, "UPDATE users SET free_left=free_left-1 WHERE id=?", (user_id,))
+        cost = 0
+    elif user["credits"] > 0:
+        execute(db, "UPDATE users SET credits=credits-1 WHERE id=?", (user_id,))
+        cost = 1
+    else:
+        db.close()
+        raise HTTPException(402, "Plus de crédits")
+    execute(db, "INSERT INTO searches (user_id, query_data, result_count, cost) VALUES (?,?,?,?)",
+            (user_id, json.dumps(query_data), result_count, cost))
+    db.commit()
+    updated = fetchone(db, "SELECT free_left, credits FROM users WHERE id=?", (user_id,))
+    db.close()
+    return dict(updated)
+
 @app.post("/api/search")
 async def search(data: SearchModel, user=Depends(get_current_user)):
     if not user.get("lifetime") and user["free_left"] <= 0 and user["credits"] <= 0:
         raise HTTPException(402, "Plus de crédits")
-    
     payload = {"flexible": data.flexible, "per_page": 100}
     fields = [
         "nom_famille","prenom","nom_naissance","nom_affichage","nom_utilisateur","genre","civilite",
@@ -638,34 +754,49 @@ async def search(data: SearchModel, user=Depends(get_current_user)):
     ]
     for f in fields:
         val = getattr(data, f, None)
-        if val:
-            payload[f] = val
+        if val: payload[f] = val
+    # Filtrer les valeurs trop courtes
     for k in list(payload.keys()):
         if k not in ('flexible','per_page') and isinstance(payload[k], str) and len(payload[k].strip()) < 2:
             del payload[k]
     if len(payload) <= 2:
         raise HTTPException(400, "Remplissez au moins un champ (2 caractères minimum)")
 
+    # Nettoyer les caractères problématiques pour BrixHub
     def clean_field(val):
         if not isinstance(val, str): return val
+        # Normaliser les accents
         val = unicodedata.normalize('NFC', val)
+        # Supprimer les caractères de contrôle
         val = ''.join(c for c in val if unicodedata.category(c) != 'Cc')
         return val.strip()
     for k in list(payload.keys()):
         if isinstance(payload[k], str):
             payload[k] = clean_field(payload[k])
 
-    # RECHERCHE LOCALE (au lieu de BrixHub)
-    result = await search_local_db(payload)
-    results = result.get("data", {}).get("results", [])
-    
-    # Pas de filtre "protected" car on est sur nos propres données
+    # Vérifier les termes protégés AVANT d'appeler BrixHub
+    if check_protected(payload):
+        return {
+            "results": [],
+            "total": 0,
+            "took_ms": 0,
+            "free_left": user["free_left"],
+            "credits": user["credits"],
+            "protected": True,
+            "message": "Ahah bien essayé mais j'y suis pas 😏"
+        }
 
-    # Pivot famille (recherche par adresse/téléphone)
-    for p in results[:5]:
+    result = await call_brix("POST", "/search", payload)
+    results = result.get("data", {}).get("results", [])
+    # Filtrer les résultats protégés (même si BrixHub les retourne)
+    results = filter_results(results)
+
+    # Pivot famille : recherche automatique sans coût de crédit
+    for p in results[:5]:  # Limiter aux 5 premiers pour économiser les requêtes
         famille = []
         pivot_done = set()
 
+        # Pivot par adresse
         if p.get("adresse") and p.get("code_postal"):
             pivot_key = f"adresse_{p['adresse']}_{p['code_postal']}"
             if pivot_key not in pivot_done:
@@ -677,9 +808,10 @@ async def search(data: SearchModel, user=Depends(get_current_user)):
                         "flexible": False,
                         "per_page": 10
                     }
-                    pivot_result = await search_local_db(pivot_payload)
+                    pivot_result = await call_brix("POST", "/search", pivot_payload)
                     pivot_results = pivot_result.get("data", {}).get("results", [])
                     for pr in pivot_results:
+                        # Exclure le profil principal
                         if pr.get("nom_famille") == p.get("nom_famille") and pr.get("prenom") == p.get("prenom"):
                             continue
                         membre = {
@@ -691,11 +823,13 @@ async def search(data: SearchModel, user=Depends(get_current_user)):
                             "lien": "Même adresse",
                             "_sources": pr.get("_sources", [])
                         }
+                        # Éviter les doublons
                         if not any(m["prenom"] == membre["prenom"] and m["nom_famille"] == membre["nom_famille"] for m in famille):
                             famille.append(membre)
                 except:
                     pass
 
+        # Pivot par téléphone
         if p.get("telephone") and len(famille) < 5:
             pivot_key = f"tel_{p['telephone']}"
             if pivot_key not in pivot_done:
@@ -706,7 +840,7 @@ async def search(data: SearchModel, user=Depends(get_current_user)):
                         "flexible": False,
                         "per_page": 5
                     }
-                    pivot_result = await search_local_db(pivot_payload)
+                    pivot_result = await call_brix("POST", "/search", pivot_payload)
                     pivot_results = pivot_result.get("data", {}).get("results", [])
                     for pr in pivot_results:
                         if pr.get("nom_famille") == p.get("nom_famille") and pr.get("prenom") == p.get("prenom"):
@@ -737,22 +871,18 @@ async def search(data: SearchModel, user=Depends(get_current_user)):
         "credits":   updated["credits"],
     }
 
-# ── LOOKUP ENDPOINT (MODIFIÉ) ───────────────────────────────────────────────
 @app.post("/api/lookup")
 async def lookup(data: LookupModel, user=Depends(get_current_user)):
     if not user.get("lifetime") and user["free_left"] <= 0 and user["credits"] <= 0:
         raise HTTPException(402, "Plus de crédits")
     val = data.lookup.strip()
-    
-    # Construire le payload selon le type
     if "@" in val:
-        payload = {"email": val, "flexible": False, "per_page": 10}
+        path = f"/lookup/email/{val}"
     elif val.upper().startswith("FR") and len(val) > 20:
-        payload = {"iban": val, "flexible": False, "per_page": 10}
+        path = f"/lookup/iban/{val}"
     else:
-        payload = {"telephone": val.replace(' ','').replace('.','').replace('-',''), "flexible": False, "per_page": 10}
-    
-    result = await search_local_db(payload)
+        path = f"/lookup/phone/{val.replace(' ','').replace('.','').replace('-','')}"
+    result = await call_brix("GET", path)
     results = result.get("data", {}).get("results", [])
     updated = deduct_and_log(user["id"], {"lookup": val}, len(results))
     return {
@@ -762,7 +892,6 @@ async def lookup(data: LookupModel, user=Depends(get_current_user)):
         "credits":   updated["credits"],
     }
 
-# ── AUTRES ENDPOINTS (inchangés) ─────────────────────────────────────────────
 @app.get("/api/history")
 async def history(user=Depends(get_current_user)):
     db = get_db()
@@ -772,6 +901,7 @@ async def history(user=Depends(get_current_user)):
 
 @app.post("/api/history/{search_id}/replay")
 async def history_replay(search_id: int, user=Depends(get_current_user)):
+    """Rejoue une recherche depuis l'historique SANS deduire de credits"""
     db = get_db()
     row = fetchone(db, "SELECT query_data FROM searches WHERE id=? AND user_id=?", (search_id, user["id"]))
     db.close()
@@ -779,13 +909,18 @@ async def history_replay(search_id: int, user=Depends(get_current_user)):
         raise HTTPException(404, "Recherche introuvable")
     payload = json.loads(row["query_data"])
     payload["per_page"] = 100
-    result = await search_local_db(payload)
+    # Vérifier les termes protégés même pour le replay
+    if check_protected(payload):
+        return {"results": [], "total": 0, "took_ms": 0, "free_left": user["free_left"], "credits": user["credits"]}
+    result = await call_brix("POST", "/search", payload)
     results = result.get("data", {}).get("results", [])
+    results = filter_results(results)
+    # Pivot famille sans credit
     for p in results[:5]:
         famille = []
         if p.get("adresse") and p.get("code_postal"):
             try:
-                pr = await search_local_db({"adresse": p["adresse"], "code_postal": p["code_postal"], "flexible": False, "per_page": 100})
+                pr = await call_brix("POST", "/search", {"adresse": p["adresse"], "code_postal": p["code_postal"], "flexible": False, "per_page": 100})
                 for m in pr.get("data", {}).get("results", []):
                     if m.get("nom_famille") == p.get("nom_famille") and m.get("prenom") == p.get("prenom"):
                         continue
@@ -803,9 +938,10 @@ async def history_replay(search_id: int, user=Depends(get_current_user)):
         "credits": user["credits"],
     }
 
-# ── CREDITS & STRIPE ──────────────────────────────────────────────────────────
+# ── STRIPE ────────────────────────────────────────────────────────────────────
 @app.post("/api/credits/confirm")
 async def confirm_paygate(request: Request, user=Depends(get_current_user)):
+    """Confirme un paiement PayGate et ajoute les crédits"""
     body     = await request.json()
     credits  = int(body.get("credits", 0))
     pack_id  = body.get("pack_id", "")
@@ -815,6 +951,7 @@ async def confirm_paygate(request: Request, user=Depends(get_current_user)):
     pack   = CREDIT_PACKS.get(pack_id, {})
     amount = pack.get("price_eur", 0)
     db = get_db()
+    # Vérifier si déjà traité
     existing = fetchone(db, "SELECT id FROM transactions WHERE stripe_id=?", (order_id,))
     if existing:
         db.close()
@@ -870,6 +1007,7 @@ async def checkout(pack_id: str, user=Depends(get_current_user), request: Reques
 
 @app.get("/api/sumup/success")
 async def sumup_success(request: Request):
+    """SumUp redirige ici apres paiement - VERIFICATION OBLIGATOIRE avec SumUp API"""
     from fastapi.responses import RedirectResponse
     params   = dict(request.query_params)
     order_id = params.get("order_id", "")
@@ -887,8 +1025,10 @@ async def sumup_success(request: Request):
     amount  = pack["price_eur"]
 
     try:
+        # VERIFIER le paiement directement avec l'API SumUp
         sumup_key = os.getenv("SUMUP_SK", "")
         async with httpx.AsyncClient(timeout=15) as client:
+            # Récupérer le checkout pour vérifier le statut
             r = await client.get(
                 f"https://api.sumup.com/v0.1/checkouts/{order_id}",
                 headers={"Authorization": f"Bearer {sumup_key}"}
@@ -904,6 +1044,7 @@ async def sumup_success(request: Request):
 
             print(f"[SUMUP] Checkout {order_id}: status={status} amount={paid_amount} {currency}")
 
+            # Vérifier que le paiement est bien PAID et que le montant correspond
             if status != "PAID":
                 print(f"[SUMUP] Paiement non complete: {status}")
                 return RedirectResponse(url="/dashboard.html?payment=cancel")
@@ -912,6 +1053,7 @@ async def sumup_success(request: Request):
                 print(f"[SUMUP] Montant incorrect: attendu {amount} recu {paid_amount}")
                 return RedirectResponse(url="/dashboard.html?payment=cancel")
 
+        # Tout est OK - ajouter les credits
         db = get_db()
         existing = fetchone(db, "SELECT id FROM transactions WHERE stripe_id=?", (order_id,))
         if not existing:
@@ -985,13 +1127,14 @@ async def admin_users(admin=Depends(require_admin), page: int = 1, search: str =
 @app.patch("/api/admin/users/{user_id}")
 async def admin_update(user_id: int, data: AdminUserUpdate, admin=Depends(require_admin)):
     db = get_db()
+    # Protéger le compte admin principal
     target = fetchone(db, "SELECT email FROM users WHERE id=?", (user_id,))
     if ADMIN_EMAIL and target and target.get("email") == ADMIN_EMAIL:
         if data.banned is not None or data.role is not None:
             db.close()
             raise HTTPException(403, "Ce compte admin ne peut pas être modifié")
     if data.credits is not None:
-        safe_credits = min(int(data.credits), 1000)
+        safe_credits = min(int(data.credits), 1000)  # Max 1000 credits
         execute(db, "UPDATE users SET credits=credits+? WHERE id=?", (safe_credits, user_id))
     if data.banned is not None:
         banned_val = data.banned if is_pg() else (1 if data.banned else 0)
@@ -1025,7 +1168,7 @@ async def admin_delete(user_id: int, admin=Depends(require_admin)):
 @app.post("/api/admin/users/{user_id}/add-credits")
 async def admin_add_credits(user_id: int, request: Request, admin=Depends(require_admin)):
     body    = await request.json()
-    credits = min(int(body.get("credits", 0)), 1000)
+    credits = min(int(body.get("credits", 0)), 1000)  # Max 1000 credits par ajout
     db = get_db()
     execute(db, "UPDATE users SET credits=credits+? WHERE id=?", (credits, user_id))
     execute(db, "INSERT INTO transactions (user_id,type,credits,amount_eur,status) VALUES (?,?,?,0,'completed')", (user_id, "admin_grant", credits))
@@ -1091,6 +1234,7 @@ async def set_maintenance(request: Request, admin=Depends(require_admin)):
     message = body.get("message", "")
     eta_minutes = body.get("eta_minutes", 0)
     db = get_db()
+    # Sauvegarder dans la table settings
     try:
         import time as _time
         start_at = str(int(_time.time())) if enabled else ""
@@ -1178,6 +1322,7 @@ async def admin_set_role(user_id: int, request: Request, admin=Depends(require_a
     if role not in ["user", "admin"]:
         raise HTTPException(400, "Role invalide")
     db = get_db()
+    # Protéger le compte admin principal
     target = fetchone(db, "SELECT email FROM users WHERE id=?", (user_id,))
     if ADMIN_EMAIL and target and target.get("email") == ADMIN_EMAIL:
         db.close()
@@ -1227,6 +1372,7 @@ async def get_ticket(ticket_id: int, user=Depends(get_current_user)):
     ticket = fetchone(db, "SELECT * FROM tickets WHERE id=? AND (user_id=? OR ?='admin')", (ticket_id, user["id"], user["role"]))
     if not ticket: raise HTTPException(404, "Ticket introuvable")
     messages = fetchall(db, "SELECT tm.*, u.username FROM ticket_messages tm JOIN users u ON tm.user_id=u.id WHERE tm.ticket_id=? ORDER BY tm.created_at ASC", (ticket_id,))
+    # Marquer comme lu
     if user["role"] != "admin":
         execute(db, "UPDATE ticket_messages SET read_by_user=TRUE WHERE ticket_id=? AND is_admin=TRUE", (ticket_id,))
     else:
@@ -1320,7 +1466,7 @@ async def mark_broadcast_read(bid: int, user=Depends(get_current_user)):
     db.close()
     return {"ok": True}
 
-# ── ANNOUNCEMENTS ──────────────────────────────────────────────────────────────
+# ── ANNOUNCEMENTS (navbar) ─────────────────────────────────────────────────────
 class AnnouncementModel(BaseModel):
     message: str
 
@@ -1353,12 +1499,13 @@ async def lookup_plaque(plaque: str, user=Depends(get_current_user)):
         raise HTTPException(402, "Plus de crédits")
     plaque_clean = plaque.upper().replace("-","").replace(" ","")
     try:
-        result = await search_local_db({
+        result = await call_brix("POST", "/search", {
             "vin_plaque": plaque_clean,
             "flexible": False,
             "per_page": 5
         })
         results = result.get("data", {}).get("results", [])
+        results = filter_results(results)
         vehicles = []
         for r in results:
             if r.get("vin_plaque") or r.get("immatriculation") or r.get("marque"):
@@ -1389,6 +1536,7 @@ async def lookup_plaque(plaque: str, user=Depends(get_current_user)):
 # ── EXPORT PDF ─────────────────────────────────────────────────────────────────
 @app.post("/api/export/pdf")
 async def export_pdf(request: Request, user=Depends(get_current_user)):
+    """Génère un PDF d'une fiche personne"""
     body = await request.json()
     profile = body.get("profile", {})
     if not profile:
@@ -1454,12 +1602,12 @@ async def admin_set_lifetime(user_id: int, request: Request, admin=Depends(requi
     return {"ok": True}
 
 # ── CHANGEMENT MOT DE PASSE ───────────────────────────────────────────────────
-class ChangePasswordModel2(BaseModel):
+class ChangePasswordModel(BaseModel):
     current_password: str
     new_password: str
 
 @app.post("/api/auth/change-password")
-async def change_password(data: ChangePasswordModel2, user=Depends(get_current_user)):
+async def change_password(data: ChangePasswordModel, user=Depends(get_current_user)):
     if len(data.new_password) < 8:
         raise HTTPException(400, "Nouveau mot de passe trop court (8 caractères min)")
     db = get_db()
@@ -2110,7 +2258,6 @@ async def remove_person_from_fiche(fiche_id: int, person_id: int, user=Depends(g
     db.commit(); db.close()
     return {"ok": True}
 
-# ── MOUNT STATIC ──────────────────────────────────────────────────────────────
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
 
 if __name__ == "__main__":
