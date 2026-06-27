@@ -1,5 +1,6 @@
 """
 Xtracker — Backend FastAPI avec API BrixHub
+Version FULL GRATUIT — sans crédits, sans paiements
 """
 
 from fastapi import FastAPI, HTTPException, Depends, Request
@@ -40,7 +41,6 @@ PAYGATE_WALLET_ETH = os.getenv("PAYGATE_WALLET_ETH", "")
 DB_PATH        = "xtracker.db"
 MAINTENANCE    = os.getenv("MAINTENANCE", "false").lower() == "true"
 DATABASE_URL   = os.getenv("DATABASE_URL", "") or os.getenv("POSTGRES_URL", "")
-CREDITS_ENABLED = os.getenv("CREDITS_ENABLED", "false").lower() == "true"
 
 # ── AUTH ──────────────────────────────────────────────────────────────────────
 pwd_ctx = CryptContext(schemes=["bcrypt"])
@@ -115,18 +115,12 @@ def init_db():
         cur = db.cursor()
         cur.execute("""CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY, email TEXT UNIQUE, password TEXT, username TEXT UNIQUE,
-            role TEXT DEFAULT 'user', credits INTEGER DEFAULT 0, free_left INTEGER DEFAULT 0,
-            created_at TIMESTAMP DEFAULT NOW(), banned BOOLEAN DEFAULT FALSE,
-            lifetime BOOLEAN DEFAULT FALSE, auth_type TEXT DEFAULT 'local',
-            reg_ip TEXT, discord_id TEXT, discord_username TEXT,
+            role TEXT DEFAULT 'user', created_at TIMESTAMP DEFAULT NOW(), banned BOOLEAN DEFAULT FALSE,
+            auth_type TEXT DEFAULT 'local', reg_ip TEXT, discord_id TEXT, discord_username TEXT,
             referral_code TEXT, referred_by INTEGER, theme TEXT DEFAULT 'default')""")
         cur.execute("""CREATE TABLE IF NOT EXISTS searches (
             id SERIAL PRIMARY KEY, user_id INTEGER, query_data TEXT,
             result_count INTEGER DEFAULT 0, created_at TIMESTAMP DEFAULT NOW())""")
-        cur.execute("""CREATE TABLE IF NOT EXISTS transactions (
-            id SERIAL PRIMARY KEY, user_id INTEGER, type TEXT, credits INTEGER DEFAULT 0,
-            amount_eur REAL DEFAULT 0, stripe_id TEXT, status TEXT DEFAULT 'pending',
-            created_at TIMESTAMP DEFAULT NOW())""")
         cur.execute("CREATE TABLE IF NOT EXISTS blocklist (id SERIAL PRIMARY KEY, type TEXT, value TEXT, created_at TIMESTAMP DEFAULT NOW())")
         cur.execute("CREATE TABLE IF NOT EXISTS ip_used (id SERIAL PRIMARY KEY, ip TEXT UNIQUE)")
         cur.execute("""CREATE TABLE IF NOT EXISTS tickets (
@@ -140,7 +134,7 @@ def init_db():
             created_at TIMESTAMP DEFAULT NOW())""")
         cur.execute("CREATE TABLE IF NOT EXISTS broadcast_reads (id SERIAL PRIMARY KEY, broadcast_id INTEGER, user_id INTEGER, read_at TIMESTAMP DEFAULT NOW(), UNIQUE(broadcast_id, user_id))")
         cur.execute("CREATE TABLE IF NOT EXISTS announcements (id SERIAL PRIMARY KEY, message TEXT, active BOOLEAN DEFAULT TRUE, created_at TIMESTAMP DEFAULT NOW())")
-        cur.execute("CREATE TABLE IF NOT EXISTS referrals (id SERIAL PRIMARY KEY, referrer_id INTEGER, referred_id INTEGER, credits_given INTEGER DEFAULT 5, created_at TIMESTAMP DEFAULT NOW())")
+        cur.execute("CREATE TABLE IF NOT EXISTS referrals (id SERIAL PRIMARY KEY, referrer_id INTEGER, referred_id INTEGER, created_at TIMESTAMP DEFAULT NOW())")
         cur.execute("CREATE TABLE IF NOT EXISTS discord_link_codes (id SERIAL PRIMARY KEY, user_id INTEGER, code TEXT UNIQUE, expires_at TIMESTAMP, used BOOLEAN DEFAULT FALSE)")
         cur.execute("CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)")
         cur.execute("CREATE TABLE IF NOT EXISTS fiches (id SERIAL PRIMARY KEY, user_id INTEGER, name TEXT, created_at TIMESTAMP DEFAULT NOW())")
@@ -151,19 +145,12 @@ def init_db():
     else:
         db.execute("""CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT UNIQUE, password TEXT,
-            username TEXT UNIQUE, role TEXT DEFAULT 'user', credits INTEGER DEFAULT 0,
-            free_left INTEGER DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            banned INTEGER DEFAULT 0, lifetime INTEGER DEFAULT 0,
-            auth_type TEXT DEFAULT 'local', reg_ip TEXT, discord_id TEXT,
-            discord_username TEXT, referral_code TEXT, referred_by INTEGER,
-            theme TEXT DEFAULT 'default')""")
+            username TEXT UNIQUE, role TEXT DEFAULT 'user', created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            banned INTEGER DEFAULT 0, auth_type TEXT DEFAULT 'local', reg_ip TEXT, discord_id TEXT,
+            discord_username TEXT, referral_code TEXT, referred_by INTEGER, theme TEXT DEFAULT 'default')""")
         db.execute("""CREATE TABLE IF NOT EXISTS searches (
             id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, query_data TEXT,
             result_count INTEGER DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)""")
-        db.execute("""CREATE TABLE IF NOT EXISTS transactions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, type TEXT,
-            credits INTEGER DEFAULT 0, amount_eur REAL DEFAULT 0, stripe_id TEXT,
-            status TEXT DEFAULT 'pending', created_at DATETIME DEFAULT CURRENT_TIMESTAMP)""")
         db.execute("CREATE TABLE IF NOT EXISTS blocklist (id INTEGER PRIMARY KEY AUTOINCREMENT, type TEXT, value TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)")
         db.execute("CREATE TABLE IF NOT EXISTS ip_used (id INTEGER PRIMARY KEY AUTOINCREMENT, ip TEXT UNIQUE)")
         db.execute("CREATE TABLE IF NOT EXISTS tickets (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, subject TEXT, status TEXT DEFAULT 'open', created_at DATETIME DEFAULT CURRENT_TIMESTAMP)")
@@ -171,7 +158,7 @@ def init_db():
         db.execute("CREATE TABLE IF NOT EXISTS broadcasts (id INTEGER PRIMARY KEY AUTOINCREMENT, message TEXT, active INTEGER DEFAULT 1, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)")
         db.execute("CREATE TABLE IF NOT EXISTS broadcast_reads (id INTEGER PRIMARY KEY AUTOINCREMENT, broadcast_id INTEGER, user_id INTEGER, read_at DATETIME DEFAULT CURRENT_TIMESTAMP, UNIQUE(broadcast_id, user_id))")
         db.execute("CREATE TABLE IF NOT EXISTS announcements (id INTEGER PRIMARY KEY AUTOINCREMENT, message TEXT, active INTEGER DEFAULT 1, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)")
-        db.execute("CREATE TABLE IF NOT EXISTS referrals (id INTEGER PRIMARY KEY AUTOINCREMENT, referrer_id INTEGER, referred_id INTEGER, credits_given INTEGER DEFAULT 5, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)")
+        db.execute("CREATE TABLE IF NOT EXISTS referrals (id INTEGER PRIMARY KEY AUTOINCREMENT, referrer_id INTEGER, referred_id INTEGER, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)")
         db.execute("CREATE TABLE IF NOT EXISTS discord_link_codes (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, code TEXT UNIQUE, expires_at DATETIME, used INTEGER DEFAULT 0)")
         db.execute("CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)")
         db.execute("CREATE TABLE IF NOT EXISTS fiches (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, name TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)")
@@ -276,15 +263,6 @@ def filter_results(results: list) -> list:
             clean.append(p)
     return clean
 
-# ── CREDIT PACKS ─────────────────────────────────────────────────────────────
-CREDIT_PACKS = {
-    "decouverte":  {"credits": 10,   "price_eur": 0.99,  "old_price": 2.99,  "label": "Decouverte"},
-    "starter":     {"credits": 50,   "price_eur": 4.99,  "old_price": 9.99,  "label": "Starter"},
-    "pro":         {"credits": 200,  "price_eur": 14.99, "old_price": 29.99,  "label": "Pro"},
-    "enterprise":  {"credits": 1000, "price_eur": 49.99, "old_price": 99.99, "label": "Enterprise"},
-    "lifetime":    {"credits": -1,   "price_eur": 149.00,"old_price": 299.00,"label": "Lifetime"},
-}
-
 # ── USER AUTH ──────────────────────────────────────────────────────────────────
 async def get_current_user(request: Request):
     auth = request.headers.get("authorization", "")
@@ -309,29 +287,6 @@ async def require_admin(request: Request):
     if user.get("role") != "admin":
         raise HTTPException(403, "Acces refuse")
     return user
-
-def deduct_and_log(user_id: int, query_data: dict, result_count: int):
-    db = get_db()
-    user = fetchone(db, "SELECT free_left, credits, lifetime FROM users WHERE id=?", (user_id,))
-    if not CREDITS_ENABLED:
-        cost = 0
-    elif user.get("lifetime"):
-        cost = 0
-    elif user["free_left"] > 0:
-        execute(db, "UPDATE users SET free_left=free_left-1 WHERE id=?", (user_id,))
-        cost = 0
-    elif user["credits"] > 0:
-        execute(db, "UPDATE users SET credits=credits-1 WHERE id=?", (user_id,))
-        cost = 1
-    else:
-        db.close()
-        raise HTTPException(402, "Plus de crédits")
-    execute(db, "INSERT INTO searches (user_id, query_data, result_count, cost) VALUES (?,?,?,?)",
-            (user_id, json.dumps(query_data), result_count, cost))
-    db.commit()
-    updated = fetchone(db, "SELECT free_left, credits FROM users WHERE id=?", (user_id,))
-    db.close()
-    return dict(updated)
 
 # ── BRIXHUB API CALL ──────────────────────────────────────────────────────────
 async def call_brix(method: str, path: str, body: dict = None):
@@ -401,9 +356,7 @@ class LookupModel(BaseModel):
 
 class AdminUserUpdate(BaseModel):
     role: str = None
-    credits: int = None
     banned: bool = None
-    lifetime: bool = None
 
 class RegisterModel(BaseModel):
     username: str
@@ -503,12 +456,11 @@ async def register(data: RegisterModel, request: Request):
         db.close()
         raise HTTPException(400, "Nom d utilisateur déjà pris")
     ip_used = fetchone(db, "SELECT id FROM ip_used WHERE ip=?", (ip,))
-    free_left = 0 if ip_used else 5
     hashed = pwd_ctx.hash(data.password)
     if is_pg():
-        db_id = execute(db, "INSERT INTO users (email, password, username, free_left, reg_ip) VALUES (?,?,?,?,?) RETURNING id", (fake_email, hashed, data.username, free_left, ip))
+        db_id = execute(db, "INSERT INTO users (email, password, username, reg_ip) VALUES (?,?,?,?) RETURNING id", (fake_email, hashed, data.username, ip))
     else:
-        db_id = execute(db, "INSERT INTO users (email, password, username, free_left, reg_ip) VALUES (?,?,?,?,?)", (fake_email, hashed, data.username, free_left, ip))
+        db_id = execute(db, "INSERT INTO users (email, password, username, reg_ip) VALUES (?,?,?,?)", (fake_email, hashed, data.username, ip))
     if not ip_used:
         try:
             execute(db, "INSERT INTO ip_used (ip) VALUES (?)", (ip,))
@@ -538,8 +490,7 @@ async def register(data: RegisterModel, request: Request):
                     print(f"[REFERRAL] Blocage: IP {ip} déjà utilisée pour ce parrain")
                 else:
                     execute(db, "UPDATE users SET referred_by=? WHERE id=?", (referrer["id"], db_id))
-                    execute(db, "INSERT INTO referrals (referrer_id, referred_id, credits_earned) VALUES (?,?,?)", (referrer["id"], db_id, 5))
-                    execute(db, "UPDATE users SET credits=credits+5 WHERE id=?", (referrer["id"],))
+                    execute(db, "INSERT INTO referrals (referrer_id, referred_id) VALUES (?,?)", (referrer["id"], db_id))
     db.commit()
     db.close()
     db2 = get_db()
@@ -560,8 +511,6 @@ async def register(data: RegisterModel, request: Request):
             "email": fake_email,
             "username": data.username,
             "role": "user",
-            "credits": 0,
-            "free_left": free_left
         },
         "message": "Compte cree avec succes !"
     }
@@ -603,8 +552,6 @@ async def login(data: LoginModel, request: Request):
             "email": user["email"],
             "username": user["username"],
             "role": user["role"],
-            "credits": user["credits"],
-            "free_left": user["free_left"]
         }
     }
 
@@ -615,18 +562,12 @@ async def me(user=Depends(get_current_user)):
         "email": user["email"],
         "username": user["username"],
         "role": user["role"],
-        "credits": user["credits"],
-        "free_left": user["free_left"],
         "created_at": user["created_at"],
-        "lifetime": bool(user.get("lifetime", False))
     }
 
 # ── SEARCH ENDPOINT ──────────────────────────────────────────────────────────
 @app.post("/api/search")
 async def search(data: SearchModel, user=Depends(get_current_user)):
-    if CREDITS_ENABLED and not user.get("lifetime") and user["free_left"] <= 0 and user["credits"] <= 0:
-        raise HTTPException(402, "Plus de crédits")
-
     payload = {"flexible": data.flexible, "per_page": 100}
     fields = [
         "nom_famille","prenom","nom_naissance","nom_affichage","nom_utilisateur","genre","civilite",
@@ -662,8 +603,6 @@ async def search(data: SearchModel, user=Depends(get_current_user)):
             "results": [],
             "total": 0,
             "took_ms": 0,
-            "free_left": user["free_left"],
-            "credits": user["credits"],
             "protected": True,
             "message": "Ahah bien essayé mais j'y suis pas 😏"
         }
@@ -739,20 +678,25 @@ async def search(data: SearchModel, user=Depends(get_current_user)):
         if famille:
             p["famille"] = famille
 
-    updated = deduct_and_log(user["id"], payload, len(results))
+    # Log la recherche sans crédits
+    try:
+        db = get_db()
+        execute(db, "INSERT INTO searches (user_id, query_data, result_count, cost) VALUES (?,?,?,?)",
+                (user["id"], json.dumps(payload), len(results), 0))
+        db.commit()
+        db.close()
+    except:
+        pass
+
     return {
         "results": results,
         "total": result.get("meta", {}).get("total", 0),
         "took_ms": result.get("meta", {}).get("took_ms", 0),
-        "free_left": updated["free_left"],
-        "credits": updated["credits"],
     }
 
 # ── LOOKUP ENDPOINT ──────────────────────────────────────────────────────────
 @app.post("/api/lookup")
 async def lookup(data: LookupModel, user=Depends(get_current_user)):
-    if CREDITS_ENABLED and not user.get("lifetime") and user["free_left"] <= 0 and user["credits"] <= 0:
-        raise HTTPException(402, "Plus de crédits")
     val = data.lookup.strip()
 
     if "@" in val:
@@ -764,19 +708,25 @@ async def lookup(data: LookupModel, user=Depends(get_current_user)):
 
     result = await call_brix("GET", path)
     results = result.get("data", {}).get("results", [])
-    updated = deduct_and_log(user["id"], {"lookup": val}, len(results))
+
+    # Log sans crédits
+    try:
+        db = get_db()
+        execute(db, "INSERT INTO searches (user_id, query_data, result_count, cost) VALUES (?,?,?,?)",
+                (user["id"], json.dumps({"lookup": val}), len(results), 0))
+        db.commit()
+        db.close()
+    except:
+        pass
+
     return {
         "results": results,
         "total": result.get("meta", {}).get("total", 0),
-        "free_left": updated["free_left"],
-        "credits": updated["credits"],
     }
 
 # ── PLAQUE ────────────────────────────────────────────────────────────────────
 @app.get("/api/lookup/plaque/{plaque}")
 async def lookup_plaque(plaque: str, user=Depends(get_current_user)):
-    if CREDITS_ENABLED and not user.get("lifetime") and user["free_left"] <= 0 and user["credits"] <= 0:
-        raise HTTPException(402, "Plus de crédits")
     plaque_clean = plaque.upper().replace("-", "").replace(" ", "")
     try:
         result = await call_brix("POST", "/search", {
@@ -800,15 +750,11 @@ async def lookup_plaque(plaque: str, user=Depends(get_current_user)):
                     "date_naissance": r.get("date_naissance", ""),
                     "sources": r.get("_sources", [])
                 })
-        if results:
-            updated = deduct_and_log(user["id"], {"vin_plaque": plaque_clean}, len(results))
         return {
             "plaque": plaque_clean,
             "results": vehicles,
             "raw": results,
             "total": len(results),
-            "free_left": user["free_left"],
-            "credits": user["credits"]
         }
     except Exception as e:
         raise HTTPException(500, str(e))
@@ -831,7 +777,7 @@ async def history_replay(search_id: int, user=Depends(get_current_user)):
     payload = json.loads(row["query_data"])
     payload["per_page"] = 100
     if check_protected(payload):
-        return {"results": [], "total": 0, "took_ms": 0, "free_left": user["free_left"], "credits": user["credits"]}
+        return {"results": [], "total": 0, "took_ms": 0}
     result = await call_brix("POST", "/search", payload)
     results = result.get("data", {}).get("results", [])
     results = filter_results(results)
@@ -853,134 +799,7 @@ async def history_replay(search_id: int, user=Depends(get_current_user)):
         "results": results,
         "total": result.get("meta", {}).get("total", 0),
         "took_ms": result.get("meta", {}).get("took_ms", 0),
-        "free_left": user["free_left"],
-        "credits": user["credits"],
     }
-
-# ── CREDITS & STRIPE ──────────────────────────────────────────────────────────
-@app.post("/api/credits/confirm")
-async def confirm_paygate(request: Request, user=Depends(get_current_user)):
-    body = await request.json()
-    credits = int(body.get("credits", 0))
-    pack_id = body.get("pack_id", "")
-    order_id = body.get("order_id", "")
-    if credits <= 0 or not order_id:
-        raise HTTPException(400, "Données invalides")
-    pack = CREDIT_PACKS.get(pack_id, {})
-    amount = pack.get("price_eur", 0)
-    db = get_db()
-    existing = fetchone(db, "SELECT id FROM transactions WHERE stripe_id=?", (order_id,))
-    if existing:
-        db.close()
-        return {"message": "Déjà traité"}
-    execute(db, "UPDATE users SET credits=credits+? WHERE id=?", (credits, user["id"]))
-    execute(db, """
-        INSERT INTO transactions (user_id, type, credits, amount_eur, stripe_id, status)
-        VALUES (?,?,?,?,?,'completed')
-    """, (user["id"], "purchase", credits, amount, order_id))
-    db.commit()
-    db.close()
-    return {"message": "Crédits ajoutés", "credits": credits}
-
-@app.get("/api/credits/packs")
-async def get_packs():
-    return CREDIT_PACKS
-
-@app.post("/api/credits/checkout/{pack_id}")
-async def checkout(pack_id: str, user=Depends(get_current_user), request: Request = None):
-    if pack_id not in CREDIT_PACKS:
-        raise HTTPException(400, "Pack invalide")
-    pack = CREDIT_PACKS[pack_id]
-    origin = str(request.base_url).rstrip("/")
-    amount = pack["price_eur"]
-    credits = pack["credits"]
-    import time
-    order_id = f"xtracker-{user['id']}-{pack_id}-{credits}-{int(time.time())}"
-    try:
-        async with httpx.AsyncClient(timeout=15) as client:
-            r = await client.post(
-                "https://api.sumup.com/v0.1/checkouts",
-                headers={
-                    "Authorization": f"Bearer {SUMUP_SK}",
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "checkout_reference": order_id,
-                    "amount": amount,
-                    "currency": "EUR",
-                    "description": f"Xtracker {pack['label']} - {credits} credits",
-                    "pay_to_email": "julien.kocahal@icloud.com",
-                    "redirect_url": f"{origin}/api/sumup/success?order_id={order_id}&uid={user['id']}&credits={credits}&pack={pack_id}",
-                    "hosted_checkout": {"enabled": True},
-                }
-            )
-            data = r.json()
-            if r.status_code not in [200, 201]:
-                raise HTTPException(500, str(data))
-            checkout_url = data.get("hosted_checkout_url") or f"https://checkout.sumup.com/pay/{data.get('id')}"
-            return {"checkout_url": checkout_url}
-    except Exception as e:
-        raise HTTPException(500, str(e))
-
-@app.get("/api/sumup/success")
-async def sumup_success(request: Request):
-    from fastapi.responses import RedirectResponse
-    params = dict(request.query_params)
-    order_id = params.get("order_id", "")
-    uid = int(params.get("uid", 0))
-    pack_id = params.get("pack", "")
-    if not order_id or not uid or not pack_id:
-        return RedirectResponse(url="/dashboard.html?payment=cancel")
-    pack = CREDIT_PACKS.get(pack_id, {})
-    if not pack:
-        return RedirectResponse(url="/dashboard.html?payment=cancel")
-    credits = pack["credits"]
-    amount = pack["price_eur"]
-    try:
-        sumup_key = os.getenv("SUMUP_SK", "")
-        async with httpx.AsyncClient(timeout=15) as client:
-            r = await client.get(
-                f"https://api.sumup.com/v0.1/checkouts/{order_id}",
-                headers={"Authorization": f"Bearer {sumup_key}"}
-            )
-            if r.status_code != 200:
-                print(f"[SUMUP] Checkout introuvable: {order_id} status={r.status_code}")
-                return RedirectResponse(url="/dashboard.html?payment=cancel")
-            checkout_data = r.json()
-            status = checkout_data.get("status", "")
-            paid_amount = float(checkout_data.get("amount", 0))
-            currency = checkout_data.get("currency", "")
-            print(f"[SUMUP] Checkout {order_id}: status={status} amount={paid_amount} {currency}")
-            if status != "PAID":
-                print(f"[SUMUP] Paiement non complete: {status}")
-                return RedirectResponse(url="/dashboard.html?payment=cancel")
-            if abs(paid_amount - amount) > 0.01:
-                print(f"[SUMUP] Montant incorrect: attendu {amount} recu {paid_amount}")
-                return RedirectResponse(url="/dashboard.html?payment=cancel")
-        db = get_db()
-        existing = fetchone(db, "SELECT id FROM transactions WHERE stripe_id=?", (order_id,))
-        if not existing:
-            if pack_id == "lifetime":
-                execute(db, "UPDATE users SET lifetime=TRUE, credits=999999 WHERE id=?", (uid,))
-            else:
-                execute(db, "UPDATE users SET credits=credits+? WHERE id=?", (credits, uid))
-            execute(db, "INSERT INTO transactions (user_id, type, credits, amount_eur, stripe_id, status) VALUES (?,?,?,?,?,'completed')",
-                    (uid, "purchase", credits, amount, order_id))
-            db.commit()
-        else:
-            print(f"[SUMUP] Transaction deja traitee: {order_id}")
-        db.close()
-    except Exception as e:
-        print(f"[SUMUP] Erreur verification: {e}")
-        return RedirectResponse(url="/dashboard.html?payment=cancel")
-    return RedirectResponse(url="/dashboard.html?payment=success")
-
-@app.get("/api/transactions")
-async def transactions(user=Depends(get_current_user)):
-    db = get_db()
-    rows = fetchall(db, "SELECT id, type, credits, amount_eur, status, created_at FROM transactions WHERE user_id=? ORDER BY created_at DESC LIMIT 20", (user["id"],))
-    db.close()
-    return rows
 
 # ── ADMIN ─────────────────────────────────────────────────────────────────────
 @app.get("/api/admin/stats")
@@ -998,26 +817,19 @@ async def admin_stats(admin=Depends(require_admin)):
     new_today = cnt("SELECT COUNT(*) FROM users WHERE date(created_at)=CURRENT_DATE") if is_pg() else cnt("SELECT COUNT(*) FROM users WHERE date(created_at)=date('now')")
     total_searches = cnt("SELECT COUNT(*) FROM searches")
     searches_today = cnt("SELECT COUNT(*) FROM searches WHERE date(created_at)=CURRENT_DATE") if is_pg() else cnt("SELECT COUNT(*) FROM searches WHERE date(created_at)=date('now')")
-    revenue = cnt("SELECT COALESCE(SUM(amount_eur),0) FROM transactions WHERE status='completed'")
     banned = cnt("SELECT COUNT(*) FROM users WHERE banned=TRUE") if is_pg() else cnt("SELECT COUNT(*) FROM users WHERE banned=1")
     try:
         discord_linked = cnt("SELECT COUNT(*) FROM users WHERE discord_id IS NOT NULL AND discord_id != ''")
     except:
         discord_linked = 0
-    try:
-        lifetime_users = cnt("SELECT COUNT(*) FROM users WHERE lifetime=TRUE") if is_pg() else cnt("SELECT COUNT(*) FROM users WHERE lifetime=1")
-    except:
-        lifetime_users = 0
     db.close()
     return {
         "total_users": total_users,
         "new_today": new_today,
         "total_searches": total_searches,
         "searches_today": searches_today,
-        "revenue_eur": float(revenue),
         "banned": banned,
         "discord_linked": discord_linked,
-        "lifetime_users": lifetime_users,
     }
 
 @app.get("/api/admin/users")
@@ -1025,10 +837,10 @@ async def admin_users(admin=Depends(require_admin), page: int = 1, search: str =
     db = get_db()
     offset = (page - 1) * 20
     if search:
-        rows = fetchall(db, "SELECT u.id,u.email,u.username,u.role,u.credits,u.free_left,u.created_at,u.last_login,u.banned,u.reg_ip,u.lifetime,u.discord_username,(SELECT COUNT(*) FROM users u2 WHERE u2.reg_ip=u.reg_ip AND u.reg_ip IS NOT NULL) as ip_count FROM users u WHERE u.email LIKE ? OR u.username LIKE ? ORDER BY u.created_at DESC LIMIT 20 OFFSET ?", (f"%{search}%", f"%{search}%", offset))
+        rows = fetchall(db, "SELECT u.id,u.email,u.username,u.role,u.created_at,u.last_login,u.banned,u.reg_ip,u.discord_username,(SELECT COUNT(*) FROM users u2 WHERE u2.reg_ip=u.reg_ip AND u.reg_ip IS NOT NULL) as ip_count FROM users u WHERE u.email LIKE ? OR u.username LIKE ? ORDER BY u.created_at DESC LIMIT 20 OFFSET ?", (f"%{search}%", f"%{search}%", offset))
         total_r = fetchone(db, "SELECT COUNT(*) as c FROM users WHERE email LIKE ? OR username LIKE ?", (f"%{search}%", f"%{search}%"))
     else:
-        rows = fetchall(db, "SELECT u.id,u.email,u.username,u.role,u.credits,u.free_left,u.created_at,u.last_login,u.banned,u.reg_ip,u.lifetime,u.discord_username,(SELECT COUNT(*) FROM users u2 WHERE u2.reg_ip=u.reg_ip AND u.reg_ip IS NOT NULL) as ip_count FROM users u ORDER BY u.created_at DESC LIMIT 20 OFFSET ?", (offset,))
+        rows = fetchall(db, "SELECT u.id,u.email,u.username,u.role,u.created_at,u.last_login,u.banned,u.reg_ip,u.discord_username,(SELECT COUNT(*) FROM users u2 WHERE u2.reg_ip=u.reg_ip AND u.reg_ip IS NOT NULL) as ip_count FROM users u ORDER BY u.created_at DESC LIMIT 20 OFFSET ?", (offset,))
         total_r = fetchone(db, "SELECT COUNT(*) as c FROM users", ())
     total = total_r["c"] if total_r else 0
     db.close()
@@ -1042,9 +854,6 @@ async def admin_update(user_id: int, data: AdminUserUpdate, admin=Depends(requir
         if data.banned is not None or data.role is not None:
             db.close()
             raise HTTPException(403, "Ce compte admin ne peut pas être modifié")
-    if data.credits is not None:
-        safe_credits = min(int(data.credits), 1000)
-        execute(db, "UPDATE users SET credits=credits+? WHERE id=?", (safe_credits, user_id))
     if data.banned is not None:
         banned_val = data.banned if is_pg() else (1 if data.banned else 0)
         execute(db, "UPDATE users SET banned=? WHERE id=?", (banned_val, user_id))
@@ -1058,8 +867,6 @@ async def admin_update(user_id: int, data: AdminUserUpdate, admin=Depends(requir
 async def admin_delete(user_id: int, admin=Depends(require_admin)):
     db = get_db()
     try: execute(db, "DELETE FROM searches WHERE user_id=?", (user_id,))
-    except: pass
-    try: execute(db, "DELETE FROM transactions WHERE user_id=?", (user_id,))
     except: pass
     try: execute(db, "DELETE FROM ticket_messages WHERE ticket_id IN (SELECT id FROM tickets WHERE user_id=?)", (user_id,))
     except: pass
@@ -1076,17 +883,6 @@ async def admin_delete(user_id: int, admin=Depends(require_admin)):
     db.close()
     return {"message": "Supprime"}
 
-@app.post("/api/admin/users/{user_id}/add-credits")
-async def admin_add_credits(user_id: int, request: Request, admin=Depends(require_admin)):
-    body = await request.json()
-    credits = min(int(body.get("credits", 0)), 1000)
-    db = get_db()
-    execute(db, "UPDATE users SET credits=credits+? WHERE id=?", (credits, user_id))
-    execute(db, "INSERT INTO transactions (user_id,type,credits,amount_eur,status) VALUES (?,?,?,0,'completed')", (user_id, "admin_grant", credits))
-    db.commit()
-    db.close()
-    return {"message": f"{credits} crédits ajoutés"}
-
 @app.get("/api/admin/searches")
 async def admin_searches(admin=Depends(require_admin), page: int = 1):
     db = get_db()
@@ -1100,13 +896,6 @@ async def admin_history(admin=Depends(require_admin), page: int = 1):
     db = get_db()
     offset = (page - 1) * 50
     rows = fetchall(db, "SELECT s.id, s.query_data, s.result_count, s.cost, s.created_at, u.email, u.username FROM searches s JOIN users u ON s.user_id=u.id ORDER BY s.created_at DESC LIMIT 50 OFFSET ?", (offset,))
-    db.close()
-    return rows
-
-@app.get("/api/admin/transactions")
-async def admin_tx(admin=Depends(require_admin)):
-    db = get_db()
-    rows = fetchall(db, "SELECT t.id, t.type, t.credits, t.amount_eur, t.status, t.created_at, u.email, u.username FROM transactions t JOIN users u ON t.user_id=u.id ORDER BY t.created_at DESC LIMIT 100")
     db.close()
     return rows
 
