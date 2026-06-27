@@ -29,7 +29,7 @@ TOKEN_EXPIRE   = 60 * 24 * 365
 
 # ── BRIXHUB API ──────────────────────────────────────────────────────────────
 BRIX_KEY       = os.getenv("BRIX_API_KEY", "")
-BRIX_BASE      = "https://api.brixhub.ch/api/v1"
+BRIX_BASE      = "https://api.brixhub.cc/api/v1"
 
 SUMUP_SK = os.getenv("SUMUP_SK", "")
 SUMUP_PK = os.getenv("SUMUP_PK", "")
