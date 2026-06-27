@@ -688,7 +688,7 @@ async def search(data: SearchModel, user=Depends(get_current_user)):
         "took_ms": result.get("meta", {}).get("took_ms", 0),
     }
 
-# ── LOOKUP ENDPOINT (utilise POST /search pour éviter les rate limiting) ──
+# ── LOOKUP ENDPOINT (utilise POST /search pour tout) ──────────────────────
 @app.post("/api/lookup")
 async def lookup(data: LookupModel, user=Depends(get_current_user)):
     val = data.lookup.strip()
@@ -701,9 +701,11 @@ async def lookup(data: LookupModel, user=Depends(get_current_user)):
     elif val.upper().startswith("FR") and len(val) > 20:
         payload = {"iban": val, "flexible": False, "per_page": 10}
     else:
+        # Nettoyer le numéro de téléphone
         phone = val.replace(" ", "").replace(".", "").replace("-", "")
         payload = {"telephone": phone, "flexible": False, "per_page": 10}
 
+    # Utiliser POST /search au lieu de GET /lookup
     result = await call_brix("POST", "/search", payload)
     results = result.get("data", {}).get("results", [])
     results = filter_results(results)
