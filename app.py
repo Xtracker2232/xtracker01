@@ -28,19 +28,13 @@ ADMIN_EMAIL    = os.getenv("ADMIN_EMAIL", "")
 ALGORITHM      = "HS256"
 TOKEN_EXPIRE   = 60 * 24 * 365
 
-# ── BRIXHUB API ──────────────────────────────────────────────────────────────
+# ── BRIXHUB API (version .cc) ──────────────────────────────────────────────
 BRIX_KEY       = os.getenv("BRIX_API_KEY", "")
 BRIX_BASE      = "https://api.brixhub.cc/api/v1"
 
-SUMUP_SK = os.getenv("SUMUP_SK", "")
-SUMUP_PK = os.getenv("SUMUP_PK", "")
-PAYGATE_WALLET_BTC = os.getenv("PAYGATE_WALLET_BTC", "")
-PAYGATE_WALLET_LTC = os.getenv("PAYGATE_WALLET_LTC", "")
-PAYGATE_WALLET_ETH = os.getenv("PAYGATE_WALLET_ETH", "")
-
-DB_PATH        = "xtracker.db"
-MAINTENANCE    = os.getenv("MAINTENANCE", "false").lower() == "true"
+# ── DATABASE ─────────────────────────────────────────────────────────────────
 DATABASE_URL   = os.getenv("DATABASE_URL", "") or os.getenv("POSTGRES_URL", "")
+DB_PATH        = "xtracker.db"
 
 # ── AUTH ──────────────────────────────────────────────────────────────────────
 pwd_ctx = CryptContext(schemes=["bcrypt"])
@@ -290,7 +284,7 @@ async def require_admin(request: Request):
 
 # ── BRIXHUB API CALL ──────────────────────────────────────────────────────────
 async def call_brix(method: str, path: str, body: dict = None):
-    """Appelle l'API BrixHub"""
+    """Appelle l'API BrixHub (version .cc)"""
     headers = {
         "X-API-Key": BRIX_KEY,
         "Content-Type": "application/json",
@@ -298,7 +292,7 @@ async def call_brix(method: str, path: str, body: dict = None):
         "User-Agent": "Xtracker/1.0",
     }
     try:
-        async with httpx.AsyncClient(timeout=25, follow_redirects=True, http2=False) as client:
+        async with httpx.AsyncClient(timeout=30, follow_redirects=True, http2=False) as client:
             if method == "POST":
                 r = await client.post(f"{BRIX_BASE}{path}", json=body, headers=headers)
             else:
@@ -678,7 +672,7 @@ async def search(data: SearchModel, user=Depends(get_current_user)):
         if famille:
             p["famille"] = famille
 
-    # Log la recherche sans crédits
+    # Log
     try:
         db = get_db()
         execute(db, "INSERT INTO searches (user_id, query_data, result_count, cost) VALUES (?,?,?,?)",
@@ -694,22 +688,27 @@ async def search(data: SearchModel, user=Depends(get_current_user)):
         "took_ms": result.get("meta", {}).get("took_ms", 0),
     }
 
-# ── LOOKUP ENDPOINT ──────────────────────────────────────────────────────────
+# ── LOOKUP ENDPOINT (utilise POST /search pour éviter les rate limiting) ──
 @app.post("/api/lookup")
 async def lookup(data: LookupModel, user=Depends(get_current_user)):
     val = data.lookup.strip()
+    if not val:
+        raise HTTPException(400, "Veuillez entrer un identifiant")
 
+    # Construire un payload de recherche pour /search
     if "@" in val:
-        path = f"/lookup/email/{val}"
+        payload = {"email": val, "flexible": False, "per_page": 10}
     elif val.upper().startswith("FR") and len(val) > 20:
-        path = f"/lookup/iban/{val}"
+        payload = {"iban": val, "flexible": False, "per_page": 10}
     else:
-        path = f"/lookup/phone/{val.replace(' ', '').replace('.', '').replace('-', '')}"
+        phone = val.replace(" ", "").replace(".", "").replace("-", "")
+        payload = {"telephone": phone, "flexible": False, "per_page": 10}
 
-    result = await call_brix("GET", path)
+    result = await call_brix("POST", "/search", payload)
     results = result.get("data", {}).get("results", [])
+    results = filter_results(results)
 
-    # Log sans crédits
+    # Log
     try:
         db = get_db()
         execute(db, "INSERT INTO searches (user_id, query_data, result_count, cost) VALUES (?,?,?,?)",
@@ -729,11 +728,12 @@ async def lookup(data: LookupModel, user=Depends(get_current_user)):
 async def lookup_plaque(plaque: str, user=Depends(get_current_user)):
     plaque_clean = plaque.upper().replace("-", "").replace(" ", "")
     try:
-        result = await call_brix("POST", "/search", {
+        payload = {
             "vin_plaque": plaque_clean,
             "flexible": False,
             "per_page": 5
-        })
+        }
+        result = await call_brix("POST", "/search", payload)
         results = result.get("data", {}).get("results", [])
         results = filter_results(results)
         vehicles = []
